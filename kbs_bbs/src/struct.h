@@ -73,7 +73,8 @@ struct boardheader {             /* This structure is used to hold data in */
         char flag;
         char title[STRLEN ];
         unsigned level;
-        unsigned char unused[ 12 ];
+        time_t createtime;
+        unsigned char unused[ 8 ];
 };
 
 typedef struct fileheader {             /* This structure is used to hold data in */
