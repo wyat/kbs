@@ -49,3 +49,14 @@ void init_sessiondata(session_t * session)
     session->utmpent=-1;
 }
 
+
+int init_all(ARG_VOID)
+{
+    chdir(BBSHOME);
+    resolve_boards();
+    resolve_ucache();
+    resolve_utmp();
+#ifndef THREADSAFE
+    init_sessiondata(getSession());
+#endif
+}
