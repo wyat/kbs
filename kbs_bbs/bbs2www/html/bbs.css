@@ -1,14 +1,18 @@
 {TEXT-DECORATION: none;}
 A:HOVER {COLOR: #ff0000;}
 TABLE.BODY {BORDER: 1px solid; BORDER-COLOR: #BBD0BB;}
-BODY {BACKGROUND-COLOR: #E5EDE5; FONT-SIZE: 12px; }
+BODY {BACKGROUND-COLOR: #FFFFFF; FONT-SIZE: 12px; }
 body.dark {BACKGROUND-COLOR: #BBD0BB}
 TABLE,TH,TD,P,INPUT,TEXTAREA,SELECT {FONT-SIZE: 12px;}
 TABLE.dark {BACKGROUND-COLOR: #BBD0BB}
 TD.default {BACKGROUND-COLOR: #E5EDE5}
 input.default { background-color: #F0F0FF; border: #000000 solid 1px }
 input.readonly { background-color: #F0F0FF; border: 0px }
-input.button { background-color: #CCCCFF }
+input.button {
+	font-size: 12px;
+	text-align: center;
+	height: 19px;
+}
 hr.default { COLOR: #008000 }
 
 FONT.c30 {COLOR: #000000;}
@@ -66,11 +70,11 @@ a.MenuLeftHead:visited { font-size: 12px ; color: #FFFFFF ; 	text-decoration: no
 }
 .Account {
 	font-size: 12px;
-	color: 0477B8;
+	color: #0477B8;
 }
 .NavigatorText {
 	font-size: 14px;
-	color: 0477B8;
+	color: #0477B8;
 	text-decoration: none;
 	font-weight: normal;
 
@@ -81,7 +85,7 @@ a.MenuLeftHead:visited { font-size: 12px ; color: #FFFFFF ; 	text-decoration: no
 	text-decoration: none;
 }
 .CoyprightText {
-	font-size: 9pt;
+	font-size: 12px;
 }
 .mainright1 {
 	color: #6E9E54;
@@ -90,36 +94,31 @@ a.MenuLeftHead:visited { font-size: 12px ; color: #FFFFFF ; 	text-decoration: no
 	color: #6E9E54;
 }
 td.header {
-	font-size: 9pt;
+	font-size: 12px;
 	background-color: #0066CC;
 	color: #FFFFFF;
 }
-input.button {
-	font-size: 9pt;
-	text-align: center;
-	height: 14pt;
-}
 input.text {
-	font-size: 9pt;
+	font-size: 12px;
 	border-style: solid;
 	border-top-width: 1px;
 	border-right-width: 1px;
 	border-bottom-width: 1px;
 	border-left-width: 1px;
-	height: 14pt;
+	height: 19px;
 
 }
 td.title {
 	margin: 0px;
 	padding: 0px;
 	height: 16px;
-	font-size: 9pt;
+	font-size: 12px;
 	color: #FFFFFF;
 
 
 }
 table.title {
-	font-size: 9pt;
+	font-size: 12px;
 	color: #FFFFFF;
 	margin: 0px;
 	padding: 0px;
@@ -128,12 +127,12 @@ table.title {
 
 }
 table.helper {
-	font-size: 9pt;
+	font-size: 12px;
 	color: #FFFFFF;
 	border: 1px solid #0066CC;
 }
 table.helpert {
-	font-size: 9pt;
+	font-size: 12px;
 	color: #FFFFFF;
 	border: 0px;
 }
@@ -143,5 +142,5 @@ hr.smth {
 	width: 80%;
 }
 td.smth {
-	font-size: 9pt;
+	font-size: 12px;
 }
