@@ -62,8 +62,8 @@ libesmtp 的话，则系统中必须安装有 sendmail 程序。
     gmp 可以直接使用操作系统自带的软件包。
 
 2.3 下载 smthbbs、apache 和 php 的代码包
-    下载 smthbbs 的源代码有两种方法，一种是通过 cvs 方式获取，另一种是下载每
-日更新的 smthbbs-snapshot 代码包。用 cvs 方式下载源代码请参考 doc/README.cvs
+    下载 smthbbs 的源代码有两种方法，一种是通过 cvs 方式获取，另一种是下载已
+经打包的 smthbbs-1.2.1 代码包。用 cvs 方式下载源代码请参考 doc/README.cvs
 文件。把 smthbbs、apache 和 php 的代码包放在 $(SRCDIR) 目录，然后分别解开。
 
     注意在 site/ 子目录里面有名字为 devel.c 和 devel.h 的文件，这两个文件是站
