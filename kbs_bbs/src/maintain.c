@@ -646,7 +646,6 @@ enterbname:
                 }
             }
             substitute_record(BOARDS, &newfh, sizeof(newfh), pos);
-            reload_boards();
             if (noidboard == 1 && !seek_in_file("etc/anonymous", newfh.filename))
                 addtofile("etc/anonymous", newfh.filename);
             else
