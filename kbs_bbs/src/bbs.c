@@ -1204,7 +1204,7 @@ int generate_mark()
     total = buf.st_size / size;
 
     BBS_TRY {
-        if (safe_mmapfile_handle(fd2, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & buf.st_size) == 0) {
+        if (safe_mmapfile_handle(fd2,  PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & buf.st_size) == 0) {
             ldata2.l_type = F_UNLCK;
             fcntl(fd2, F_SETLKW, &ldata2);
             close(fd2);
@@ -1361,7 +1361,7 @@ int search_mode(int mode, char *index)
     total = buf.st_size / size;
 
     init = false;
-    if ((i = safe_mmapfile_handle(fd2, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+    if ((i = safe_mmapfile_handle(fd2, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
         if (i == 2)
             end_mmapfile((void *) ptr, buf.st_size, -1);
         ldata2.l_type = F_UNLCK;

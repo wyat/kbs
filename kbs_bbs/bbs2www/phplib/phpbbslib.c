@@ -1206,7 +1206,7 @@ static PHP_FUNCTION(bbs_searchtitle)
 	}
     total = buf.st_size / sizeof(struct fileheader);
 
-    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
         if (i == 2)
             end_mmapfile((void *) ptr, buf.st_size, -1);
         ldata.l_type = F_UNLCK;
@@ -2110,7 +2110,7 @@ static PHP_FUNCTION(bbs_getthreads)
 	}
     total = buf.st_size / sizeof(struct wwwthreadheader);
 
-    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
         if (i == 2)
             end_mmapfile((void *) ptr, buf.st_size, -1);
         ldata.l_type = F_UNLCK;
@@ -2253,7 +2253,7 @@ static PHP_FUNCTION(bbs_get_article)
 	}
     total = buf.st_size / sizeof(struct fileheader);
 
-    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
         if (i == 2)
             end_mmapfile((void *) ptr, buf.st_size, -1);
         ldata.l_type = F_UNLCK;
@@ -2383,7 +2383,7 @@ static PHP_FUNCTION(bbs_get_thread_articles)
 	}
     total = buf.st_size / sizeof(struct fileheader);
 
-    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
         if (i == 2)
             end_mmapfile((void *) ptr, buf.st_size, -1);
         ldata.l_type = F_UNLCK;
@@ -2500,7 +2500,7 @@ static PHP_FUNCTION(bbs_get_today_article_num){
 	}
     total = buf.st_size / sizeof(struct fileheader);
 
-    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
         if (i == 2)
             end_mmapfile((void *) ptr, buf.st_size, -1);
         ldata.l_type = F_UNLCK;
@@ -2608,7 +2608,7 @@ static PHP_FUNCTION(bbs_get_thread_article_num)
 	}
     total = buf.st_size / sizeof(struct fileheader);
 
-    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
         if (i == 2)
             end_mmapfile((void *) ptr, buf.st_size, -1);
         ldata.l_type = F_UNLCK;

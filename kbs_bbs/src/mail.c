@@ -975,7 +975,7 @@ char *maildoent(char *buf, int num, struct fileheader *ent)
 extern int bug_possible;
 #endif
 
-int mail_read(struct _select_def* conf,struct fileheader *fileinfo)
+int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char buf[512], notgenbuf[128];
     char *t;
@@ -1333,7 +1333,7 @@ int mail_forward(struct _select_def* conf, struct fileheader *fileinfo,void* ext
 
 #endif
 
-int mail_del_range(struct _select_def* conf,struct fileheader *fileinfo)
+int mail_del_range(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     int ret;
     int ent=conf->pos;
@@ -1448,23 +1448,23 @@ struct key_command mail_comms[] = {
      */
     {'a', (READ_KEY_FUNC)auth_search,(void*)false},
     {'A', (READ_KEY_FUNC)auth_search,(void*)true},
-/*  TODO:
-    {'/', t_search_down,NULL},
-    {'?', t_search_up,NULL},
-    {']', thread_down,NULL},
-    {'[', thread_up,NULL},
+    {'/', (READ_KEY_FUNC)title_search,(void*)false},
+    {'?', (READ_KEY_FUNC)title_search,(void*)true},
+    {']', (READ_KEY_FUNC)thread_search,(void*)false},
+    {'[', (READ_KEY_FUNC)thread_search,(void*)true},
 
+    {Ctrl('N'), (READ_KEY_FUNC)thread_read,(void*)SR_FIRSTNEW},
+    {'\\', (READ_KEY_FUNC)thread_read,(void*)SR_LAST},
+    {'=', (READ_KEY_FUNC)thread_read,(void*)SR_FIRST},
+/*  TODO:
     {'z', sendmsgtoauthor,NULL},
     {Ctrl('A'), show_author,NULL},
     {Ctrl('Q'), show_authorinfo,NULL},     
     {Ctrl('W'), show_authorBM,NULL}, 
 
-    {Ctrl('N'), SR_first_new,NULL},
-    {'\\', SR_last,NULL},
 #ifdef PERSONAL_CORP
 	{'y', import_to_pc,NULL},
 #endif
-    {'=', SR_first,NULL},
     {Ctrl('O'), add_author_friend,NULL},
     {Ctrl('Y'), zsend_post,NULL},
     {Ctrl('C'), do_cross,NULL}, */
@@ -2742,6 +2742,20 @@ typedef struct {
     mailgroup_t *users;
 } mailgroup_arg;
 
+const static struct key_translate mail_key_table[]= {
+        {'$',KEY_END},
+        {'q',KEY_LEFT},
+        {'e',KEY_LEFT},
+        {'k',KEY_UP},
+        {'j',KEY_DOWN},
+        {'N',KEY_PGDN},
+        {Ctrl('F'),KEY_PGDN},
+        {' ',KEY_PGDN},
+        {'p',KEY_PGDN},
+        {Ctrl('B'),KEY_PGUP},
+        {-1,-1}
+};
+
 static int set_mailgroup_select(struct _select_def *conf)
 {
     mailgroup_arg *arg = (mailgroup_arg *) conf->arg;
@@ -2759,31 +2773,6 @@ static int set_mailgroup_show(struct _select_def *conf, int i)
     mailgroup_arg *arg = (mailgroup_arg *) conf->arg;
 
     prints(" %3d  %-12s  %-14s", i, arg->users[i - 1].id, arg->users[i - 1].exp);
-    return SHOW_CONTINUE;
-}
-
-static int set_mailgroup_prekey(struct _select_def *conf, int *key)
-{
-    mailgroup_arg *arg = (mailgroup_arg *) conf->arg;
-
-    switch (*key) {
-    case 'e':
-    case 'q':
-        *key = KEY_LEFT;
-        break;
-    case 'p':
-    case 'k':
-        *key = KEY_UP;
-        break;
-    case ' ':
-    case 'N':
-        *key = KEY_PGDN;
-        break;
-    case 'n':
-    case 'j':
-        *key = KEY_DOWN;
-        break;
-    }
     return SHOW_CONTINUE;
 }
 
@@ -2980,6 +2969,7 @@ int set_mailgroup(mailgroup_list_t * mgl, int entry, mailgroup_t * users)
         pts[i].x = 2;
         pts[i].y = i + 3;
     }
+    group_conf.key_table = &mail_key_table[0];
     group_conf.item_per_page = BBS_PAGESIZE;
     /*
      * 加上 LF_VSCROLL 才能用 LEFT 键退出 
@@ -2995,7 +2985,6 @@ int set_mailgroup(mailgroup_list_t * mgl, int entry, mailgroup_t * users)
 
     group_conf.on_select = set_mailgroup_select;
     group_conf.show_data = set_mailgroup_show;
-    group_conf.pre_key_command = set_mailgroup_prekey;
     group_conf.key_command = set_mailgroup_key;
     group_conf.show_title = set_mailgroup_refresh;
     group_conf.get_data = set_mailgroup_getdata;
@@ -3027,31 +3016,6 @@ static int set_mailgroup_list_show(struct _select_def *conf, int i)
     mailgroup_list_arg *arg = (mailgroup_list_arg *) conf->arg;
 
     prints("  %2d  %-40s  %3d", i, arg->mail_group.groups[i - 1].group_desc, arg->mail_group.groups[i - 1].users_num);
-    return SHOW_CONTINUE;
-}
-
-static int set_mailgroup_list_prekey(struct _select_def *conf, int *key)
-{
-    mailgroup_list_arg *arg = (mailgroup_list_arg *) conf->arg;
-
-    switch (*key) {
-    case 'e':
-    case 'q':
-        *key = KEY_LEFT;
-        break;
-    case 'p':
-    case 'k':
-        *key = KEY_UP;
-        break;
-    case ' ':
-    case 'N':
-        *key = KEY_PGDN;
-        break;
-    case 'n':
-    case 'j':
-        *key = KEY_DOWN;
-        break;
-    }
     return SHOW_CONTINUE;
 }
 
@@ -3283,6 +3247,7 @@ int set_mailgroup_list()
     /*
      * 加上 LF_VSCROLL 才能用 LEFT 键退出 
      */
+    grouplist_conf.key_table=&mail_key_table[0];
     grouplist_conf.flag = LF_NUMSEL | LF_VSCROLL | LF_BELL | LF_LOOP | LF_MULTIPAGE;
     grouplist_conf.prompt = "◆";
     grouplist_conf.item_pos = pts;
@@ -3294,7 +3259,6 @@ int set_mailgroup_list()
 
     grouplist_conf.on_select = set_mailgroup_list_select;
     grouplist_conf.show_data = set_mailgroup_list_show;
-    grouplist_conf.pre_key_command = set_mailgroup_list_prekey;
     grouplist_conf.key_command = set_mailgroup_list_key;
     grouplist_conf.show_title = set_mailgroup_list_refresh;
     grouplist_conf.get_data = set_mailgroup_list_getdata;

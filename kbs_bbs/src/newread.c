@@ -11,42 +11,82 @@ static int read_key(struct _select_def *conf, int command)
     struct read_arg *arg = (struct read_arg *) conf->arg;
     int i;
     int ret=SHOW_CONTINUE;
-    
+    int mode=DONOTHING;
+
+    switch (command) {    
+        case 'L':
+        case 'l':                  /* Luzi 1997.10.31 */
+            if (uinfo.mode != LOOKMSGS) {
+                show_allmsgs();
+                mode=FULLUPDATE;
+                break;
+            }
+
+            else
+                return DONOTHING;
+        case 'w':                  /* Luzi 1997.10.31 */
+            if (!HAS_PERM(currentuser, PERM_PAGE))
+                break;
+            s_msg();
+            mode=FULLUPDATE;
+            break;
+        case 'u':                  /* Haohmaru. 99.11.29 */
+            clear();
+            modify_user_mode(QUERY);
+            t_query(NULL);
+            mode= FULLUPDATE;
+            break;
+        case 'O':
+        case 'o':                  /* Luzi 1997.10.31 */
+            {                       /* Leeward 98.10.26 fix a bug by saving old mode */
+                int savemode = uinfo.mode;
+
+                if (!HAS_PERM(currentuser, PERM_BASIC))
+                    break;
+                t_friends();
+                modify_user_mode(savemode);
+                mode=FULLUPDATE;
+                break;
+            }
+    }
     for (i = 0; arg->rcmdlist[i].fptr != NULL; i++) {
         if (arg->rcmdlist[i].key == command) {
-            int mode = (*(arg->rcmdlist[i].fptr)) (conf, arg->data+(conf->pos - conf->page_pos) * arg->ssize, arg->rcmdlist[i].arg);
-            switch (mode) {
-                case FULLUPDATE:
-                case PARTUPDATE:
-                    clear();
-                    ret=SHOW_REFRESH;
-                    break;
-                case DIRCHANGED:
-                case NEWDIRECT:
-                    ret=SHOW_DIRCHANGE;
-                    break;
-                case DOQUIT:
-                case CHANGEMODE:
-                    ret=SHOW_QUIT;
-                    break;
-                case READ_NEXT:
-                    if (conf->pos<conf->item_count) {
-                        conf->new_pos = conf->pos + 1;
-                        list_select_add_key(conf,'r'); //SEL change的下一条指令是read
-                        ret=SHOW_SELCHANGE;
-                    } else ret=SHOW_REFRESH;
-                    break;
-                case READ_PREV:
-                    if (conf->pos>1) {
-                        conf->new_pos = conf->pos - 1;
-                        list_select_add_key(conf,'r'); //SEL change的下一条指令是read
-                        ret=SHOW_SELCHANGE;
-                    } else ret= SHOW_REFRESH;
-                    break;
-            } 
+            mode = (*(arg->rcmdlist[i].fptr)) (conf, arg->data+(conf->pos - conf->page_pos) * arg->ssize, arg->rcmdlist[i].arg);
             break;
         }
     }
+    switch (mode) {
+        case FULLUPDATE:
+        case PARTUPDATE:
+            clear();
+            ret=SHOW_REFRESH;
+            break;
+        case DIRCHANGED:
+        case NEWDIRECT:
+            ret=SHOW_DIRCHANGE;
+            break;
+        case DOQUIT:
+        case CHANGEMODE:
+            ret=SHOW_QUIT;
+            break;
+        case READ_NEXT:
+            if (conf->pos<conf->item_count) {
+                conf->new_pos = conf->pos + 1;
+                list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                ret=SHOW_SELCHANGE;
+            } else ret=SHOW_REFRESH;
+            break;
+        case READ_PREV:
+            if (conf->pos>1) {
+                conf->new_pos = conf->pos - 1;
+                list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                ret=SHOW_SELCHANGE;
+            } else ret= SHOW_REFRESH;
+            break;
+        case SELCHANGE:
+            ret=SHOW_SELCHANGE;
+            break;
+    } 
     return ret;
 }
 
@@ -165,11 +205,23 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
             {'\n','r'},
             {'\r','r'},
             {KEY_RIGHT,'r'},
+            {'$',KEY_END},
+            {'q',KEY_LEFT},
+            {'e',KEY_LEFT},
+            {'k',KEY_UP},
+            {'j',KEY_DOWN},
+            {'N',KEY_PGDN},
+            {Ctrl('F'),KEY_PGDN},
+            {' ',KEY_PGDN},
+            {'p',KEY_PGDN},
+            {Ctrl('B'),KEY_PGUP},
             {-1,-1}
     };
 
-
-    modify_user_mode(cmdmode);
+    if (cmdmode==DIR_MODE_MAIL)
+        modify_user_mode(RMAIL);
+    else //todo: other mode
+        modify_user_mode(RMAIL);
 
     /* save argument */
     arg.mode=cmdmode;
@@ -230,7 +282,7 @@ static int read_search_articles(struct _select_def* conf, char *query, bool up, 
     char ptr[STRLEN];
     int now, match = 0;
     int complete_search;
-    char upper_ptr[STRLEN], upper_query[STRLEN];
+    char upper_query[STRLEN];
     bool init;
     size_t bm_search[256];
 
@@ -261,7 +313,7 @@ static int read_search_articles(struct _select_def* conf, char *query, bool up, 
 /*    refresh();*/
     match = 0;
     BBS_TRY {
-        if (safe_mmapfile_handle(arg->fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &pFh, &size) == 0)
+        if (safe_mmapfile_handle(arg->fd, PROT_READ, MAP_SHARED, (void **) &pFh, &size) == 0)
             BBS_RETURN(0);
         if(now > arg->filecount){
 	/*在置顶文章前搜索*/
@@ -367,5 +419,173 @@ int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
             conf->show_endline(conf);
     }
     return DONOTHING;
+}
+
+int title_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    static char title[STRLEN];
+    char ans[STRLEN], pmt[STRLEN];
+    bool up=(bool)extraarg;
+
+    strncpy(ans, title, STRLEN);
+    snprintf(pmt, STRLEN, "%s搜寻标题 [%s]: ", up ? "往前" : "往后", ans);
+    move(t_lines - 1, 0);
+    clrtoeol();
+    getdata(t_lines - 1, 0, pmt, ans, STRLEN - 1, DOECHO, NULL, true);
+    if (*ans != '\0')
+        strcpy(title, ans);
+    switch (read_search_articles(conf, title, up, 0)) {
+        case 1:
+            return PARTUPDATE;
+        default:
+            conf->show_endline(conf);
+    }
+    return DONOTHING;
+}
+
+bool isThreadTitle(char* a,char* b)
+{
+  if (!strncasecmp(a,"re: ",4)) a+=4;
+  if (!strncasecmp(b,"re: ",4)) b+=4;
+  return strcmp(a,b)?0:1;
+}
+
+int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC* func, bool down,void* arg)
+{
+    struct fileheader *pFh,*nowFh;
+    int size;
+    int now; /*当前扫描到的位置*/
+    int count; /*计数器*/
+    int recordcount; /*文章总数*/
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
+    /*是否需要flock,这个有个关键是如果lock中间有提示用户做什么
+      的,就会导致死锁*/
+/*    flock(arg->fd,LOCK_SH);*/
+    count=0;
+    now = conf->pos;
+    BBS_TRY {
+        if (safe_mmapfile_handle(arg->fd, PROT_READ|PROT_WRITE, MAP_SHARED, (void **) &pFh, &size) ) {
+            bool needmove;
+            if(now > read_arg->filecount){
+            /*在置顶文章前搜索*/
+                now = read_arg->filecount;
+            }
+            recordcount=size/sizeof(struct fileheader);
+            if (now>recordcount)
+                now=recordcount;
+            nowFh=pFh+now-1;
+            needmove=true;
+            while (1) {
+                int ret;
+                /* 移动指针*/
+                if (needmove) {
+                    if (down) {
+                        if (++now > arg->filecount)
+                            break;
+                        nowFh++;
+                    } else {
+                        if (--now < 1)
+                            break;
+                        nowFh--;
+                    }
+                }
+                
+                /* 判断是不是同一主题,不是直接continue*/
+                if (read_arg->mode==DIR_MODE_NORMAL) { /*判断是否使用groupid*/
+                    if (fh->groupid!=nowFh->groupid)
+                    continue;
+                } else {
+                    if (!isThreadTitle(fh->title,nowFh->title))
+                        continue;
+                }
+
+                /* 是同一主题*/
+                count++;
+                if (func) {
+                    ret=(*func)(conf,nowFh,now,arg);
+                    if (ret==APPLY_QUIT) break;
+
+                    /*在返回APPLY_REAPPLY的时候不需要移动指针*/
+                    needmove=(ret!=APPLY_REAPPLY);
+                }
+            }
+        }
+    }
+    BBS_CATCH {
+    }
+    BBS_END;
+    if (pFh!=NULL)
+        end_mmapfile((void *) pFh, size, -1);
+/*    flock(arg->fd,LOCK_UN); */
+    return count;
+}
+
+int thread_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+//TODO: 在.DIR的时候，用groupid来搜
+    bool up=(bool)extraarg;
+    char* title=fh->title;
+    if (title[0] == 'R' && (title[1] == 'e' || title[1] == 'E')
+        && title[2] == ':')
+        title += 4;
+    setqtitle(title);
+    switch (read_search_articles(conf, title, up, 2)) {
+        case 1:
+            return PARTUPDATE;
+        default:
+            conf->show_endline(conf);
+    }
+    return DONOTHING;
+}
+
+/*用于apply_record的回调函数*/
+static int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
+{
+    int mode=(int)extraarg;
+    switch (mode) {
+        case SR_FIRSTNEWDOWNSEARCH:
+#ifdef HAVE_BRC_CONTROL
+            if (brc_unread(fh->id)) {
+                conf->new_pos=ent;
+            }
+#endif
+            break;
+        case SR_FIRSTNEW:
+#ifdef HAVE_BRC_CONTROL
+            if (brc_unread(fh->id)) {
+                conf->new_pos=ent;
+                return APPLY_CONTINUE;
+            }
+            break;
+#endif
+        case SR_FIRST:
+        case SR_LAST:
+            conf->new_pos=ent;
+            return APPLY_CONTINUE;/*继续查到底*/
+    }
+    return APPLY_QUIT;
+}
+
+int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    int mode=(int)extraarg;
+    conf->new_pos=0;
+    switch (mode) {
+        case SR_FIRST:
+            apply_thread(conf,fh,fileheader_thread_read,false,(void*)mode);
+            break;
+        case SR_LAST:
+            apply_thread(conf,fh,fileheader_thread_read,true,(void*)mode);
+            break;
+        case SR_FIRSTNEW:
+            apply_thread(conf,fh,fileheader_thread_read,false,(void*)mode);
+            if (conf->new_post==0) {
+                apply_thread(conf,fh,fileheader_thread_read,true,(void*)SR_FIRSTNEWDOWNSEARCH);
+            }
+            break;
+    }
+    if (conf->new_post==0) return DONOTHING;
+    /*TODO: SR_FIRSTNEW还需要紧跟着同主题阅读*/
+    return SELCHANGE;
 }
 
