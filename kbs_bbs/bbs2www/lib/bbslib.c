@@ -908,7 +908,7 @@ int sig_append(FILE * fp, char *id, int sig)
 
 int has_BM_perm(struct userec *user, char *board)
 {
-    bcache_t *x;
+    boardheader_t *x;
     char buf[256], *bm;
 
     x = getbcache(board);
@@ -1092,7 +1092,7 @@ time_t get_idle_time(struct user_info * uentp)
 }
 
 
-bcache_t *getbcacheaddr()
+boardheader_t *getbcacheaddr()
 {
     return bcache;
 }

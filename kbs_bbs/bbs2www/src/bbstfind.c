@@ -8,7 +8,7 @@ int main()
     FILE *fp;
     char buf[1024], title[80], board[80], dir[80], first_file[80];
     char brdencode[STRLEN];
-    bcache_t *x1;
+    boardheader_t *x1;
     struct fileheader x, x0;
     int sum = 0, total = 0;
     int title_len;

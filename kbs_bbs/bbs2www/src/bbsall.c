@@ -11,10 +11,10 @@ int cmp_board(b1, b2)
 
 int main()
 {
-    bcache_t data[MAXBOARD], *x;
+    boardheader_t data[MAXBOARD], *x;
     int i, total = 0;
     char *ptr;
-    bcache_t *bc;
+    boardheader_t *bc;
 
     init_all();
     bc = getbcacheaddr();

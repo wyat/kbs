@@ -38,7 +38,7 @@ int search(char* boardname,char *id, char *pat, char *pat2, char *pat3, int dt)
     char board[256], dir[256], buf2[150];
     int total, now = time(0), i, sum = 0, n, t;
     struct fileheader x;
-    bcache_t *bc;
+    boardheader_t *bc;
 
     bc = getbcacheaddr();       /* Assume shm_init() had been called. */
     printf("%s -- 站内文章查询结果 <br>\n", BBSNAME);

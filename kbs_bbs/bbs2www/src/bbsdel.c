@@ -45,7 +45,7 @@ int del_post(int ent, struct fileheader *fileinfo, char *direct, char *board)
 int main()
 {
     FILE *fp;
-    bcache_t *brd;
+    boardheader_t *brd;
     struct fileheader f;
     struct userec *u = NULL;
     char buf[80], dir[80], path[80], board[80], file[80], *id;

@@ -10,7 +10,7 @@ int main()
     int r, i, sig;
 	int reid;
     struct fileheader x, *oldx;
-    bcache_t *brd;
+    boardheader_t *brd;
     int local, anony;
     /*int filtered = 0;*/
 
