@@ -1024,6 +1024,14 @@ int do_after_logout(struct userec* user,struct user_info* userinfo,int unum,int 
 }
 
 #ifdef HAVE_CUSTOM_USER_TITLE
+/**
+ * user_title数组是1 base,所以idx都要减一
+ * 当title==0的时候，应该用原来的显示体系结构
+ */
+
+/**
+  *  把user_title数组写入磁盘
+  */
 static void flush_user_title()
 {
     FILE* titlefile;
@@ -1038,17 +1046,29 @@ static void flush_user_title()
     }
 }
 
+/**
+ * 获得title对应的字符串
+ * @param titleidx 1base的title
+ * @return 用于显示的title
+ */
 char* get_user_title(unsigned char titleidx)
 {
-	return uidshm->user_title[titleidx];
+    if (titleidx==0) return "";
+    return uidshm->user_title[titleidx-1];
 }
 
-int set_user_title(unsigned char titleidx,char* newtitle)
+/**
+ * 设置title对应的字符串
+ * @param titleidx 1base的title
+ * @param newtitle 需要设置的title
+ */
+void set_user_title(unsigned char titleidx,char* newtitle)
 {
     int fd;
     fd=ucache_lock();
-    uidshm->user_title[titleidx][USER_TITLE_LEN-1]=0;
-    strncpy(uidshm->user_title[titleidx],newtitle,USER_TITLE_LEN-1);
+    if (titleidx==0) return;
+    uidshm->user_title[titleidx-1][USER_TITLE_LEN-1]=0;
+    strncpy(uidshm->user_title[titleidx-1],newtitle,USER_TITLE_LEN-1);
     flush_user_title();
     ucache_unlock(fd);
 }

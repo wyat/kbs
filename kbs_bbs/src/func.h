@@ -52,7 +52,7 @@ int clean_cachedata(char* userid,int unum);
 
 #ifdef HAVE_CUSTOM_USER_TITLE
 char* get_user_title(unsigned char titleidx);
-int set_user_title(unsigned char titleidx,char* newtitle);
+void set_user_title(unsigned char titleidx,char* newtitle);
 #endif
 
 /* 根据tag ,生成 匹配的user id 列表 (针对所有注册用户)*/
