@@ -351,7 +351,7 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼ş£¬È¡³ö±£´
     entry=brc_getcache(userid);
     for (i=0;i<BRC_MAXBOARD;i++) {
     	if (brc_head[i]==bid) {
-    		struct boardheader* bptr;
+    		struct boardheader const* bptr;
     		bptr=getboard(bid);
     		lseek(fd,BRC_HEADER_LEN+i*BRC_ITEMSIZE,SEEK_SET);
     		read(fd,&brc_cache_entry[entry].list,BRC_ITEMSIZE);
