@@ -12,7 +12,8 @@ struct key_command {                /* Used to pass commands to the readmenu */
 
 enum {
     READ_NORMAL,
-    READ_THREAD
+    READ_THREAD,
+    READ_AUTHOR
 };
 
 struct read_arg {
@@ -24,6 +25,7 @@ struct read_arg {
     READ_ENT_FUNC doentry;
     struct key_command *rcmdlist;
     int ssize;
+    int oldpos; /*在同主题阅读的时候，保存原始位置*/
 
     /*用于确定当前的阅读模式，如果是
     READ_NORMAL  正常的顺序阅读
@@ -90,6 +92,8 @@ int thread_search(struct _select_def* conf, struct fileheader* fh, void* extraar
 #define SR_LAST             2
 #define SR_NEXT             3
 #define SR_PREV             4
+#define SR_READ            5    /*同主题阅读*/
+#define SR_READX           6   /*同主题阅读，保存原始位置*/
 #define SR_FIRSTNEWDOWNSEARCH 100
 
 int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg);

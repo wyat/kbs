@@ -1541,8 +1541,9 @@ int change_post_flag(char *currBM, struct userec *currentuser, int currmode, cha
 #endif
                     return PARTUPDATE;
                 }
-				link(&genbuf[512], genbuf);
+                link(&genbuf[512], genbuf);
                 append_record(buf, &digest, sizeof(digest));    /* 文摘目录下添加 .DIR */
+                board_update_toptitle(currboard,1);
             }
         }
 	break;

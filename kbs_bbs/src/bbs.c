@@ -662,19 +662,6 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     return buf;
 }
 
-extern int zsend_file(char *filename, char *title);
-int zsend_post(int ent, struct fileheader *fileinfo, char *direct)
-{
-    char *t;
-    char buf1[512];
-
-    strcpy(buf1, direct);
-    if ((t = strrchr(buf1, '/')) != NULL)
-        *t = '\0';
-    snprintf(genbuf, 512, "%s/%s", buf1, fileinfo->filename);
-    return zsend_file(genbuf, fileinfo->title);
-}
-
 #define SESSIONLEN 9
 void get_telnet_sessionid(char* buf,int unum)
 {
@@ -823,8 +810,9 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 
     setreadpost(conf, fileinfo);
 
-    if (!(ch == KEY_RIGHT || ch == KEY_UP || ch == KEY_PGUP
-        || ch == KEY_DOWN) && (ch <= 0 || strchr("RrEexp", ch) == NULL))
+//new_i_read    if (!(ch == KEY_RIGHT || ch == KEY_UP || ch == KEY_PGUP
+//        || ch == KEY_DOWN) && (ch <= 0 || strchr("RrEexp", ch) == NULL))
+reget:
         ch = igetkey();
 
     switch (ch) {
@@ -886,24 +874,34 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         set_article_flag(conf , fileinfo, (void*)FILE_MARK_FLAG);       /* Leeward 99.03.02 */
         break;
     case Ctrl('U'):
-        sread(0, 1, NULL /*ent */ , 1, fileinfo);       /* Leeward 98.10.03 */
-        break;
+        if (arg->readmode!=READ_AUTHOR) {
+            arg->readmode=READ_AUTHOR;
+            arg->oldpos=0;
+            goto reget;
+        } else return READ_NEXT;
     case Ctrl('H'):
-        sread(-1003, 1, NULL /*ent */ , 1, fileinfo);
-        break;
+        if (arg->readmode!=READ_AUTHOR) {
+            arg->readmode=READ_AUTHOR;
+            arg->oldpos=conf->pos;
+            goto reget;
+        } else return READ_NEXT;
     case Ctrl('N'):
-        sread(2, 0, ent, 0, fileinfo);
-        sread(3, 0, ent, 0, fileinfo);
-        sread(0, 1, ent, 0, fileinfo);
+        list_select_add_key(Ctrl('N'));
         break;
     case Ctrl('S'):
     case 'p':                  /*Add by SmallPig */
-        sread(0, 0, ent, 0, fileinfo);
-        break;
+        if (arg->readmode!=READ_AUTHOR) {
+            arg->readmode=READ_THREAD;
+            arg->oldpos=0;
+            goto reget;
+        } else return READ_NEXT;
     case Ctrl('X'):            /* Leeward 98.10.03 */
     case KEY_RIGHT:
-        sread(-1003, 0, ent, 0, fileinfo);
-        break;
+        if (arg->readmode!=READ_AUTHOR) {
+            arg->readmode=READ_THREAD;
+            arg->oldpos=conf->pos;
+            goto reget;
+        } else return READ_NEXT;
     case Ctrl('Q'):            /*Haohmaru.98.12.05,系统管理员直接查作者资料 */
         clear();
         read_showauthorinfo(conf, fileinfo, NULL);
@@ -2524,33 +2522,32 @@ int del_ding(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 
     if (!HAS_PERM(currentuser, PERM_SYSOP) && !chk_currBM(currBM, currentuser))
             return DONOTHING;
-
+    clear();
+    prints("删除文章 '%s'.", fileinfo->title);
+    getdata(1, 0, "(Y/N) [N]: ", genbuf, 3, DOECHO, NULL, true);
+    if (genbuf[0] != 'Y' && genbuf[0] != 'y') {     /* if not yes quit */
+        move(2, 0);
+        prints("取消\n");
+        pressreturn();
         clear();
-        prints("删除文章 '%s'.", fileinfo->title);
-        getdata(1, 0, "(Y/N) [N]: ", genbuf, 3, DOECHO, NULL, true);
-        if (genbuf[0] != 'Y' && genbuf[0] != 'y') {     /* if not yes quit */
-            move(2, 0);
-            prints("取消\n");
-            pressreturn();
-            clear();
-            return FULLUPDATE;
-        }
+        return FULLUPDATE;
+    }
 
-	failed=delete_record(arg->dingdirect, sizeof(struct fileheader), conf->pos-arg->filecount, 
-            (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
+    failed=delete_record(arg->dingdirect, sizeof(struct fileheader), conf->pos-arg->filecount, 
+        (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
 
-	if(failed){
+    if(failed){
         move(2, 0);
         prints("删除失败\n");
         pressreturn();
         clear();
-		return FULLUPDATE;
-	}else{
-		snprintf(tmpname,100,"boards/%s/%s",currboard->filename,fileinfo->filename);
-		my_unlink(tmpname);
-	}
-
-	return DIRCHANGED;
+        return FULLUPDATE;
+    }else{
+        snprintf(tmpname,100,"boards/%s/%s",currboard->filename,fileinfo->filename);
+        my_unlink(tmpname);
+        board_update_toptitle(currboard,-1);
+    }
+    return DIRCHANGED;
 }
 /* add end */
 
@@ -2711,7 +2708,7 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     return FULLUPDATE;
 }
 
-int show_b_note()
+int show_b_note(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     clear();
     if (show_board_notes(currboard->filename) == -1) {
@@ -2738,7 +2735,7 @@ int show_sec_board_notes(char bname[30])
     return -1;
 }
 
-int show_sec_b_note()
+int show_sec_b_note(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     clear();
     if (show_sec_board_notes(currboard->filename) == -1) {
@@ -2948,10 +2945,8 @@ int show_t_friends(struct _select_def* conf,struct fileheader *fileinfo,void* ex
     return FULLUPDATE;
 }
 
-extern int super_filter(int ent, struct fileheader *fileinfo, char *direct);
-
 /* add by stiger, add template */
-int b_note_edit_new()
+int b_note_edit_new(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
 	char ans[4];
 
@@ -4603,6 +4598,11 @@ int choose_tmpl(char *title, char *fname)
 	return -1;
 }
 
+int b_results(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
+{
+    return vote_results(currboard->filename);
+}
+
 static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {'r', (READ_KEY_FUNC)read_post,NULL},
     {'K', (READ_KEY_FUNC)skip_post,NULL},
@@ -4642,8 +4642,6 @@ static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {'i', (READ_KEY_FUNC)Save_post,NULL},
     {'J', (READ_KEY_FUNC)Semi_save,NULL},
     {'I', (READ_KEY_FUNC)Import_post,NULL},
-        /*----------------------------------*/
-
 
 #ifdef INTERNET_EMAIL
     {'F', (READ_KEY_FUNC)mail_forward,NULL},
@@ -4658,53 +4656,60 @@ static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {'c', (READ_KEY_FUNC)clear_new_flag,NULL},
 #endif
     {'f', (READ_KEY_FUNC)clear_all_new_flag,NULL},
+
+    {'n',  (READ_KEY_FUNC)thread_read,(void*)SR_FIRSTNEW},
+    {Ctrl('N'), (READ_KEY_FUNC)thread_read,(void*)SR_FIRSTNEW},
+    {'\\', (READ_KEY_FUNC)thread_read,(void*)SR_LAST},
+    {'=', (READ_KEY_FUNC)thread_read,(void*)SR_FIRST},
+
+    {'a', (READ_KEY_FUNC)auth_search,(void*)false},
+    {'A', (READ_KEY_FUNC)auth_search,(void*)true},
+    {'/', (READ_KEY_FUNC)title_search,(void*)false},
+    {'?', (READ_KEY_FUNC)title_search,(void*)true},
+    {']', (READ_KEY_FUNC)thread_read,(void*)SR_NEXT},
+    {'[', (READ_KEY_FUNC)thread_read,(void*)SR_PREV},
+
+    {Ctrl('A'), (READ_KEY_FUNC)read_showauthor,NULL},
+    {Ctrl('Q'), (READ_KEY_FUNC)read_showauthorinfo,NULL},     
+    {Ctrl('W'), (READ_KEY_FUNC)read_showauthorBM,NULL}, 
+    {Ctrl('O'), (READ_KEY_FUNC)read_addauthorfriend,NULL},
+
+    {Ctrl('Y'), (READ_KEY_FUNC)read_zsend,NULL},
+#ifdef PERSONAL_CORP
+    {'y', (READ_KEY_FUNC)read_importpc,NULL},
+#endif
+    /*----------------------------------*/
+    {'\'',(READ_KEY_FUNC)post_search,(void*)false},
+    {'\"', (READ_KEY_FUNC)post_search,(void*)true},
+
+    {'R',  (READ_KEY_FUNC)b_results,NULL},
+    {'V',  (READ_KEY_FUNC)b_vote,NULL},
+    {'M',  (READ_KEY_FUNC)b_vote_maintain,NULL},
+    {'W',  (READ_KEY_FUNC)b_note_edit_new,NULL},
+    {'h',  (READ_KEY_FUNC)mainreadhelp,NULL},
+    {'X',  (READ_KEY_FUNC)b_jury_edit,NULL},     //编辑版面的仲裁委员名单,stephen on 2001.11.1 
+    {KEY_TAB,  (READ_KEY_FUNC)show_b_note,NULL},
+    {Ctrl('D'), (READ_KEY_FUNC)deny_user,NULL},
+    {Ctrl('E'), (READ_KEY_FUNC)clubmember,NULL},
+#ifdef NINE_BUILD
+    {'z',  (READ_KEY_FUNC)show_sec_b_note,NULL},
+    {'Z',  (READ_KEY_FUNC)b_sec_notes_edit,NULL},
+#else
+    {'z', (READ_KEY_FUNC)read_sendmsgtoauthor,NULL},
+    {'Z', (READ_KEY_FUNC)read_sendmsgtoauthor,NULL},
+#endif
+
+    {'p',  (READ_KEY_FUNC)thread_read,(void*)SR_READ},
+    {Ctrl('S'), (READ_KEY_FUNC)thread_read,(void*)SR_READ},
+    {Ctrl('X'), (READ_KEY_FUNC)thread_read,(void*)SR_READX},
     /*----------------------------------------*/
 /*
     {'S', sequential_read},
-    {'R', b_results},
-    {'V', b_vote},
-    {'M', b_vote_maintain},
-    {'W', b_note_edit_new},
-    {'h', mainreadhelp},
-    {'X', b_jury_edit},     //编辑版面的仲裁委员名单,stephen on 2001.11.1 
-    {KEY_TAB, show_b_note},
     
-    {'a', auth_search_down},
-    {'A', auth_search_up},
-    {'/', t_search_down},
-    {'?', t_search_up},
-    {'\'', post_search_down},
-    {'\"', post_search_up},
-    {']', thread_down},
-    {'[', thread_up},
-    {Ctrl('D'), deny_user},
-    {Ctrl('E'), clubmember},
-    {Ctrl('A'), show_author},
-    {Ctrl('O'), add_author_friend},
-    {trl('Q'), show_authorinfo},      
-    {Ctrl('W'), show_authorBM},
-#ifdef NINE_BUILD
-    {'z', show_sec_b_note},    
-    {'Z', b_sec_notes_edit},
-#else
-    {'z', sendmsgtoauthor},     
-    {'Z', sendmsgtoauthor},     
-#endif
-    {Ctrl('N'), SR_first_new},
-    {'n', SR_first_new},
-    {'\\', SR_last},
-    {'=', SR_first},
-    {Ctrl('S'), SR_read},
-    {'p', SR_read},
-    {Ctrl('X'), SR_readX},    
     {Ctrl('U'), SR_author},
     {Ctrl('H'), SR_authorX}, 
     {'b', SR_BMfunc},
     {'B', SR_BMfuncX},         
-    {Ctrl('Y'), zsend_post},  
-#ifdef PERSONAL_CORP
-	{'y', import_to_pc},
-#endif
 */
     {'\0', NULL},
 };

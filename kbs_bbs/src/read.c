@@ -779,7 +779,3 @@ static int i_read_key(int cmdmode, struct one_key *rcmdlist, struct keeploc *loc
     return mode;
 }
 
-int sread(int passonly, int readfirst, int pnum, int auser, struct fileheader *ptitle)
-{
-}
-

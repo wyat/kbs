@@ -210,6 +210,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     int setboardtitle(char *board, int i);
     int board_setreadonly(char *board, int readonly);   /* 设置版面只读属性 */
     int get_nextid(char *boardname);    /*生成文章索引号并自动加一 */
+    void board_update_toptitle(struct boardheader* bh,int increment); /*改变置顶个数*/
 #if HAVE_WWW==1
     int resolve_guest_table(); /* www guest shm */
     int www_guest_lock();

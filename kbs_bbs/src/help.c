@@ -47,7 +47,7 @@ char    *mesg;
     prints("[m");
 }*/
 
-int mainreadhelp()
+int mainreadhelp(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     show_help("help/mainreadhelp");
     return FULLUPDATE;

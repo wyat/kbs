@@ -60,6 +60,7 @@ static int read_key(struct _select_def *conf, int command)
     int i;
     int ret=SHOW_CONTINUE;
     int mode=DONOTHING;
+    struct fileheader* currfh;
 
     switch (command) {    
         case 'L':
@@ -97,9 +98,10 @@ static int read_key(struct _select_def *conf, int command)
                 break;
             }
     }
+    currfh=(struct fileheader*)(arg->data+(conf->pos - conf->page_pos) * arg->ssize);
     for (i = 0; arg->rcmdlist[i].fptr != NULL; i++) {
         if (arg->rcmdlist[i].key == command) {
-            mode = (*(arg->rcmdlist[i].fptr)) (conf, arg->data+(conf->pos - conf->page_pos) * arg->ssize, arg->rcmdlist[i].arg);
+            mode = (*(arg->rcmdlist[i].fptr)) (conf, currfh, arg->rcmdlist[i].arg);
             break;
         }
     }
@@ -126,16 +128,17 @@ static int read_key(struct _select_def *conf, int command)
             break;
         case READ_NEXT:
         case GOTO_NEXT:
+            ret=SHOW_REFRESH;
             if (arg->readmode==READ_NORMAL) {
                 if (conf->pos<conf->item_count) {
                     conf->new_pos = conf->pos + 1;
                     if (mode==READ_NEXT)
                         list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
-                } else ret=SHOW_REFRESH;
-            } else  { /* 处理同主题阅读*/
+                }
+            } else  if (arg->readmoe==READ_THREAD) { /* 处理同主题阅读*/
                 int findthread=apply_thread(conf,
-                    arg->data+(conf->pos - conf->page_pos) * arg->ssize,
+                    currfh,
                     fileheader_thread_read,
                     true,
                     (void*)SR_NEXT);
@@ -143,7 +146,17 @@ static int read_key(struct _select_def *conf, int command)
                     list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 }
-                else ret=SHOW_REFRESH;
+            } else { //处理同作者阅读
+                if (read_search_articles(conf,currfh->owner,false,1)==1) {
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    ret=SHOW_SELCHANGE;
+                }
+            }
+            
+            if ((ret==SHOW_REFRESH)&&(arg->oldpos!=0)) {
+                /*恢复到原来的位置*/
+                ret=SHOW_SELCHANGE;
+                arg->oldpos=0;
             }
             break;
         case READ_PREV:
@@ -153,7 +166,8 @@ static int read_key(struct _select_def *conf, int command)
                     list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 } else ret= SHOW_REFRESH;
-            } else { /* 处理同主题阅读*/
+            }
+            else if (arg->readmode==READ_THREAD) {/* 处理同主题阅读*/
                 int findthread=apply_thread(conf,
                     arg->data+(conf->pos - conf->page_pos) * arg->ssize,
                     fileheader_thread_read,
@@ -164,6 +178,16 @@ static int read_key(struct _select_def *conf, int command)
                     ret=SHOW_SELCHANGE;
                 }
                 else ret=SHOW_REFRESH;
+            } else { //处理同作者阅读
+                if (read_search_articles(conf,currfh->owner,true,1)==1) {
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    ret=SHOW_SELCHANGE;
+                }
+            }
+            if ((ret==SHOW_REFRESH)&&(arg->oldpos!=0)) {
+                /*恢复到原来的位置*/
+                ret=SHOW_SELCHANGE;
+                arg->oldpos=0;
             }
             break;
         case SELCHANGE:
@@ -554,6 +578,28 @@ static int read_search_articles(struct _select_def* conf, char *query, bool up, 
     return 0;
 }
 
+int post_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    static char query[STRLEN];
+    char ans[IDLEN + 1], pmt[STRLEN];
+    char currauth[STRLEN];
+    bool up=(bool)extraarg;
+    
+    strncpy(currauth, fh->owner, STRLEN);
+    snprintf(pmt, STRLEN, "搜寻%s的文章 [%s]: ", up ? "往先前":"往后来", ans);
+    move(t_lines - 1, 0);
+    clrtoeol();
+    getdata(t_lines - 1, 0, pmt, ans, IDLEN + 1, DOECHO, NULL, true);   /*Haohmaru.98.09.29.修正作者查找只能11位ID的错误 */
+    switch (read_search_articles(conf, query, up, -1)) {
+        case 1:
+            return SELCHANGE;
+        default:
+            conf->show_endline(conf);
+    }
+    if (ans[0] != '\0')
+        strncpy(query, ans, IDLEN);
+    return DONOTHING;
+}
 
 int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 {
@@ -686,7 +732,14 @@ int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     int mode=(int)extraarg;
     struct read_arg *read_arg = (struct read_arg *) conf->arg;
     conf->new_pos=0;
+    read_arg->oldpos=0;
     switch (mode) {
+        case SR_READX:
+            read_arg->oldpos=conf->pos;
+        case SR_READ:
+            read_arg->readmode=READ_THREAD;
+            list_select_add_key(conf, 'r');
+            return DONOTHING;
         case SR_FIRST:
         case SR_PREV:
             apply_thread(conf,fh,fileheader_thread_read,false,(void*)mode);
@@ -835,10 +888,17 @@ int read_addauthorfriend(struct _select_def* conf, struct fileheader* fh, void* 
     return FULLUPDATE;
 }
 
+extern int zsend_file(char *filename, char *title);
 int read_zsend(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 {
+    char *t;
+    char buf1[512];
     struct read_arg *read_arg = (struct read_arg *) conf->arg;
-    return zsend_post(conf->pos, fh, read_arg->direct);
+    strcpy(buf1, read_getcurrdirect(conf));
+    if ((t = strrchr(buf1, '/')) != NULL)
+        *t = '\0';
+    snprintf(genbuf, 512, "%s/%s", buf1, fh->filename);
+    return zsend_file(genbuf, fh->title);
 }
 
 #ifdef PERSONAL_CORP
