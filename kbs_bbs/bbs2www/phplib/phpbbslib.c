@@ -5901,20 +5901,21 @@ static PHP_FUNCTION(bbs_getonline_user_list)
 
 	zval* element;
 	
-	int total;
+	int total = 0;
 
-        if ( 0!=ZEND_NUM_ARGS() )
-		 WRONG_PARAM_COUNT;
+    if ( 0!=ZEND_NUM_ARGS() )
+		WRONG_PARAM_COUNT;
 
-	user = get_ulist_addr();
-
-	init_array(return_value);
+   	if (array_init(return_value) == FAILURE)
+      	 RETURN_FALSE;
 
 	apply_ulist_addr((APPLY_UTMP_FUNC) full_utmp, (char *) &total);
 
+	user = get_ulist_addr();
+
 	for ( i=0; i < total; i++ ) {
-		MAKE_ZVAL ( element );
-		init_array ( element );
+		MAKE_STD_ZVAL ( element );
+		array_init ( element );
 
 		add_assoc_bool ( element, "invisible", user[i]->invisible );
 		add_assoc_bool ( element, "isfriend", isfriend(user[i]->userid) );
