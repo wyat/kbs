@@ -599,6 +599,7 @@ static PHP_FUNCTION(bbs_setonlineuser)
             ret = 0;
         }
     }
+    u_info=pui;
     RETURN_LONG(ret);
 }
 
@@ -1533,13 +1534,11 @@ static PHP_FUNCTION(bbs_postarticle)
         RETURN_LONG(-4); //此讨论区是唯读的, 或是您尚无权限在此发表文章.
     if (deny_me(currentuser->userid, board) && !HAS_PERM(currentuser, PERM_SYSOP))
         RETURN_LONG(-5); //很抱歉, 你被版务人员停止了本版的post权利.
-    /*
     if (abs(time(0) - *(int *) (u_info->from + 36)) < 6) {
         *(int *) (u_info->from + 36) = time(0);
         RETURN_LONG(-6); // 两次发文间隔过密, 请休息几秒后再试
     }
     *(int *) (u_info->from + 36) = time(0);
-    */
     sprintf(filename, "tmp/%s.%d.tmp", getcurruserid(), getpid());
     f_append(filename, unix_string(content));
     if(reid > 0){
