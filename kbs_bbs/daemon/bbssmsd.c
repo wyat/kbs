@@ -8,7 +8,7 @@
 
 #include "bbs.h"
 
-#if HAVE_MYSQL == 1
+#if HAVE_MYSQL_SMTH == 1
 #include "mysql.h"
 #endif
 
@@ -21,7 +21,7 @@ int sockfd;
 int sn=0;
 struct header h;
 int running;
-#if HAVE_MYSQL == 1
+#if HAVE_MYSQL_SMTH == 1
 MYSQL mysql_s;
 #endif
 
@@ -118,7 +118,7 @@ int sendtouser(struct GWSendSMS * h, char* buf)
     newbbslog(BBSLOG_SMS,"receive %s from %s for %s",buf,h->SrcMobileNo, uident);
     if(uin == NULL){
 		hh.topid = -1;
-#if HAVE_MYSQL == 1
+#if HAVE_MYSQL_SMTH == 1
 		save_smsmsg_nomysqlconnect(&mysql_s, uident, &hh, buf, 0);
 #endif
 		{
@@ -169,7 +169,7 @@ int sendtouser(struct GWSendSMS * h, char* buf)
 
     hh.topid = uin->pid;
     save_msgtext(uident, &hh, buf);
-#if HAVE_MYSQL == 1
+#if HAVE_MYSQL_SMTH == 1
 	save_smsmsg_nomysqlconnect(&mysql_s, uident, &hh, buf, 1);
 #endif
     kill(uin->pid, SIGUSR2);
@@ -362,7 +362,7 @@ void processbbs()
     head->sem=0;
 }
 
-#if HAVE_MYSQL == 1
+#if HAVE_MYSQL_SMTH == 1
 int sms_init_mysql(){
 	mysql_init(&mysql_s);
 	if (! my_connect_mysql(&mysql_s) ){
@@ -383,7 +383,7 @@ int main()
     time_t now;
 
     start_daemon();
-#if HAVE_MYSQL == 1
+#if HAVE_MYSQL_SMTH == 1
 	sms_init_mysql();
 #endif
     load_sysconf();
@@ -467,7 +467,7 @@ int main()
     
     close(sockfd);
         }
-#if HAVE_MYSQL == 1
+#if HAVE_MYSQL_SMTH == 1
 	mysql_close(&mysql_s);
 #endif
     shmdt(head);
