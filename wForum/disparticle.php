@@ -17,7 +17,7 @@ global $listType;
 
 preprocess();
 
-setStat($article['TITLE']);
+setStat(htmlspecialchars($article['TITLE'],ENT_QUOTES));
 
 show_nav();
 
@@ -37,7 +37,6 @@ if (isErrFounded()) {
 	}
 
 	board_head_var($boardArr['DESC'],$boardName,$boardArr['SECNUM']);
-	require_once("inc/ubbcode.php");
 	showArticleThreads($boardName,$boardID,$articleID,$article,$start,$listType);
 }
 
@@ -89,7 +88,7 @@ function preprocess(){
 	}
 
 	bbs_set_onboard($boardID,1);
-	$articles = bbs_getarticles($boardName, $articleID, 1, $dir_modes["ORIGIN"]);
+	$articles = bbs_getthreads($boardName, $articleID, 1);
 	@$article=$articles[0];
 	if ($article==NULL) {
 		foundErr("您指定的文章不存在！");
@@ -104,7 +103,7 @@ function article_bar($boardName,$boardID,$articleID,$article,$threadID,$listType
 <table cellpadding=0 cellspacing=0 border=0 width=97% align=center>
 	<tr>
 	<td align=left valign=middle style="height:27">&nbsp; 
-	<a href="postarticle.php?board=<?php echo $boardName; ?>"><span class="buttonclass1" border=0 alt=发表一个新主题></span></a>&nbsp;&nbsp;<a href="vote.php?name=<?php echo $boardName; ?>"><span class="buttonclass2" border=0 alt=发表一个新投票></span>&nbsp;&nbsp;<a href="reply?name=<?php echo $boardName; ?>&id=<?php echo $article['ID']; ?>"><span class="buttonclass4" border=0 alt=回复本主题></span></a>
+	<a href="postarticle.php?board=<?php echo $boardName; ?>"><span class="buttonclass1" border=0 alt=发表一个新主题></span></a>&nbsp;&nbsp;<a href="vote.php?name=<?php echo $boardName; ?>"><span class="buttonclass2" border=0 alt=发表一个新投票></span>&nbsp;&nbsp;<a href="postarticle.php?board=<?php echo $boardName; ?>&reID=<?php echo $article['ID']; ?>"><span class="buttonclass4" border=0 alt=回复本主题></span></a>
 	</td>
 	<td align=right valign=middle><a href="disparticle.php?boardName=<?php echo $boardName; ?>&ID=<?php echo $articleID>1?$articleID-1:1; ?>"><img src="pic/prethread.gif" border=0 alt=浏览上一篇主题 width=52 height=12></a>&nbsp;
 	<a href="javascript:this.location.reload()"><img src="pic/refresh.gif" border=0 alt=刷新本主题 width=40 height=12></a> &nbsp;
@@ -119,7 +118,7 @@ function article_bar($boardName,$boardID,$articleID,$article,$threadID,$listType
 <?php
 	}
 ?>
-	　<a href="disparticle.php?boardName=<?php 	echo $boardName; ?>&ID=<?php echo $articleID<bbs_countarticles($boardID, $dir_modes['ORIGIN'])?$articleID+1:$articleID; ?>"><img src="pic/nextthread.gif" border=0 alt=浏览下一篇主题 width=52 height=12></a>
+	　<a href="disparticle.php?boardName=<?php 	echo $boardName; ?>&ID=<?php echo $articleID<bbs_getThreadNum($boardID)?$articleID+1:$articleID; ?>"><img src="pic/nextthread.gif" border=0 alt=浏览下一篇主题 width=52 height=12></a>
 	</td>
 	</tr>
 </table>
@@ -134,7 +133,7 @@ function dispArticleTitle($boardName,$boardID,$articleID,$article, $threadID){
 		<table width=100% cellPadding=0 cellSpacing=0 border=0>
 		<tr>
 		<th align=left valign=middle width="73%" height=25>
-		&nbsp;* 文章主题</B>： <?php echo $article['TITLE']; ?></th>
+		&nbsp;* 文章主题</B>： <?php echo htmlspecialchars($article['TITLE'],ENT_QUOTES); ?></th>
 		<th width=37% align=right>
 		<a href=# onclick="javascript:WebBrowser.ExecWB(4,1)"><img src="pic/saveas.gif" border=0 width=16 height=16 alt=保存该页为文件 align=absmiddle></a>&nbsp;<object id="WebBrowser" width=0 height=0 classid="CLSID:8856F961-340A-11D0-A96B-00C04FD705A2"></object>
 		<a href="report.asp?BoardID=1&id=1"><img src=pic/report.gif alt=报告本帖给版主 border=0></a>&nbsp;
@@ -154,12 +153,9 @@ function dispArticleTitle($boardName,$boardID,$articleID,$article, $threadID){
 
 function showArticleThreads($boardName,$boardID,$articleID,$article,$start,$listType) {
 	global $dir_modes;
-	$threads=bbs_get_threads_from_id($boardID, intval($article['ID']), $dir_modes["NORMAL"], 50000);
-	if ($threads!=NULL) {
-		$total=count($threads)+1;
-	} else {
-		$total=1;
-	}
+	$threadNum=bbs_get_thread_article_num($boardName,intval($article['ID']));
+	$total=$threadNum+1;
+
 	$totalPages=ceil(($total)/THREADSPERPAGE);
 	$num=THREADSPERPAGE;
 	if ($start<0) {
@@ -171,6 +167,8 @@ function showArticleThreads($boardName,$boardID,$articleID,$article,$start,$list
 		$num=$total-$start;
 	}
 	$page=ceil(($start+1)/THREADSPERPAGE);
+	$threads=bbs_get_thread_articles($boardName, intval($article['ID']), 	$total-$start-$num,$num);
+	$num=count($threads);
 	article_bar($boardName,$boardID,$articleID, $article, $start, $listType);
 	dispArticleTitle($boardName,$boardID,$articleID,$article,$start);
 ?>
@@ -180,11 +178,7 @@ function showArticleThreads($boardName,$boardID,$articleID,$article,$start,$list
 		$num=1;
 	} 
 	for($i=0;$i<$num;$i++) {
-		if (($i+$start)==0) {
-			showArticle($boardName,$boardID,intval($article['ID']), $article);
-		} else {
-			showArticle($boardName,$boardID,intval($threads[$start+$i-1]['ID']),$threads[$start+$i-1]);
-		}
+			showArticle($boardName,$boardID,$i+$start,intval($threads[$num-$i-1]['ID']),$threads[$num-$i-1]);
 	}
 ?>
 </table>
@@ -229,11 +223,15 @@ function showArticleThreads($boardName,$boardID,$articleID,$article,$start,$list
 <br>
 <?php
 	if ($listType==1) {
+		$threadNum=bbs_get_thread_article_num($boardName,intval($article['ID']));
+		$total=$threadNum+1;
+		$threads=bbs_get_thread_articles($boardName, intval($article['ID']),0,$total);
+		$total=count($threads);
 		showArticleTree($boardName,$boardID,$articleID,$article,$threads,$total,$start);
 	}
 }
 
-function showArticle($boardName,$boardID,$threadID,$thread){
+function showArticle($boardName,$boardID,$num, $threadID,$thread){
 ?>
 <tr><td class=tablebody1 valign=top width=175>
 <table width=100% cellpadding=4 cellspacing=0>
@@ -243,10 +241,10 @@ function showArticle($boardName,$boardID,$threadID,$thread){
 
 <td class=tablebody1 valign=top width=*>
 
-<table width=100% ><tr><td width=*><a href="javascript:openScript('messanger.asp?action=new&touser=Roy',500,400)"><img src="pic/message.gif" border=0 alt="给Roy发送一个短消息"></a>&nbsp;<a href="friendlist.asp?action=addF&myFriend=Roy" target=_blank><img src="pic/friend.gif" border=0 alt="把Roy加入好友"></a>&nbsp;<a href="dispuser.asp?id=4" target=_blank><img src="pic/profile.gif" border=0 alt="查看Roy的个人资料"></a>&nbsp;<a href="queryResult.asp?stype=1&nSearch=3&keyword=Roy&BoardID=1&SearchDate=ALL" target=_blank><img src="pic/find.gif" border=0 alt="搜索Roy在测试的所有贴子"></a>&nbsp;<A href="mailto:roy@zixia.net"><IMG alt="点击这里发送电邮给Roy" border=0 src=pic/email.gif></A>&nbsp;<a href="reannounce.asp?BoardID=1&replyID=1&id=1&star=1&reply=true"><img src="pic/reply.gif" border=0 alt=引用回复这个贴子></a>&nbsp;<a href="reannounce.asp?BoardID=1&replyID=1&id=1&star=1"><img src="pic/reply_a.gif" border=0 alt=回复这个贴子></a></td><td width=50><b>楼主</b></td></tr><tr><td bgcolor=#D8C0B1 height=1 colspan=2></td></tr>
+<table width=100% ><tr><td width=* valign='center'><a href="javascript:openScript('messanger.asp?action=new&touser=Roy',500,400)"><img src="pic/message.gif" border=0 alt="给Roy发送一个短消息"></a>&nbsp;<a href="friendlist.asp?action=addF&myFriend=Roy" target=_blank><img src="pic/friend.gif" border=0 alt="把Roy加入好友"></a>&nbsp;<a href="dispuser.asp?id=4" target=_blank><img src="pic/profile.gif" border=0 alt="查看Roy的个人资料"></a>&nbsp;<a href="queryResult.asp?stype=1&nSearch=3&keyword=Roy&BoardID=1&SearchDate=ALL" target=_blank><img src="pic/find.gif" border=0 alt="搜索Roy在测试的所有贴子"></a>&nbsp;<A href="sendmail.php?board=<?php echo $boardName; ?>&reID=<?php echo $thread['ID']; ?>"><IMG alt="点击这里发送电邮给Roy" border=0 src=pic/email.gif></A>&nbsp;<a href="editarticle.php?board=<?php echo $boardName; ?>&reID=<?php echo $thread['ID']; ?>"><img src="pic/edit.gif" border=0 alt=编辑></a>&nbsp;<a href="deletearticle.php?board=<?php echo $boardName; ?>&ID=<?php echo $thread['ID']; ?>" onclick="return confirm('你真的要删除本文吗?')"><img src="pic/delete.gif" border=0 alt=删除>删除</a>&nbsp;<a href="postarticle.php?board=<?php echo $boardName; ?>&reID=<?php echo $thread['ID']; ?>"><img src="pic/reply_a.gif" border=0 alt=回复这个贴子></a></td><td width=50><b><?php echo $num==0?'楼主':'第<font color=#ff0000>'.$num.'</font>楼'; ?></b></td></tr><tr><td bgcolor=#D8C0B1 height=1 colspan=2></td></tr>
 </table>
 
-<blockquote><table class=tablebody2 border=0 width=90% style=" table-layout:fixed;word-break:break-all"><tr><td width="100%" style="font-size:9pt;line-height:12pt"><img src=face/face1.gif border=0 alt=发贴心情>&nbsp;<?php echo  $thread['TITLE']; ?><b></b><br><?php 
+<blockquote><table class=tablebody2 border=0 width=90% style=" table-layout:fixed;word-break:break-all"><tr><td width="100%" style="font-size:9pt;line-height:12pt"><img src=face/face1.gif border=0 alt=发贴心情>&nbsp;<?php echo  htmlspecialchars($thread['TITLE'],ENT_QUOTES); ?><b></b><br><?php 
 	 $isnormalboard=bbs_normalboard($boardName);
 	 $filename=bbs_get_board_filename($boardName, $thread["FILENAME"]);
 	 if ($loginok) {
@@ -273,9 +271,8 @@ function showArticleTree($boardName,$boardID,$articleID,$article,$threads,$threa
 <th width=10% align=right valign=middle height=24 id=tabletitlelink> <a href=#top><img src=pic/gotop.gif border=0>顶端</a>&nbsp;</th></tr>
 <?php
 	$flags=array();
-	showTreeItem($boardName,$articleID,$article,0,$start,$flags);
-	for ($i=1;$i<$threadNum;$i++){
-		showTreeItem($boardName,$articleID,$threads[$i-1],$i,$start,$flags);
+	for ($i=0;$i<$threadNum;$i++){
+		showTreeItem($boardName,$articleID,$threads[$threadNum-$i-1],$i,$start,$flags);
 	}
 ?>
 </table>
@@ -301,7 +298,7 @@ function showTreeItem($boardName,$articleID,$thread,$threadID,$start,&$flags){
 	if ($start==$threadID) {
 		echo "<font color=#FF0000>";
 	}
-	echo $thread['TITLE'].'</a><I><font color=gray>(37字) － <a href=dispuser.php?name='.$thread['OWNER'].' target=_blank title="作者资料"><font color=gray>'.$thread['OWNER'].'</font></a>，'.strftime("%Y年%m月%d日",$thread['POSTTIME']);
+	echo htmlspecialchars($thread['TITLE'],ENT_QUOTES).'</a><I><font color=gray>(37字) － <a href=dispuser.php?name='.$thread['OWNER'].' target=_blank title="作者资料"><font color=gray>'.$thread['OWNER'].'</font></a>，'.strftime("%Y年%m月%d日",$thread['POSTTIME']);
 	if ($start==$threadID) {
 		echo "</font>";
 	}
