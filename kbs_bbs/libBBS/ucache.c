@@ -281,7 +281,10 @@ static int fillucache(struct userec *uentp, int *number, int *prev)
     return 0;
 }
 
+#ifdef HAVE_CUSTOM_USER_TITLE
 void flush_user_title();
+void load_user_title();
+#endif
 
 int flush_ucache()
 {
@@ -311,6 +314,9 @@ int load_ucache()
         return 0;
     }
 
+#ifdef HAVE_CUSTOM_USER_TITLE
+    load_user_title();
+#endif
     if ((passwdfd = open(PASSFILE, O_RDWR | O_CREAT, 0644)) == -1) {
         bbslog("3system", "Can't open " PASSFILE "file %s", strerror(errno));
         exit(-1);
@@ -321,24 +327,6 @@ int load_ucache()
         ucache_unlock(fd);
         return -1;
     }
-#ifdef HAVE_CUSTOM_USER_TITLE
-{
-    FILE* titlefile;
-    bzero(uidshm->user_title,sizeof(uidshm->user_title));
-    if ((titlefile = fopen(USER_TITLE_FILE, "r")) == -1) {
-        bbslog("3system", "Can't open " USER_TITLE_FILE "file %s", strerror(errno));
-    } else {
-        int i;
-        for (i=0;i<256;i++) {
-            fgets(uidshm->user_title[i],USER_TITLE_LEN,titlefile);
-            
-            if ((uidshm->user_title[i][0]!=0)&&(uidshm->user_title[i][strlen(uidshm->user_title[i])-1]=='\n'))
-                uidshm->user_title[i][strlen(uidshm->user_title[i])-1]=0;
-        }
-        fclose(titlefile);
-    }
-}
-#endif
     bzero(uidshm->hashhead, UCACHE_HASHSIZE * sizeof(int));
     usernumber = 0;
 
@@ -1030,6 +1018,27 @@ int do_after_logout(struct userec* user,struct user_info* userinfo,int unum,int 
  * user_title数组是1 base,所以idx都要减一
  * 当title==0的时候，应该用原来的显示体系结构
  */
+
+/**
+  * 读入文件中保存的user title
+  */
+static void load_user_title()
+{
+    FILE* titlefile;
+    bzero(uidshm->user_title,sizeof(uidshm->user_title));
+    if ((titlefile = fopen(USER_TITLE_FILE, "r")) == -1) {
+        bbslog("3system", "Can't open " USER_TITLE_FILE "file %s", strerror(errno));
+    } else {
+        int i;
+        for (i=0;i<256;i++) {
+            fgets(uidshm->user_title[i],USER_TITLE_LEN,titlefile);
+            
+            if ((uidshm->user_title[i][0]!=0)&&(uidshm->user_title[i][strlen(uidshm->user_title[i])-1]=='\n'))
+                uidshm->user_title[i][strlen(uidshm->user_title[i])-1]=0;
+        }
+        fclose(titlefile);
+    }
+}
 
 /**
   *  把user_title数组写入磁盘

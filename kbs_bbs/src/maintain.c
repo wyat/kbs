@@ -288,42 +288,6 @@ char *chgrp()
     int i, ch;
     char buf[STRLEN], ans[6];
 
-    /*
-     * static char    *explain[] = {
-     * "本站系统",
-     * "休闲娱乐",
-     * "电脑技术",
-     * "学术科学",
-     * "体育健身",
-     * "谈天说地",
-     * "校园信息",
-     * "艺术文化",
-     * "人文社会",
-     * "网络信息",
-     * "清华大学",
-     * "兄弟院校",
-     * "其  他",
-     * NULL
-     * };
-     * 
-     * static char    *groups[] = {
-     * "system.faq",
-     * "rec.faq",
-     * "comp.faq",
-     * "sci.faq",
-     * "sport.faq",
-     * "talk.faq",
-     * "campus.faq",
-     * "literal.faq",
-     * "soc.faq",
-     * "network.faq",
-     * "thu.faq",
-     * "univ.faq",
-     * "other.faq",
-     * NULL
-     * };
-     */
-
     clear();
     move(2, 0);
     prints("选择精华区的目录\n");

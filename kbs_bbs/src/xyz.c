@@ -590,7 +590,11 @@ void a_edits()
         "../0Announce/systeminfo",
         "forbm",
         "forcloak",
-        "forlongid", "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", NULL
+        "forlongid", "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", 
+        #ifdef HAVE_CUSTOM_USER_TITLE
+        USER_TITLE_FILE,
+        #endif
+        NULL
     };
 
     /*
@@ -606,7 +610,11 @@ void a_edits()
         "给新任版主的信        ", "给隐身用户的信",
         "给长期用户的信        ",
         "转信版和新闻组对应",
-        "封禁理由列表", "新用户个人定制区","给新注册用户的信", NULL
+        "封禁理由列表", "新用户个人定制区","给新注册用户的信", 
+        #ifdef HAVE_CUSTOM_USER_TITLE
+        "用户职务表",
+        #endif
+        NULL
     };
 
     modify_user_mode(ADMIN);
@@ -683,6 +691,11 @@ void a_edits()
             unlink(BADWORD_IMG_FILE);
             prints("\n过滤词表更新");
 	}
+#endif
+#ifdef HAVE_CUSTOM_USER_TITLE
+       if (!strcmp(e_file[ch],USER_TITLE_FILE)) {
+          load_user_title();
+       }
 #endif
     }
     pressreturn();
