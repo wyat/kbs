@@ -52,11 +52,17 @@ void init_sessiondata(session_t * session)
 
 int init_all(ARG_VOID)
 {
+    int ret=0;
     chdir(BBSHOME);
+    get_publicshm();
     resolve_boards();
-    resolve_ucache();
+    ret=resolve_ucache();
     resolve_utmp();
 #ifndef THREADSAFE
     init_sessiondata(getSession());
 #endif
+#if HAVE_WWW == 1
+	resolve_guest_table();
+#endif
+    return ret;
 }

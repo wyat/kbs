@@ -92,7 +92,7 @@ life *brd;
                 } else {
                     strcpy(fname, head.filename);
 //                    unlink(fpath);
-                    cancelpost(brd->bname, "-", &head, 0, 1);
+                    cancelpost(brd->bname, "-", &head, 0, 1, getSession());
                     printf("\t%s\n", fname);
                     total--;
                 }
@@ -121,6 +121,11 @@ char *argv[];
     struct dirent *de;
     DIR *dirp;
     char *ptr, *bname, buf[256];
+
+    if (init_all()) {
+        printf("init data fail\n");
+        return -1;
+    }
 
     db.days = ((argc > 1)
                && (number = atoi(argv[1])) > 0) ? number : DEF_DAYS;

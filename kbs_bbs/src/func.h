@@ -678,6 +678,7 @@ extern session_t g_session;
 session_t * getSession();
 #endif
 void init_sessiondata(session_t* session);
+int init_all(ARG_VOID);
 #ifdef __cplusplus
 }
 #endif

@@ -13,7 +13,7 @@ libcalc_la_SOURCES = calc.c
 libansieditor_la_SOURCES = ansieditor.c
 libiquery_la_SOURCES = iquery.c
 libdir=${prefix}/service
-AM_CFLAGS = -DINVISIBLE -DSAFE_KILL -D_DETAIL_UINFO_ -DSHOW_IDLE_TIME -I$(top_builddir)/src
+AM_CFLAGS = -DINVISIBLE -DSAFE_KILL -D_DETAIL_UINFO_ -DSHOW_IDLE_TIME -I$(top_builddir)/src -DBBSMAIN
 CLEANFILES=@EXTRA_CLEAN@
 install-data-local:
 	cp -f definekey.* ansihelp.txt $(libdir)

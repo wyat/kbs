@@ -111,5 +111,6 @@ typedef struct {
 
 #ifndef THREADSAFE
 #define getCurrentUser() (g_session.currentuser)
+#define setCurrentUser(x) (g_session.currentuser=x)
 #endif
 #endif
