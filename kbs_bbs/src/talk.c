@@ -206,8 +206,6 @@ int t_cmpuids(int uid, struct user_info *up)
     return (up->active && uid == up->uid);
 }
 
-extern char MsgDesUid[20];
-
 int t_query(char* q_id)
 {
     char uident[STRLEN], *newline;
@@ -370,7 +368,7 @@ int t_query(char* q_id)
 			sprintf(buf, "%s 已经关闭讯息呼叫器", uident);
 			break;
 		    }
-		    strcpy(MsgDesUid, uident);
+		    strcpy(getSession()->MsgDesUid, uident);
                     do_sendmsg(uin, NULL, 0);
 		}
                 break;

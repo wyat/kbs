@@ -2074,9 +2074,9 @@ void do_quote(char *filepath, char quote_mode, char *q_file, char *q_user)
      * *q_user = '\0';
      */
 
-    if ((currentmemo->ud.signum > 0) && !(getCurrentUser()->signature == 0 || Anony == 1)) {       /* 签名档为0则不添加 */
+    if ((getSession()->currentmemo->ud.signum > 0) && !(getCurrentUser()->signature == 0 || Anony == 1)) {       /* 签名档为0则不添加 */
         if (getCurrentUser()->signature < 0)
-            addsignature(outf, getCurrentUser(), (rand() % currentmemo->ud.signum) + 1);
+            addsignature(outf, getCurrentUser(), (rand() % getSession()->currentmemo->ud.signum) + 1);
         else
             addsignature(outf, getCurrentUser(), getCurrentUser()->signature);
     }
@@ -2339,9 +2339,9 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         buf4[0] = '\0';
         replymode = 0;
     }
-    if (currentmemo->ud.signum == 0)
+    if (getSession()->currentmemo->ud.signum == 0)
         getCurrentUser()->signature = 0;
-    else if (getCurrentUser()->signature > currentmemo->ud.signum)      /*签名档No.检查 */
+    else if (getCurrentUser()->signature > getSession()->currentmemo->ud.signum)      /*签名档No.检查 */
         getCurrentUser()->signature = 1;
     anonyboard = anonymousboard(currboard->filename);     /* 是否为匿名版 */
     if (!strcmp(currboard->filename, "Announce"))
@@ -2384,13 +2384,13 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         /*
          * Leeward 98.09.24 add: viewing signature(s) while setting post head 
          */
-        sprintf(buf2, "按\033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，%s\033[1;32mEnter\033[m接受所有设定: ", currentmemo->ud.signum,
+        sprintf(buf2, "按\033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，%s\033[1;32mEnter\033[m接受所有设定: ", getSession()->currentmemo->ud.signum,
                 (replymode) ? "，\033[1;32mS/Y\033[m/\033[1;32mN\033[m/\033[1;32mR\033[m/\033[1;32mA\033[m 改引言模式" : "，\033[1;32mP\033[m使用模板", (anonyboard) ? "\033[1;32mM\033[m匿名，" : "");
         if(replymode&&anonyboard) buf2[strlen(buf2)-10]=0;
         getdata(t_lines - 1, 0, buf2, ans, 3, DOECHO, NULL, true);
         ans[0] = toupper(ans[0]);       /* Leeward 98.09.24 add; delete below toupper */
         if ((ans[0] - '0') >= 0 && ans[0] - '0' <= 9) {
-            if (atoi(ans) <= currentmemo->ud.signum)
+            if (atoi(ans) <= getSession()->currentmemo->ud.signum)
                 getCurrentUser()->signature = atoi(ans);
         } else if ((ans[0] == 'S' || ans[0] == 'Y' || ans[0] == 'N' || ans[0] == 'A' || ans[0] == 'R') && replymode) {
             include_mode = ans[0];
@@ -3885,7 +3885,7 @@ int Goodbye()
     output("\x1b[H\x1b[J",6);
     oflush();
 
-    end_mmapfile(currentmemo, sizeof(struct usermemo), -1);
+    end_mmapfile(getSession()->currentmemo, sizeof(struct usermemo), -1);
 
     shutdown(0, 2);
     close(0);

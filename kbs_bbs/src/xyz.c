@@ -542,20 +542,20 @@ int x_usersmsdef()
     if (!strcmp(getCurrentUser()->userid, "guest"))
         return 0;
 
-	if( ! currentmemo->ud.mobileregistered ){
+	if( ! getSession()->currentmemo->ud.mobileregistered ){
         move(3, 0);
 		prints("您没有注册手机号码");
         pressreturn();
         return 0;
     }
     move(2, 0);
-    newlevel = setperms(currentmemo->ud.smsdef, 0, "短信参数", NUMSMSDEF, showsmsdef, NULL);
+    newlevel = setperms(getSession()->currentmemo->ud.smsdef, 0, "短信参数", NUMSMSDEF, showsmsdef, NULL);
     move(2, 0);
-    if (newlevel == currentmemo->ud.smsdef)
+    if (newlevel == getSession()->currentmemo->ud.smsdef)
         prints("参数没有修改...\n");
     else {
-        currentmemo->ud.smsdef = newlevel;
-		write_userdata(getCurrentUser()->userid, &(currentmemo->ud) );
+        getSession()->currentmemo->ud.smsdef = newlevel;
+		write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud) );
         prints("新的参数设定完成...\n\n");
     }
     pressreturn();
@@ -728,10 +728,10 @@ void x_edits()
         sprintf(buf, "edit %s", explain_file[ch]);
         if (!strcmp(e_file[ch], "signatures")) {
 
-			currentmemo->ud.signum = calc_numofsig(getCurrentUser()->userid);
-			write_userdata( getCurrentUser()->userid, &(currentmemo->ud) );
+			getSession()->currentmemo->ud.signum = calc_numofsig(getCurrentUser()->userid);
+			write_userdata( getCurrentUser()->userid, &(getSession()->currentmemo->ud) );
 
-            if (currentmemo->ud.signum&&(getCurrentUser()->signature==0))
+            if (getSession()->currentmemo->ud.signum&&(getCurrentUser()->signature==0))
             	getCurrentUser()->signature=1;
             prints("系统重新设定以及读入你的签名档...");
         }

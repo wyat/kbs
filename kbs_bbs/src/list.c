@@ -12,7 +12,6 @@ int usercounter, real_user_names = 0;
 int range, page, readplan, num;
 struct user_info *user_record[USHM_SIZE];
 struct userec *user_data;
-extern char MsgDesUid[14];      /* 保存所发msg的目的uid 1998.7.5 by dong */
 int t_users();
 int Show_Users();
 int print_title()
@@ -519,7 +518,7 @@ int allnum, pagenum;
         /*
          * 保存所发msg的目的uid 1998.7.5 by dong 
          */
-        strcpy(MsgDesUid, user_record[allnum]->userid);
+        strcpy(getSession()->MsgDesUid, user_record[allnum]->userid);
 #ifdef SMS_SUPPORT
 	/*
 	if(ch=='S')

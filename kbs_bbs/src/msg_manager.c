@@ -291,33 +291,33 @@ static int set_smsg_key(struct _select_def *conf, int key)
 		clear();
 		prints("修改短消息前缀/后缀,这些会在发送的短消息内容前/后显示,占短消息字节");
 
-		if(currentmemo->ud.smsprefix[0])
-			strcpy(ans, currentmemo->ud.smsprefix);
+		if(getSession()->currentmemo->ud.smsprefix[0])
+			strcpy(ans, getSession()->currentmemo->ud.smsprefix);
 		else
 			ans[0]=0;
 		move(2,0);
 		prints("请输入新的前缀:");
 		multi_getdata(3, 0, 79, NULL, ans, 41, 6, false, 0);
 		if(ans[0]){
-			strncpy(currentmemo->ud.smsprefix, ans, 40);
-			currentmemo->ud.smsprefix[40]=0;
+			strncpy(getSession()->currentmemo->ud.smsprefix, ans, 40);
+			getSession()->currentmemo->ud.smsprefix[40]=0;
 		}else
-			currentmemo->ud.smsprefix[0]=0;
+			getSession()->currentmemo->ud.smsprefix[0]=0;
 
-		if(currentmemo->ud.smsend[0])
-			strcpy(ans, currentmemo->ud.smsend);
+		if(getSession()->currentmemo->ud.smsend[0])
+			strcpy(ans, getSession()->currentmemo->ud.smsend);
 		else
 			ans[0]=0;
 		move(10,0);
 		prints("请输入新的后缀:");
 		multi_getdata(11, 0, 79, NULL, ans, 41, 6, false, 0);
 		if(ans[0]){
-			strncpy(currentmemo->ud.smsend, ans, 40);
-			currentmemo->ud.smsend[40]=0;
+			strncpy(getSession()->currentmemo->ud.smsend, ans, 40);
+			getSession()->currentmemo->ud.smsend[40]=0;
 		}else
-			currentmemo->ud.smsend[0]=0;
+			getSession()->currentmemo->ud.smsend[0]=0;
 
-		write_userdata( getCurrentUser()->userid, &(currentmemo->ud) );
+		write_userdata( getCurrentUser()->userid, &(getSession()->currentmemo->ud) );
 
 		move(18,0);
 		prints("修改成功");

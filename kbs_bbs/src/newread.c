@@ -5,7 +5,6 @@
 #include "bbs.h"
 #include "read.h"
 
-extern char MsgDesUid[14];
 extern unsigned int tmpuser;
 
 //每一个模式上次阅读位置保存
@@ -1078,7 +1077,7 @@ int read_sendmsgtoauthor(struct _select_def* conf, struct fileheader* fh, void* 
         do_sendmsg(NULL, NULL, 0);
 
     else {
-        strncpy(MsgDesUid, uin->userid, 20);
+        strncpy(getSession()->MsgDesUid, uin->userid, 20);
         do_sendmsg(uin, NULL, 0);
     }
     return FULLUPDATE;

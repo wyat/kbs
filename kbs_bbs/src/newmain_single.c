@@ -76,7 +76,6 @@ static int i_domode = INPUT_ACTIVE;
 extern time_t calltime;
 extern char calltimememo[];
 
-extern char MsgDesUid[14];      /* 保存所发msg的目的uid 1998.7.5 by dong */
 int canbemsged(uin)             /*Haohmaru.99.5.29 */
     struct user_info *uin;
 {
@@ -164,14 +163,14 @@ void u_enter()
         uinfo.pager |= FRIENDMSG_PAGER;
     }
     uinfo.uid = usernum;
-    strncpy(uinfo.from, fromhost, IPLEN);
+    strncpy(uinfo.from, getSession()->fromhost, IPLEN);
 #ifdef SHOW_IDLE_TIME
     uinfo.freshtime = time(0);
 #endif
     strncpy(uinfo.userid, getCurrentUser()->userid, 20);
 
 //    strncpy(uinfo.realname, curruserdata.realname, 20);
-    strncpy(uinfo.realname, currentmemo->ud.realname, 20);
+    strncpy(uinfo.realname, getSession()->currentmemo->ud.realname, 20);
     strncpy(uinfo.username, getCurrentUser()->username, 40);
     getSession()->utmpent = getnewutmpent(&uinfo);
     if (getSession()->utmpent == -1) {
@@ -560,7 +559,7 @@ void login_query()
         }
         if (strcasecmp(uid, "new") == 0) {
 #ifdef LOGINASNEW
-            if (check_ban_IP(fromhost, buf) <= 0) {
+            if (check_ban_IP(getSession()->fromhost, buf) <= 0) {
                 new_register();
                 sethomepath(tmpstr, getCurrentUser()->userid);
                 sprintf(buf, "/bin/mv -f %s " BBSHOME "/homeback/%s", tmpstr, getCurrentUser()->userid);
@@ -595,22 +594,22 @@ void login_query()
             if (!convcode)
                 convcode = !(DEFINE(getCurrentUser(), DEF_USEGB));      /* KCN,99.09.05 */
 
-            if(check_ip_acl(getCurrentUser()->userid, fromhost)) {
-                prints("该 ID 不欢迎来自 %s 的用户，byebye!", fromhost);
+            if(check_ip_acl(getCurrentUser()->userid, getSession()->fromhost)) {
+                prints("该 ID 不欢迎来自 %s 的用户，byebye!", getSession()->fromhost);
                 oflush();
                 sleep(1);
                 exit(1);
             }
             getdata(0, 0, "\033[1m\033[37m"PASSWD_PROMPT": \033[m", passbuf, 39, NOECHO, NULL, true);
 #ifdef NINE_BUILD
-            if(!strcmp(fromhost, "10.9.0.1")||!strcmp(fromhost, "10.9.30.133")) {
+            if(!strcmp(getSession()->fromhost, "10.9.0.1")||!strcmp(getSession()->fromhost, "10.9.30.133")) {
 		getdata(0, 0, "", buf, 20, NOECHO, NULL, true);
-                if (buf[0]) strcpy(fromhost, buf);
+                if (buf[0]) strcpy(getSession()->fromhost, buf);
             }
 #endif
 
             if (!checkpasswd2(passbuf, getCurrentUser())) {
-                logattempt(getCurrentUser()->userid, fromhost);
+                logattempt(getCurrentUser()->userid, getSession()->fromhost);
                 prints("\033[32m密码输入错误...\033[m\n");
             } else {
                 if (id_invalid(uid)) {
@@ -691,7 +690,7 @@ void login_query()
 #endif
     multi_user_check();
 
-	if( read_user_memo( getCurrentUser()->userid, & currentmemo ) <= 0 ){
+	if( read_user_memo( getCurrentUser()->userid, & getSession()->currentmemo ) <= 0 ){
 		prints("由于程序更新，请先退出此帐号所有连接再重新登陆\n");
 	 	oflush();
 		sleep(1);
@@ -817,9 +816,9 @@ void user_login()
     unsigned unLevel = PERM_SUICIDE;
 
     /* ?????后面还有check_register_info */
-    newbbslog(BBSLOG_USIES,"ENTER @%s", fromhost);
+    newbbslog(BBSLOG_USIES,"ENTER @%s", getSession()->fromhost);
     u_enter();
-    sprintf(genbuf, "Enter from %-16s", fromhost);      /* Leeward: 97.12.02 */
+    sprintf(genbuf, "Enter from %-16s", getSession()->fromhost);      /* Leeward: 97.12.02 */
 
     bbslog("user","%s",genbuf);
 /*---	period	2000-10-19	4 debug	---*/
@@ -908,7 +907,7 @@ void user_login()
             my_unlink(fname);
     }
 
-    strncpy(getCurrentUser()->lasthost, fromhost, IPLEN);
+    strncpy(getCurrentUser()->lasthost, getSession()->fromhost, IPLEN);
     getCurrentUser()->lasthost[15] = '\0';   /* dumb mistake on my part */
     getCurrentUser()->lastlogin = time(NULL);
     getCurrentUser()->numlogins++;
@@ -926,7 +925,7 @@ void user_login()
         getCurrentUser()->firstlogin = login_start_time - 7 * 86400;
     }
     check_register_info();
-    load_mail_list(getCurrentUser(),&user_mail_list);
+    load_mail_list(getCurrentUser(),&getSession()->user_mail_list);
 }
 
 int chk_friend_book()
@@ -959,7 +958,7 @@ int chk_friend_book()
         uin = t_search(uid, false);
         sprintf(msg, "%s 已经上站。", getCurrentUser()->userid);
         /* 保存所发msg的目的uid 1998.7.5 by dong */
-        strcpy(MsgDesUid, uin ? uin->userid : "");
+        strcpy(getSession()->MsgDesUid, uin ? uin->userid : "");
         idnum = 0;              /*Haohmaru.99.5.29.修正一个bug,免得有人利用这个来骚扰别人 */
         if (uin != NULL && canbemsged(uin))
             idnum = do_sendmsg(uin, msg, 2);
@@ -1036,7 +1035,7 @@ void main_bbs(int convit, char *argv)
             strncpy(msg.userid,getCurrentUser()->userid,IDLEN);
             msg.userid[IDLEN]=0;
             //水木是可以用fromhost的，不过其他打开dns反解得就要考虑一下了
-            strncpy(msg.ip,fromhost,IPLEN);
+            strncpy(msg.ip,getSession()->fromhost,IPLEN);
             msg.ip[IPLEN]=0;
             msgctl(msqid, IPC_STAT, &buf);
 	    buf.msg_qbytes = (sizeof(msg)-sizeof(msg.mtype))*20;

@@ -93,7 +93,7 @@ void new_register()
                 if (!stat(genbuf, &lst) && S_ISDIR(lst.st_mode)
                     && (lnow - lst.st_ctime < SEC_DELETED_OLDHOME /* 3600*24*30 */ )) {
                     prints("目前无法注册帐号%s，请与系统管理人员联系。\n", newuser.userid);
-                    sprintf(genbuf, "IP %s new id %s failed[home changed in past 30 days]", fromhost, newuser.userid);
+                    sprintf(genbuf, "IP %s new id %s failed[home changed in past 30 days]", getSession()->fromhost, newuser.userid);
                     bbslog("user","%s",genbuf);
                 } else
                 /*---	---*/
@@ -161,7 +161,7 @@ void new_register()
         sleep(2);
         exit(1);
     }
-    newbbslog(BBSLOG_USIES, "APPLY: %s uid %d from %s", newuser.userid, allocid, fromhost);
+    newbbslog(BBSLOG_USIES, "APPLY: %s uid %d from %s", newuser.userid, allocid, getSession()->fromhost);
 
     update_user(&newuser, allocid, 1);
 
@@ -265,7 +265,7 @@ void check_register_info()
     perm = PERM_DEFAULT & sysconf_eval("AUTOSET_PERM",PERM_DEFAULT);
 
 //    invalid_realmail(getCurrentUser()->userid,curruserdata.realemail,STRLEN - 16);
-    invalid_realmail(getCurrentUser()->userid,currentmemo->ud.realemail,STRLEN - 16);
+    invalid_realmail(getCurrentUser()->userid,getSession()->currentmemo->ud.realemail,STRLEN - 16);
 
     do_after_login(getCurrentUser(),getSession()->utmpent,0);
 
@@ -277,21 +277,21 @@ void check_register_info()
         UPDATE_UTMP_STR(username, uinfo);
     }
 //    if (strlen(curruserdata.realname) < 2) {
-    if (strlen(currentmemo->ud.realname) < 2) {
+    if (strlen(getSession()->currentmemo->ud.realname) < 2) {
         move(3, 0);
         prints("请输入您的真实姓名: (站长会帮您保密的 !)\n");
         getdata(4, 0, "> ", buf, NAMELEN, DOECHO, NULL, true);
 //        strcpy(curruserdata.realname, buf);
-        strcpy(currentmemo->ud.realname, buf);
+        strcpy(getSession()->currentmemo->ud.realname, buf);
     }
 //    if (strlen(curruserdata.address) < 6) {
-    if (strlen(currentmemo->ud.address) < 6) {
+    if (strlen(getSession()->currentmemo->ud.address) < 6) {
         move(5, 0);
 //        prints("您目前填写的地址是‘%s’，长度小于 \033[1m\033[37m6\033[m，系统认为其过于简短。\n", curruserdata.address[0] ? curruserdata.address : "空地址");  /* Leeward 98.04.26 */
-        prints("您目前填写的地址是‘%s’，长度小于 \033[1m\033[37m6\033[m，系统认为其过于简短。\n", currentmemo->ud.address[0] ? currentmemo->ud.address : "空地址");  /* Leeward 98.04.26 */
+        prints("您目前填写的地址是‘%s’，长度小于 \033[1m\033[37m6\033[m，系统认为其过于简短。\n", getSession()->currentmemo->ud.address[0] ? getSession()->currentmemo->ud.address : "空地址");  /* Leeward 98.04.26 */
         getdata(6, 0, "请详细填写您的住址：", buf, NAMELEN, DOECHO, NULL, true);
 //        strcpy(curruserdata.address, buf);
-        strcpy(currentmemo->ud.address, buf);
+        strcpy(getSession()->currentmemo->ud.address, buf);
     }
 
 	/* 加入转让ID后的代码   by binxun 2003-5-23 */
@@ -312,18 +312,18 @@ void check_register_info()
         sprintf(buf,"%s$%s@SYSOP", career,phone);
 		if(strlen(buf) >= STRLEN - 16)sprintf(buf,"%s@SYSOP",phone);
 //		strncpy(curruserdata.realemail,buf,STRLEN-16);
-		strncpy(currentmemo->ud.realemail,buf,STRLEN-16);
+		strncpy(getSession()->currentmemo->ud.realemail,buf,STRLEN-16);
 //		curruserdata.realemail[STRLEN-16-1]='\0';
-		currentmemo->ud.realemail[STRLEN-16-1]='\0';
+		getSession()->currentmemo->ud.realemail[STRLEN-16-1]='\0';
 //		write_userdata(getCurrentUser()->userid,&curruserdata);
-		write_userdata(getCurrentUser()->userid,&(currentmemo->ud));
+		write_userdata(getCurrentUser()->userid,&(getSession()->currentmemo->ud));
 		
 	}
 
 
 #if 0
 //    if (strchr(curruserdata.email, '@') == NULL) {
-    if (currentmemo->ud.email[0]==0) {
+    if (getSession()->currentmemo->ud.email[0]==0) {
         clear();
         move(3, 0);
         prints("只有本站的合法公民才能够完全享有各种功能，");
@@ -360,8 +360,8 @@ void check_register_info()
 #ifdef HAVE_BIRTHDAY
 //	if (!is_valid_date(curruserdata.birthyear+1900, curruserdata.birthmonth,
 //				curruserdata.birthday))
-	if (!is_valid_date(currentmemo->ud.birthyear+1900, currentmemo->ud.birthmonth,
-				currentmemo->ud.birthday))
+	if (!is_valid_date(getSession()->currentmemo->ud.birthyear+1900, getSession()->currentmemo->ud.birthmonth,
+				getSession()->currentmemo->ud.birthday))
 	{
 		time_t now;
 		struct tm *tmnow;
@@ -383,49 +383,49 @@ void check_register_info()
 		{
 		case '1':
 //			curruserdata.gender = 'M';
-			currentmemo->ud.gender = 'M';
+			getSession()->currentmemo->ud.gender = 'M';
 			break;
 		case '2':
 //			curruserdata.gender = 'F';
-			currentmemo->ud.gender = 'F';
+			getSession()->currentmemo->ud.gender = 'F';
 			break;
 		}
 		move(4, 0);
 		prints("请输入您的出生日期");
 //		while (curruserdata.birthyear < tmnow->tm_year - 98
 //			   || curruserdata.birthyear > tmnow->tm_year - 3)
-		while (currentmemo->ud.birthyear < tmnow->tm_year - 98
-			   || currentmemo->ud.birthyear > tmnow->tm_year - 3)
+		while (getSession()->currentmemo->ud.birthyear < tmnow->tm_year - 98
+			   || getSession()->currentmemo->ud.birthyear > tmnow->tm_year - 3)
 		{
 			buf[0] = '\0';
 			getdata(5, 0, "四位数公元年: ", buf, 5, DOECHO, NULL, true);
 			if (atoi(buf) < 1900)
 				continue;
 //			curruserdata.birthyear = atoi(buf) - 1900;
-			currentmemo->ud.birthyear = atoi(buf) - 1900;
+			getSession()->currentmemo->ud.birthyear = atoi(buf) - 1900;
 		}
 //		while (curruserdata.birthmonth < 1 || curruserdata.birthmonth > 12)
-		while (currentmemo->ud.birthmonth < 1 || currentmemo->ud.birthmonth > 12)
+		while (getSession()->currentmemo->ud.birthmonth < 1 || getSession()->currentmemo->ud.birthmonth > 12)
 		{
 			buf[0] = '\0';
 			getdata(6, 0, "出生月: (1-12) ", buf, 3, DOECHO, NULL, true);
 //			curruserdata.birthmonth = atoi(buf);
-			currentmemo->ud.birthmonth = atoi(buf);
+			getSession()->currentmemo->ud.birthmonth = atoi(buf);
 		}
 		do
 		{
 			buf[0] = '\0';
 			getdata(7, 0, "出生日: (1-31) ", buf, 3, DOECHO, NULL, true);
 //			curruserdata.birthday = atoi(buf);
-			currentmemo->ud.birthday = atoi(buf);
+			getSession()->currentmemo->ud.birthday = atoi(buf);
 //		} while (!is_valid_date(curruserdata.birthyear + 1900,
 //					curruserdata.birthmonth,
 //					curruserdata.birthday));
-		} while (!is_valid_date(currentmemo->ud.birthyear + 1900,
-					currentmemo->ud.birthmonth,
-					currentmemo->ud.birthday));
+		} while (!is_valid_date(getSession()->currentmemo->ud.birthyear + 1900,
+					getSession()->currentmemo->ud.birthmonth,
+					getSession()->currentmemo->ud.birthday));
 //		write_userdata(getCurrentUser()->userid, &curruserdata);
-		write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
+		write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud));
 	}
 #endif
 #ifdef NEW_COMERS
@@ -440,11 +440,11 @@ void check_register_info()
 		{
 			fprintf(fout, "大家好,\n\n");
 			fprintf(fout, "我是 %s (%s), 来自 %s\n", getCurrentUser()->userid,
-					getCurrentUser()->username, SHOW_USERIP(getCurrentUser(), fromhost));
+					getCurrentUser()->username, SHOW_USERIP(getCurrentUser(), getSession()->fromhost));
 			fprintf(fout, "今天%s初来此站报到, 请大家多多指教。\n",
 #ifdef HAVE_BIRTHDAY
 //					(curruserdata.gender == 'M') ? "小弟" : "小女子");
-					(currentmemo->ud.gender == 'M') ? "小弟" : "小女子");
+					(getSession()->currentmemo->ud.gender == 'M') ? "小弟" : "小女子");
 #else
                                         "小弟");
 #endif
@@ -485,7 +485,7 @@ void check_register_info()
         if (HAS_PERM(getCurrentUser(), PERM_SYSOP))
             return;
 //        if (!invalid_realmail(getCurrentUser()->userid, curruserdata.realemail, STRLEN - 16)) {
-        if (!invalid_realmail(getCurrentUser()->userid, currentmemo->ud.realemail, STRLEN - 16)) {
+        if (!invalid_realmail(getCurrentUser()->userid, getSession()->currentmemo->ud.realemail, STRLEN - 16)) {
             getCurrentUser()->userlevel |= PERM_DEFAULT;
             /*
             if (HAS_PERM(getCurrentUser(), PERM_DENYPOST) && !HAS_PERM(getCurrentUser(), PERM_SYSOP))
@@ -569,9 +569,9 @@ void check_register_info()
         /*  above lines added by netty...  */
     }
 //    	curruserdata.realemail[STRLEN -16 - 1] = '\0';  //纠错代码
-    	currentmemo->ud.realemail[STRLEN -16 - 1] = '\0';  //纠错代码
+    	getSession()->currentmemo->ud.realemail[STRLEN -16 - 1] = '\0';  //纠错代码
 //	write_userdata(getCurrentUser()->userid, &curruserdata);
-	write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
+	write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud));
     newregfile = sysconf_str("NEWREGFILE");
     /*if (getCurrentUser()->lastlogin - getCurrentUser()->firstlogin < REGISTER_WAIT_TIME && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && newregfile != NULL) {
         getCurrentUser()->userlevel &= ~(perm);
@@ -687,11 +687,11 @@ void ConveyID()
 
 		//clear 用户信息
 //		bzero(&curruserdata,sizeof(struct userdata));
-		bzero(&(currentmemo->ud),sizeof(struct userdata));
+		bzero(&(getSession()->currentmemo->ud),sizeof(struct userdata));
 //		strcpy(curruserdata.userid,getCurrentUser()->userid);
-		strcpy(currentmemo->ud.userid,getCurrentUser()->userid);
+		strcpy(getSession()->currentmemo->ud.userid,getCurrentUser()->userid);
 //		write_userdata(getCurrentUser()->userid,&curruserdata);
-		write_userdata(getCurrentUser()->userid,&(currentmemo->ud));
+		write_userdata(getCurrentUser()->userid,&(getSession()->currentmemo->ud));
 
         move(12,0);
 		prints("转让ID成功,马上断线了,告别这个ID吧.");
@@ -749,38 +749,38 @@ int ProtectID()
 	move(1,0);
 	prints("请逐项修改,直接按 <ENTER> 代表使用 [] 内的资料。\n");
 	
-	sprintf(print_buf,"请输入您的真实姓名: [%s]",currentmemo->ud.realname);
+	sprintf(print_buf,"请输入您的真实姓名: [%s]",getSession()->currentmemo->ud.realname);
 	getdata(3, 0, print_buf, buf, NAMELEN, DOECHO, NULL, true);
 	if(buf[0])
 		strncpy(protect.name,buf,NAMELEN);
 	else
-		strncpy(protect.name,currentmemo->ud.realname,NAMELEN);
+		strncpy(protect.name,getSession()->currentmemo->ud.realname,NAMELEN);
 	
 	move(4,0);
 	prints("请输入您的出生日期: ");
 	
-	sprintf(print_buf,"四位数公元年: [%d]",currentmemo->ud.birthyear);
+	sprintf(print_buf,"四位数公元年: [%d]",getSession()->currentmemo->ud.birthyear);
 	while (protect.birthyear > 2010 || protect.birthyear < 1900) {
 		getdata(5, 0, print_buf, buf, 5, DOECHO, NULL, true);
 		if(buf[0]) protect.birthyear = atoi(buf);
 		else
-			protect.birthyear = currentmemo->ud.birthyear;
+			protect.birthyear = getSession()->currentmemo->ud.birthyear;
 	}
 
-	sprintf(print_buf,"出生月: [%d]",currentmemo->ud.birthmonth);
+	sprintf(print_buf,"出生月: [%d]",getSession()->currentmemo->ud.birthmonth);
 	while (protect.birthmonth < 1 || protect.birthmonth > 12) {
 		getdata(6, 0, print_buf, buf, 3, DOECHO, NULL, true);
 		if(buf[0]) protect.birthmonth = atoi(buf);
 		else
-			protect.birthmonth = currentmemo->ud.birthmonth;
+			protect.birthmonth = getSession()->currentmemo->ud.birthmonth;
 	}
 	
-	sprintf(print_buf,"出生日: [%d]",currentmemo->ud.birthday);
+	sprintf(print_buf,"出生日: [%d]",getSession()->currentmemo->ud.birthday);
 	while (protect.birthday < 1 || protect.birthday > 31) {
 		getdata(7, 0, print_buf, buf, 3, DOECHO, NULL, true);
 		if(buf[0]) protect.birthday = atoi(buf);
 		else
-			protect.birthday = currentmemo->ud.birthday;
+			protect.birthday = getSession()->currentmemo->ud.birthday;
 	}
 
 	sprintf(print_buf,"您的Email: ");

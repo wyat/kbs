@@ -317,7 +317,7 @@ int do_exec(char *com, *wd)
          * added for tin's reply to 
          */
         bbssetenv("REPLYTO", session->currentuser->email);
-        bbssetenv("FROMHOST", fromhost);
+        bbssetenv("FROMHOST", getSession()->fromhost);
 
         /*
          * end of insertion 

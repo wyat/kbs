@@ -12,7 +12,6 @@
 int RMSG = false;
 extern int RUNSH;
 extern struct screenline *big_picture;
-extern char MsgDesUid[14];      /* 保存所发msg的目的uid 1998.7.5 by dong */
 static int RMSGCount = 0;       /* Leeward 98.07.30 supporting msgX */
 extern int i_timeout;
 
@@ -63,7 +62,6 @@ int s_msg()
     return do_sendmsg(NULL, NULL, 0);
 }
 
-extern char msgerr[255];
 extern bool inremsg;
 extern bool in_do_sendmsg;
 
@@ -93,7 +91,7 @@ int mode;
         if( namecomplete(NULL, uident) == '#' ){
 			in_do_sendmsg=false;
             inremsg = false;
-    		if(!currentmemo->ud.mobileregistered)
+    		if(!getSession()->currentmemo->ud.mobileregistered)
 				return 0;
             getdata(1, 0, "送短信给:", uident, MOBILE_NUMBER_LEN+1, true, NULL, true);
 			if( uident[0] == 0)
@@ -142,7 +140,7 @@ int mode;
         /*
          * 保存所发msg的目的uid 1998.7.5 by dong 
          */
-        strcpy(MsgDesUid, uident);
+        strcpy(getSession()->MsgDesUid, uident);
         /*
          * uentp = uin; 
          */
@@ -154,7 +152,7 @@ int mode;
          */ uin = uentp;
         strcpy(uident, uin->userid);
         /*
-         * strcpy(MsgDesUid, uin->userid); change by KCN,is wrong 
+         * strcpy(getSession()->MsgDesUid, uin->userid); change by KCN,is wrong 
          */
     }
 
@@ -175,7 +173,7 @@ int mode;
         if (mode == 0) {
             move(2, 0);
             clrtobot();
-            prints(msgerr);
+            prints(getSession()->msgerr);
             pressreturn();
             move(2, 0);
             clrtoeol();
@@ -218,7 +216,7 @@ int mode;
         if (mode == 0) {
             move(2, 0);
             clrtobot();
-            prints(msgerr);
+            prints(getSession()->msgerr);
             pressreturn();
             move(2, 0);
             clrtoeol();
@@ -404,7 +402,7 @@ int dowall(struct user_info *uin, char *buf2)
         /*
          * 保存所发msg的目的uid 1998.7.5 by dong 
          */
-        strcpy(MsgDesUid, uin->userid);
+        strcpy(getSession()->MsgDesUid, uin->userid);
 
         do_sendmsg(uin, buf2, 3);       /* 广播时避免被过多的 guest 打断 */
     }
@@ -596,12 +594,12 @@ void r_msg()
             default:
                 if(canreply) {
                     if(buf[0]) {
-                        strcpy(MsgDesUid, uid);
+                        strcpy(getSession()->MsgDesUid, uid);
                         pid = head.frompid;
                         uin = t_search(uid, pid);
                         if(uin==NULL&&head.mode!=6) {
                             i=-1;
-                            strcpy(msgerr, "对方已经离线....");
+                            strcpy(getSession()->msgerr, "对方已经离线....");
                         }
                         else {
 #ifdef SMS_SUPPORT
@@ -611,7 +609,7 @@ void r_msg()
                                     if(!i) i=1;
                                     else {
                                         i=0;
-                                        sprintf(msgerr, "无法给 %s 发送手机短信", uid);
+                                        sprintf(getSession()->msgerr, "无法给 %s 发送手机短信", uid);
                                     }
                                 }
                                 else {
@@ -620,18 +618,18 @@ void r_msg()
                                         if(reg==1) {
 //                                            curruserdata.mobileregistered = 0;
 //                                            strcpy(curruserdata.mobilenumber, uid);
-                                            currentmemo->ud.mobileregistered = 0;
-                                            strcpy(currentmemo->ud.mobilenumber, uid);
+                                            getSession()->currentmemo->ud.mobileregistered = 0;
+                                            strcpy(getSession()->currentmemo->ud.mobilenumber, uid);
                                         }
                                         else {
 //                                            curruserdata.mobileregistered = 0;
-                                            currentmemo->ud.mobileregistered = 0;
+                                            getSession()->currentmemo->ud.mobileregistered = 0;
                                         }
 //                                        write_userdata(getCurrentUser()->userid, &curruserdata);
-                                        write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
-                                        sprintf(msgerr, "%s 成功", (reg==1)?"注册":"取消注册");
+                                        write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud));
+                                        sprintf(getSession()->msgerr, "%s 成功", (reg==1)?"注册":"取消注册");
                                     }
-                                    else sprintf(msgerr, "%s 失败", (reg==1)?"注册":"取消注册");
+                                    else sprintf(getSession()->msgerr, "%s 失败", (reg==1)?"注册":"取消注册");
                                     i = 0;
                                 }
                             }
@@ -641,7 +639,7 @@ void r_msg()
                         }
                         buf[0]=0;
                         if(i==1) strcpy(buf, "\033[1m帮你送出讯息了\033[m");
-                        else if(i!=0) strcpy(buf, msgerr);
+                        else if(i!=0) strcpy(buf, getSession()->msgerr);
                         if(buf[0]) {
                             int j=i;
                             if(i!=1&&i!=0) {
@@ -707,7 +705,7 @@ int myfriend_wall(struct user_info *uin, char *buf, int i)
         clrtoeol();
         prints("\x1b[1;32m正在送讯息给 %s...  \x1b[m", uin->userid);
         refresh();
-        strcpy(MsgDesUid, uin->userid);
+        strcpy(getSession()->MsgDesUid, uin->userid);
         do_sendmsg(uin, buf, 5);
     }
     return 0;
@@ -751,19 +749,19 @@ int register_sms()
     clear();
     prints("注册手机号\n\n注册你的手机号之后，你可在bbs上发送和接收手机短信\n");
     move(4,0);
-    if(currentmemo->ud.mobileregistered) {
+    if(getSession()->currentmemo->ud.mobileregistered) {
         prints("你已经注册手机号了。每一个账号只能注册一个手机号。\n");
         pressreturn();
         return -1;
     }
-    if(currentmemo->ud.mobilenumber[0]&&strlen(currentmemo->ud.mobilenumber)==11) {
-        sprintf(buf2, "你输入的手机号是%s，是否重新注册？[Y/n]", currentmemo->ud.mobilenumber);
+    if(getSession()->currentmemo->ud.mobilenumber[0]&&strlen(getSession()->currentmemo->ud.mobilenumber)==11) {
+        sprintf(buf2, "你输入的手机号是%s，是否重新注册？[Y/n]", getSession()->currentmemo->ud.mobilenumber);
         getdata(3, 0, buf2, ans, 3, 1, 0, 1);
-        if(toupper(ans[0])!='N') currentmemo->ud.mobilenumber[0]=0;
+        if(toupper(ans[0])!='N') getSession()->currentmemo->ud.mobilenumber[0]=0;
     }
-    if(!currentmemo->ud.mobilenumber[0]||strlen(currentmemo->ud.mobilenumber)!=11) {
-        getdata(4, 0, "请输入手机号: ", currentmemo->ud.mobilenumber, 17, 1, 0, 1);
-        if(!currentmemo->ud.mobilenumber[0]||strlen(currentmemo->ud.mobilenumber)!=11) {
+    if(!getSession()->currentmemo->ud.mobilenumber[0]||strlen(getSession()->currentmemo->ud.mobilenumber)!=11) {
+        getdata(4, 0, "请输入手机号: ", getSession()->currentmemo->ud.mobilenumber, 17, 1, 0, 1);
+        if(!getSession()->currentmemo->ud.mobilenumber[0]||strlen(getSession()->currentmemo->ud.mobilenumber)!=11) {
             move(5, 0);
             prints("错误的手机号");
             pressreturn();
@@ -780,7 +778,7 @@ int register_sms()
     sms_init_memory();
     smsuin = &uinfo;
 //        if(DoReg(curruserdata.mobilenumber)) {
-        if(DoReg(currentmemo->ud.mobilenumber)) {
+        if(DoReg(getSession()->currentmemo->ud.mobilenumber)) {
             signal(SIGUSR1, talk_request);
             move(5, 0);
             prints("发送注册码失败");
@@ -796,7 +794,7 @@ int register_sms()
     getdata(6, 0, "请输入你的注册码: ", valid, 11, 1, 0, 1);
     if(!valid[0]) return -1;
 //    if(DoCheck(curruserdata.mobilenumber, valid)) {
-    if(DoCheck(currentmemo->ud.mobilenumber, valid)) {
+    if(DoCheck(getSession()->currentmemo->ud.mobilenumber, valid)) {
         signal(SIGUSR1, talk_request);
         move(7, 0);
         prints("注册码检查失败");
@@ -807,9 +805,9 @@ int register_sms()
     }
     signal(SIGUSR1, talk_request);
 //    curruserdata.mobileregistered = 1;
-    currentmemo->ud.mobileregistered = 1;
+    getSession()->currentmemo->ud.mobileregistered = 1;
 //    write_userdata(getCurrentUser()->userid, &curruserdata);
-    write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
+    write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud));
     move(7, 0);
     prints("手机注册成功！ 你可以在bbs上发送短信啦！");
     pressreturn();
@@ -830,7 +828,7 @@ int unregister_sms()
     prints("取消注册手机号");
     move(4,0);
 //    if(!curruserdata.mobileregistered) {
-    if(!currentmemo->ud.mobileregistered) {
+    if(!getSession()->currentmemo->ud.mobileregistered) {
         prints("你尚未注册手机号");
         pressreturn();
         shmdt(head);
@@ -838,12 +836,12 @@ int unregister_sms()
         return -1;
     }
 //    sprintf(buf2, "你输入的手机号是%s，是否取消注册？[y/N]", curruserdata.mobilenumber);
-    sprintf(buf2, "你输入的手机号是%s，是否取消注册？[y/N]", currentmemo->ud.mobilenumber);
+    sprintf(buf2, "你输入的手机号是%s，是否取消注册？[y/N]", getSession()->currentmemo->ud.mobilenumber);
     getdata(3, 0, buf2, ans, 3, 1, 0, 1);
     if(toupper(ans[0])=='Y') {
         
 //        rr = DoUnReg(curruserdata.mobilenumber);
-        rr = DoUnReg(currentmemo->ud.mobilenumber);
+        rr = DoUnReg(getSession()->currentmemo->ud.mobilenumber);
         if(rr&&rr!=CMD_ERR_NO_SUCHMOBILE) {
             signal(SIGUSR1, talk_request);
             move(5, 0);
@@ -852,10 +850,10 @@ int unregister_sms()
             shmdt(head);
 //	    curruserdata.mobileregistered = 0;
 
-	    currentmemo->ud.mobileregistered = 0;
-        currentmemo->ud.mobilenumber[0]=0;
+	    getSession()->currentmemo->ud.mobileregistered = 0;
+        getSession()->currentmemo->ud.mobilenumber[0]=0;
 //	    write_userdata(getCurrentUser()->userid, &curruserdata);
-	    write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
+	    write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud));
             smsbuf=NULL;
             return -1;
         }
@@ -863,11 +861,11 @@ int unregister_sms()
         move(5, 0);
         prints("取消注册成功");
 //        curruserdata.mobilenumber[0]=0;
-        currentmemo->ud.mobilenumber[0]=0;
+        getSession()->currentmemo->ud.mobilenumber[0]=0;
 //        curruserdata.mobileregistered = 0;
-        currentmemo->ud.mobileregistered = 0;
+        getSession()->currentmemo->ud.mobileregistered = 0;
 //        write_userdata(getCurrentUser()->userid, &curruserdata);
-        write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
+        write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud));
     }
     shmdt(head);
     smsbuf=NULL;
@@ -885,7 +883,7 @@ int do_send_sms_func(char * dest, char * msgstr)
     struct userec * ur;
 
 //    if(!curruserdata.mobileregistered) {
-    if(!currentmemo->ud.mobileregistered) {
+    if(!getSession()->currentmemo->ud.mobileregistered) {
         move(1, 0);
         clrtoeol();
         prints("你尚未注册手机号，无法给别人发送短信");
@@ -975,30 +973,30 @@ int do_send_sms_func(char * dest, char * msgstr)
     else
         strcpy(buf, msgstr);
 
-	if( strlen(buf) + strlen(currentmemo->ud.smsprefix) + strlen(currentmemo->ud.smsend) < MAX_MSG_SIZE ){
+	if( strlen(buf) + strlen(getSession()->currentmemo->ud.smsprefix) + strlen(getSession()->currentmemo->ud.smsend) < MAX_MSG_SIZE ){
 		int i,i1,j;
 
 		i=strlen(buf);
-		i1=strlen(currentmemo->ud.smsprefix);
+		i1=strlen(getSession()->currentmemo->ud.smsprefix);
 		for(j= i+i1; j>=i1; j--){
 			buf[j] = buf[j-i1];
 		}
 		for(j=0;j<i1;j++)
-			buf[j] = currentmemo->ud.smsprefix[j];
-		strcat(buf, currentmemo->ud.smsend);
+			buf[j] = getSession()->currentmemo->ud.smsprefix[j];
+		strcat(buf, getSession()->currentmemo->ud.smsend);
 
 	}
 
 //    ret = DoSendSMS(curruserdata.mobilenumber, udata.mobilenumber, buf);
-    ret = DoSendSMS(currentmemo->ud.mobilenumber, udata.mobilenumber, buf);
+    ret = DoSendSMS(getSession()->currentmemo->ud.mobilenumber, udata.mobilenumber, buf);
     signal(SIGUSR1, talk_request);
     if(ret==CMD_ERR_SMS_VALIDATE_FAILED) {
 //        curruserdata.mobilenumber[0]=0;
-        currentmemo->ud.mobilenumber[0]=0;
+        getSession()->currentmemo->ud.mobilenumber[0]=0;
 //        curruserdata.mobileregistered = 0;
-        currentmemo->ud.mobileregistered = 0;
+        getSession()->currentmemo->ud.mobileregistered = 0;
 //        write_userdata(getCurrentUser()->userid, &curruserdata);
-        write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
+        write_userdata(getCurrentUser()->userid, &(getSession()->currentmemo->ud));
     }
     if(ret) {
         clrtoeol();

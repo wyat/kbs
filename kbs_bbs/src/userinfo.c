@@ -133,7 +133,7 @@ int uinfo_query(struct userec *u, int real, int unum)
     memcpy(&newinfo, u, sizeof(struct userec));
 	read_userdata(u->userid, &ud);
 	read_user_memo(u->userid, &um);
-	//memcpy(&ud, &(currentmemo->ud), sizeof(ud));
+	//memcpy(&ud, &(getSession()->currentmemo->ud), sizeof(ud));
     getdata(t_lines - 1, 0, real ? "请选择 (0)结束 (1)修改资料 (2)设定密码 (3) 改 ID ==> [0]" : "请选择 (0)结束 (1)修改资料 (2)设定密码 ==> [0]", ans, 2, DOECHO, NULL, true);
     clear();
     i = 3;
@@ -522,7 +522,7 @@ void x_fillform()
     if (ans[0] != 'Y' && ans[0] != 'y')
         return;
 //    memcpy(&ud,&curruserdata,sizeof(ud));
-    memcpy(&ud,&(currentmemo->ud),sizeof(ud));
+    memcpy(&ud,&(getSession()->currentmemo->ud),sizeof(ud));
     strncpy(rname, ud.realname, NAMELEN);
     strncpy(addr, ud.address, STRLEN);
     career[0] = phone[0] = birth[0] = '\0';
@@ -561,7 +561,7 @@ void x_fillform()
     strncpy(ud.address, addr, STRLEN);
 	write_userdata(getCurrentUser()->userid, &ud);
 //	memcpy(&curruserdata,&ud,sizeof(ud));
-	memcpy(&(currentmemo->ud),&ud,sizeof(ud));
+	memcpy(&(getSession()->currentmemo->ud),&ud,sizeof(ud));
     if ((fn = fopen("new_register", "a")) != NULL) {
         now = time(NULL);
         fprintf(fn, "usernum: %d, %s", usernum, ctime(&now));

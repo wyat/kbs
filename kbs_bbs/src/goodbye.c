@@ -85,7 +85,7 @@ char buf[256];
     if (getCurrentUser()) {
         douser = *getCurrentUser();
 //        memcpy(&ud,&curruserdata,sizeof(curruserdata));
-		memcpy(&ud, &(currentmemo->ud), sizeof(ud) );
+		memcpy(&ud, &(getSession()->currentmemo->ud), sizeof(ud) );
     }
     else {
         bzero(&douser, sizeof(struct userec));

@@ -182,7 +182,7 @@ int mailall()
              * strcpy(currentlookupuser->userid, doc[ans4[0]-'0'-1] + 4); 
              */
 
-            if (getCurrentUser()->signature > currentmemo->ud.signum)
+            if (getCurrentUser()->signature > getSession()->currentmemo->ud.signum)
                 getCurrentUser()->signature = 1;
             while (1) {
                 sprintf(buf3, "引言模式 [\033[1m%c\033[m]", include_mode);
@@ -213,12 +213,12 @@ int mailall()
                 /*
                  * Leeward 98.09.24 add: viewing signature(s) while setting post head 
                  */
-                sprintf(buf2, "按\033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，\033[1;32mEnter\033[m接受所有设定: ", currentmemo->ud.signum,
+                sprintf(buf2, "按\033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，\033[1;32mEnter\033[m接受所有设定: ", getSession()->currentmemo->ud.signum,
                         (replymode) ? "，\033[1;32mY\033[m/\033[1;32mN\033[m/\033[1;32mR\033[m/\033[1;32mA\033[m改引言模式" : "");
                 getdata(t_lines - 1, 0, buf2, ans, 3, DOECHO, NULL, true);
                 ans[0] = toupper(ans[0]);       /* Leeward 98.09.24 add; delete below toupper */
                 if ((ans[0] - '0') >= 0 && ans[0] - '0' <= 9) {
-                    if (atoi(ans) <= currentmemo->ud.signum)
+                    if (atoi(ans) <= getSession()->currentmemo->ud.signum)
                         getCurrentUser()->signature = atoi(ans);
                 } else if ((ans[0] == 'Y' || ans[0] == 'N' || ans[0] == 'A' || ans[0] == 'R') && replymode) {
                     include_mode = ans[0];
@@ -436,7 +436,7 @@ int do_send(char *userid, char *title, char *q_file)
     } else
         buf4[0] = ' ';
 
-    if (getCurrentUser()->signature > currentmemo->ud.signum)
+    if (getCurrentUser()->signature > getSession()->currentmemo->ud.signum)
         getCurrentUser()->signature = 1;
     while (1) {
         sprintf(buf3, "引言模式 [\033[1m%c\033[m]", include_mode);
@@ -467,12 +467,12 @@ int do_send(char *userid, char *title, char *q_file)
         /*
          * Leeward 98.09.24 add: viewing signature(s) while setting post head 
          */
-        sprintf(buf2, "按 \033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，\033[1;32mEnter\033[m接受所有设定: ", currentmemo->ud.signum,
+        sprintf(buf2, "按 \033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，\033[1;32mEnter\033[m接受所有设定: ", getSession()->currentmemo->ud.signum,
                 (replymode) ? "，\033[1;32mY\033[m/\033[1;32mN\033[m/\033[1;32mR\033[m/\033[1;32mA\033[m改引言模式" : "");
         getdata(t_lines - 1, 0, buf2, ans, 3, DOECHO, NULL, true);
         ans[0] = toupper(ans[0]);       /* Leeward 98.09.24 add; delete below toupper */
         if ((ans[0] - '0') >= 0 && ans[0] - '0' <= 9) {
-            if (atoi(ans) <= currentmemo->ud.signum)
+            if (atoi(ans) <= getSession()->currentmemo->ud.signum)
                 getCurrentUser()->signature = atoi(ans);
         } else if ((ans[0] == 'Y' || ans[0] == 'N' || ans[0] == 'A' || ans[0] == 'R') && replymode) {
             include_mode = ans[0];
@@ -1822,7 +1822,7 @@ static int do_gsend(char *userid[], char *title, int num)
      * strcpy(lookupuser->userid, "多位网友");
      */
 
-    if (getCurrentUser()->signature > currentmemo->ud.signum)
+    if (getCurrentUser()->signature > getSession()->currentmemo->ud.signum)
         getCurrentUser()->signature = 1;
     while (1) {
         sprintf(buf3, "引言模式 [\033[1m%c\033[m]", include_mode);
@@ -1851,12 +1851,12 @@ static int do_gsend(char *userid[], char *title, int num)
         /*
          * Leeward 98.09.24 add: viewing signature(s) while setting post head 
          */
-        sprintf(buf2, "按\033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，\033[1;32mEnter\033[m接受所有设定: ", currentmemo->ud.signum,
+        sprintf(buf2, "按\033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，\033[1;32mEnter\033[m接受所有设定: ", getSession()->currentmemo->ud.signum,
                 (replymode) ? "，\033[1;32mY\033[m/\033[1;32mN\033[m/\033[1;32mR\033[m/\033[1;32mA\033[m改引言模式" : "");
         getdata(t_lines - 1, 0, buf2, ans, 3, DOECHO, NULL, true);
         ans[0] = toupper(ans[0]);       /* Leeward 98.09.24 add; delete below toupper */
         if ((ans[0] - '0') >= 0 && ans[0] - '0' <= 9) {
-            if (atoi(ans) <= currentmemo->ud.signum)
+            if (atoi(ans) <= getSession()->currentmemo->ud.signum)
                 getCurrentUser()->signature = atoi(ans);
         } else if ((ans[0] == 'Y' || ans[0] == 'N' || ans[0] == 'A' || ans[0] == 'R') && replymode) {
             include_mode = ans[0];
@@ -2063,9 +2063,9 @@ int doforward(char *direct, struct fileheader *fh, int isuu)
     clear();
     if (address[0] == '\0') {
 //        strncpy(address, curruserdata.email, STRLEN);
-        strncpy(address, currentmemo->ud.email, STRLEN);
+        strncpy(address, getSession()->currentmemo->ud.email, STRLEN);
 //        if (strstr(curruserdata.email, "@" MAIL_BBSDOMAIN) || strlen(curruserdata.email) == 0) {
-        if (strstr(currentmemo->ud.email, "@" MAIL_BBSDOMAIN) || strlen(currentmemo->ud.email) == 0) {
+        if (strstr(getSession()->currentmemo->ud.email, "@" MAIL_BBSDOMAIN) || strlen(getSession()->currentmemo->ud.email) == 0) {
             strcpy(address, getCurrentUser()->userid);
         }
     }
@@ -2275,20 +2275,20 @@ static int m_clean()
         delete_range(&dirarg, 1, num, 1, DIR_MODE_MAIL,NULL,getSession());
     }
 	/*
-    if (user_mail_list.mail_list_t) {
+    if (getSession()->user_mail_list.mail_list_t) {
         int i;
 
-        for (i = 0; i < user_mail_list.mail_list_t; i++) {
+        for (i = 0; i < getSession()->user_mail_list.mail_list_t; i++) {
             char filebuf[20];
 
             move(0, 0);
-            sprintf(filebuf, ".%s", user_mail_list.mail_list[i] + 30);
+            sprintf(filebuf, ".%s", getSession()->user_mail_list.mail_list[i] + 30);
             setmailfile(buf, getCurrentUser()->userid, filebuf);
             num = get_num_records(buf, sizeof(struct fileheader));
             if (num) {
                 char prompt[80];
 
-                sprintf(prompt, "清除自定义邮箱 %s 么?", user_mail_list.mail_list[i]);
+                sprintf(prompt, "清除自定义邮箱 %s 么?", getSession()->user_mail_list.mail_list[i]);
                 if (askyn(prompt, 0))
                     delete_range(buf, 1, num, 2);
             }
@@ -2549,7 +2549,7 @@ static int maillist_key(struct _select_def *conf, int command)
         f_touch(buf);
         strncpy(user_mail_list.mail_list[user_mail_list.mail_list_t] + 30, bname, 9);
         user_mail_list.mail_list_t++;
-        save_mail_list(&user_mail_list,getSession());
+        save_mail_list(&getSession()->user_mail_list,getSession());
         x = 0;
 
         y = 3 + (20 - user_mail_list.mail_list_t) / 2;
@@ -2580,7 +2580,7 @@ static int maillist_key(struct _select_def *conf, int command)
             for (j = p; j < user_mail_list.mail_list_t - 1; j++)
                 memcpy(user_mail_list.mail_list[j], user_mail_list.mail_list[j + 1], sizeof(user_mail_list.mail_list[j]));
             user_mail_list.mail_list_t--;
-            save_mail_list(&user_mail_list,getSession());
+            save_mail_list(&getSession()->user_mail_list,getSession());
             y = 3 + (20 - user_mail_list.mail_list_t) / 2;
             arg->numbers--;
             conf->item_count = arg->numbers;
@@ -2610,7 +2610,7 @@ static int maillist_key(struct _select_def *conf, int command)
         getdata(0, 0, "输入信箱中文名: ", bname, 30, DOECHO, NULL, false);
         if (bname[0]) {
             strcpy(user_mail_list.mail_list[i], bname);
-            save_mail_list(&user_mail_list,getSession());
+            save_mail_list(&getSession()->user_mail_list,getSession());
             return SHOW_REFRESH;
         }
         return SHOW_REFRESH;
@@ -2923,7 +2923,6 @@ static int set_mailgroup_key(struct _select_def *conf, int key)
     case 'z':                  /* send message to a user */
         if (arg->mgl->groups[arg->entry].users_num > 0) {
             struct user_info *uin;
-            extern char MsgDesUid[];
 
             if (!HAS_PERM(getCurrentUser(), PERM_PAGE))
                 break;
@@ -2933,7 +2932,7 @@ static int set_mailgroup_key(struct _select_def *conf, int key)
             if (!uin || !canmsg(getCurrentUser(), uin))
                 do_sendmsg(NULL, NULL, 0);
             else {
-                strcpy(MsgDesUid, uin->userid);
+                strcpy(getSession()->MsgDesUid, uin->userid);
                 do_sendmsg(uin, NULL, 0);
             }
             modify_user_mode(oldmode);

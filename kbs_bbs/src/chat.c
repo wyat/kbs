@@ -41,7 +41,6 @@
 #endif
 
 #include "chat.h"
-extern char MsgDesUid[14];      /* 保存所发msg的目的uid 1998.7.5 by dong */
 extern char page_requestor[];
 extern char *modestring();
 extern struct UTMPFILE *utmpshm;
@@ -837,7 +836,7 @@ void call_user(chatcontext * pthis, const char *arg)
                 sprintf(msg, "到聊天广场的 %s 聊天室 聊聊天",
                         pthis->chatroom);
                 /* 保存所发msg的目的uid 1998.7.5 by dong */
-                strcpy(MsgDesUid, uin->userid);
+                strcpy(getSession()->MsgDesUid, uin->userid);
                 state = do_sendmsg(uin, msg, 1);
                 if (state == 1)
                     sprintf(msg, "\033[37m已经帮你邀请 %s 了\033[m",
@@ -901,7 +900,7 @@ void chat_sendmsg(chatcontext * pthis, const char *arg)
                             "对方尚有一些讯息未处理，请稍候再发或给他(她)写信...\n");
                 else {
                     /* 保存所发msg的目的uid 1998.7.5 by dong */
-                    strcpy(MsgDesUid, uin->userid);
+                    strcpy(getSession()->MsgDesUid, uin->userid);
                     state = do_sendmsg(uin, arg, 2);
                     if (state == 1)
                         sprintf(msg,
