@@ -18,6 +18,9 @@ static unsigned char third_arg_force_ref_011[] = { 3, BYREF_NONE, BYREF_FORCE, B
 static unsigned char fourth_arg_force_ref_0001[] = { 4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE };
 
 static PHP_FUNCTION(bbs_getonline_user_list);
+static PHP_FUNCTION(bbs_get_elite_num);
+static PHP_FUNCTION(bbs_get_elite_list);
+
 #ifdef HAVE_USERMONEY
 static PHP_FUNCTION(bbs_getusermoney);
 static PHP_FUNCTION(bbs_setusermoney);
@@ -127,6 +130,8 @@ static PHP_FUNCTION(bbs_getthreads);
  */
 static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_getonline_user_list, NULL)
+		PHP_FE(bbs_get_elite_num, NULL)
+		PHP_FE(bbs_get_elite_list, NULL)
 #ifdef HAVE_USERMONEY
 		PHP_FE(bbs_getusermoney, NULL)
 		PHP_FE(bbs_setusermoney, NULL)
@@ -1190,6 +1195,8 @@ static PHP_FUNCTION(bbs_searchtitle)
 				index[threads]=found;
 				threads++;
 			}
+		} else {
+			break;
 		}
 		if (threads>10000) 
 			break;
@@ -1763,6 +1770,159 @@ static unsigned int binarySearchInFileHeader(struct fileheader *start,int total,
 			low = mid + 1;
 	}
 	return found;
+}
+
+/**
+ * 获取版面精华主题数量
+ * prototype:
+ * int bbs_get_elite_num(char *board);
+ *
+ * @return elite top number
+ *         < 0 on failure.
+ * @author roy
+ */
+static PHP_FUNCTION(bbs_get_elite_num){
+    char *board;
+    int blen;
+    struct boardheader *bp=NULL;
+	char dirpath[STRLEN];
+    int i;
+    zval *element;
+    int is_bm;
+	unsigned int *IDList=NULL;
+	unsigned int *IDList2=NULL;
+	unsigned int threadsFounded;
+	unsigned int threads;
+	int total;
+	int fd;
+	struct stat buf;
+	struct flock ldata;
+	struct fileheader *ptr1=NULL;
+	char* ptr;
+	unsigned int long found;
+	char flag;
+
+    int ac = ZEND_NUM_ARGS();
+
+
+    /*
+     * getting arguments 
+     */
+    if (ac != 1 || zend_parse_parameters(4 TSRMLS_CC, "s", &board, &blen) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+    /*
+     * checking arguments 
+     */
+    if (currentuser == NULL) {
+        RETURN_FALSE;
+    }
+    if ((bp = getbcache(board)) == NULL) {
+        RETURN_FALSE;
+    }
+
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+
+	IDList	= emalloc((8000)*sizeof(long int));
+	IDList2	= emalloc((10000)*sizeof(long int));
+
+	threadsFounded=0;
+	threads=0;
+
+
+	// get normal articles
+
+    setbdir(DIR_MODE_NORMAL, dirpath, board);
+
+    if ((fd = open(dirpath, O_RDONLY, 0)) == -1) {
+		efree(IDList);
+        RETURN_LONG(-1);   
+	}
+    ldata.l_type = F_RDLCK;
+    ldata.l_whence = 0;
+    ldata.l_len = 0;
+    ldata.l_start = 0;
+    fcntl(fd, F_SETLKW, &ldata);
+	fstat(fd, &buf);
+    total = buf.st_size / sizeof(struct fileheader);
+
+    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+        if (i == 2)
+            end_mmapfile((void *) ptr, buf.st_size, -1);
+        ldata.l_type = F_UNLCK;
+        fcntl(fd, F_SETLKW, &ldata);
+        close(fd);
+		efree(IDList);
+		efree(IDList2);
+        RETURN_LONG(-2);
+    }
+    ptr1 = (struct fileheader *) ptr;
+    /*
+     * fetching articles 
+     */
+
+
+	for (i=total-1;i>=0;i--) {
+		if (foundInArray(ptr1[i].groupid,IDList2,threads)==-1)	{
+			unsigned int low, high ,mid, found;
+			int comp;
+			low = 0;
+			high = total - 1;
+			found=-1;
+			while (low <= high) {
+				mid = (high + low) / 2;
+				comp = (ptr1[i].groupid) - (ptr1[mid].id);
+				if (comp == 0) {
+					found=mid;
+					break;
+				} else if (comp < 0)
+					high = mid - 1;
+				else
+					low = mid + 1;
+			}
+			if (found!=-1) {
+				IDList2[threads]=ptr1[i].groupid;
+				threads++;
+			} 
+		} else {
+			break;
+		}
+		if (threads>=10000)
+			break;
+		flag = get_article_flag(ptr1+found, currentuser, board, is_bm);
+		if ( ('M'!=toupper(flag)) || ('B'!=toupper(flag)) )
+			break;
+		if (foundInArray(ptr1[i].groupid,IDList,threadsFounded)!=-1)
+			break;
+		IDList[threadsFounded]=ptr1[i].groupid;
+		threadsFounded++;
+
+		if (threadsFounded>=8000){
+			break;
+		}
+	}
+    end_mmapfile((void *) ptr, buf.st_size, -1);
+    ldata.l_type = F_UNLCK;
+    fcntl(fd, F_SETLKW, &ldata);        /* 退出互斥区域*/
+    close(fd);
+	efree(IDList2);
+    efree(IDList);
+	RETURN_LONG(threadsFounded);
+}
+/**
+ * 获取从start开始的num个精华主题
+ * prototype:
+ * array bbs_get_elite_list(char *board, int start, int num);
+ *
+ * @return array of loaded articles on success,
+ *         FALSE on failure.
+ * @author roy
+ */
+static PHP_FUNCTION(bbs_get_elite_list){
+	RETURN_FALSE;
 }
 
 /**
