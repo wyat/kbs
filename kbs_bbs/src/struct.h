@@ -33,7 +33,7 @@ struct userec {                 /* Structure used to hold information in */
 #ifdef HAVE_USERMONEY
     int money;
     int score;
-    char unused[80];
+    char unused[20];
 #endif
 };
 
