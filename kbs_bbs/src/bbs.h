@@ -435,6 +435,7 @@ enum BBS_DIR_MODE
     DIR_MODE_WEB_THREAD = 10, /** .WEBTHREAD */
     DIR_MODE_ZHIDING = 11,  /** .DINGDIR */
     DIR_MODE_MAIL ,/* mail mode */
+    DIR_MODE_FRIEND, /*ºÃÓÑÃûµ¥*/
 };
 
 enum BBSLOG_TYPE

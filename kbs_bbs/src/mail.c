@@ -738,10 +738,11 @@ int del_mail(int ent, struct fileheader *fh, char *direct)
     if ((t = strrchr(buf, '/')) != NULL)
         *t = '\0';
     if (!delete_record(direct, sizeof(*fh), ent, (RECORD_FUNC_ARG) cmpname, fh->filename)) {
-        sprintf(genbuf, "%s/%s", buf, fh->filename);
+        char filename[MAXPATH];
+        sprintf(filename, "%s/%s", buf, fh->filename);
         if (strstr(direct, ".DELETED")
             || HAS_MAILBOX_PROP(&uinfo, MBP_FORCEDELETEMAIL))
-            my_unlink(genbuf);
+            my_unlink(filename);
         else {
             strcpy(buf, direct);
             t = strrchr(buf, '/') + 1;

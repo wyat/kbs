@@ -4835,7 +4835,7 @@ static struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
 #ifdef PERSONAL_CORP
     {'y', (READ_KEY_FUNC)read_importpc,NULL},
 #endif
-    /*----------------------------------*/
+
     {'\'',(READ_KEY_FUNC)post_search,(void*)false},
     {'\"', (READ_KEY_FUNC)post_search,(void*)true},
 

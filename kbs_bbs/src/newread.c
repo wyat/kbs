@@ -6,8 +6,72 @@
 #include "read.h"
 
 extern char MsgDesUid[14];
-static int read_search_articles(struct _select_def* conf, char *query, bool up, int aflag);
 
+//每一个模式上次阅读位置保存
+struct _read_pos {
+    int mode;
+    char* key;
+    int pos;
+    struct _read_pos* next;
+}static *read_pos_head=NULL;
+
+/* 获得上一次阅读的位置
+  * @param mode 阅读模式
+  * @param direct dir的文件名
+  * @return 上次位置，为0则失败
+*/
+static int getPos(int mode,char* direct)
+{
+    struct _read_pos* ptr;
+    char* key;
+    
+    ptr=read_pos_head;
+    if (mode==DIR_MODE_MAIL)
+        key=direct;
+    else
+        key=currboard.filename;
+    while (ptr!=NULL) {
+        if (mode==ptr->mode) {
+            if ((key==NULL)||((ptr->key!=NULL)&&(!strcmp(key,ptr->key)))
+                return ptr->pos;
+        }
+    }
+    return 0;
+}
+
+/* 保存阅读位置
+  * @param mode 阅读模式
+  * @param direct dir的文件名
+  * @param pos 阅读位置
+*/
+static void savePos(int mode,char* direct,int pos)
+{
+    struct _read_pos*ptr;
+    char* key;
+    
+    ptr=read_pos_head;
+    if (mode==DIR_MODE_MAIL)
+        key=direct;
+    else
+        key=currboard.filename;
+    while (ptr!=NULL) {
+        if (mode==ptr->mode) {
+            if ((key==NULL)||((ptr->key!=NULL)&&(!strcmp(key,ptr->key)))
+                break;
+        }
+    }
+    if (ptr==NULL) { /*增加一个表项*/
+        ptr=(struct _read_pos*)malloc(sizeof(struct _read_pos));
+        ptr->next=read_pos_head;
+        read_pos_head=ptr;
+    }
+    ptr->mode=mode;
+    ptr->key=(char*)malloc(strlen(key)+1);
+    strcpy(ptr->key,key);
+    ptr->pos=pos;
+}
+
+static int read_search_articles(struct _select_def* conf, char *query, bool up, int aflag);
 /* 寻找下一个未读文章，找到返回位置，否则返回0*/
 int find_nextnew(struct _select_def* conf,int begin)
 {
@@ -139,6 +203,10 @@ static int read_key(struct _select_def *conf, int command)
         }
     }
     switch (mode) {
+        case CHANGEMODE:
+            arg->returnvalue=CHANGEMODE;
+            ret=SHOW_QUIT;
+            break;
         case FULLUPDATE:
         case PARTUPDATE:
             clear();
@@ -146,13 +214,13 @@ static int read_key(struct _select_def *conf, int command)
             break;
         case DIRCHANGED:
         case NEWDIRECT: {
-			    int newfd;
+                int newfd;
                 if ((newfd = open(arg->direct, O_RDWR, 0)) != -1) {
-			        close(arg->fd);
+                    close(arg->fd);
                     arg->fd=newfd;
-			    }
-			}
-        case CHANGEMODE:
+                }
+                savePos(arg->mode,arg->direct,conf->pos);
+            }
         case NEWSCREEN:
             ret=SHOW_DIRCHANGE;
             break;
@@ -340,6 +408,19 @@ static int read_endline(struct _select_def *conf)
 static int read_prekey(struct _select_def *conf, int *command)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
+    switch (*command) {
+        case KEY_PGDN:
+        case 'N':
+        case Ctrl('F'):
+        case ' ':
+        case 'p': //翻页控制使用arg->filecount，不到达置顶
+  	    if (conf->pos+conf->item_per_page<=arg->filecount) 
+    		return select_change(conf, conf->pos + conf->item_per_page);
+	    else
+    		return select_change(conf, arg->filecount);
+                *command=KEY_INVALID;
+    	break;
+    }
     return SHOW_CONTINUE;
 }
 
@@ -380,6 +461,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
     struct _select_def read_conf;
     struct read_arg arg;
     int i;
+    int lastpos;
     const static struct key_translate ktab[]= {
             {'\n','r'},
             {'\r','r'},
@@ -389,19 +471,18 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
             {'e',KEY_LEFT},
             {'k',KEY_UP},
             {'j',KEY_DOWN},
-            {'N',KEY_PGDN},
-            {Ctrl('F'),KEY_PGDN},
-            {' ',KEY_PGDN},
-            {'p',KEY_PGDN},
             {Ctrl('B'),KEY_PGUP},
             {-1,-1}
     };
 
-    if (cmdmode==DIR_MODE_MAIL)
+    if (cmdmode==DIR_MODE_MAIL) {
         modify_user_mode(RMAIL);
-    else //todo: other mode
+     }
+    else {
         modify_user_mode(READING);
+    } //todo: other mode 
 
+    lastpos=getPos(cmdmode,direct);
     /* save argument */
     bzero(&arg,sizeof(struct read_arg));
     arg.mode=cmdmode;
@@ -413,6 +494,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
     arg.readmode=READ_NORMAL;
     arg.data=NULL;
     arg.readdata=NULL;
+    arg.returnvalue=QUIT;
     arg.writearg=NULL;
     if ((arg.mode==DIR_MODE_NORMAL)||
         ((arg.mode>=DIR_MODE_THREAD)&&(arg.mode<=DIR_MODE_WEB_THREAD))) {
@@ -433,8 +515,6 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
         read_conf.arg = &arg;
         read_conf.title_pos.x = 0;
         read_conf.title_pos.y = 0;
-        read_conf.pos = 1; //TODO: get last position
-        read_conf.page_pos = ((1-1)/BBS_PAGESIZE)*BBS_PAGESIZE+1; //TODO
 
         read_conf.get_data = read_getdata;
 
@@ -447,10 +527,16 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
         read_conf.on_size= read_onsize;
         read_conf.key_table = (struct key_translate *)ktab;
 
-        read_getdata(&read_conf,read_conf.pos,read_conf.item_per_page);
+        read_getdata(&read_conf,1,read_conf.item_per_page);
+        if (lastpos!=-1)
+            read_conf.pos = lastpos;
+        else
+            read_conf.pos = read_conf.item_count; 
+        read_conf.page_pos = ((read_conf.pos-1)/BBS_PAGESIZE)*BBS_PAGESIZE+1;
 
         list_select_loop(&read_conf);
         close(arg.fd);
+        savePos(cmdmode,direct,read_conf.pos);
     } else {
         prints("没有任何信件...");
         pressreturn();
@@ -464,7 +550,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
         free(arg.dingdirect);
     if (read_conf.item_pos!=NULL)
         free(read_conf.item_pos);
-    return arg.mode;
+    return arg.returnvalue;
 }
 
 

@@ -1,8 +1,26 @@
 #ifndef __READ_H__
 #define __READ_H__
 
+/*
+  阅读的键定义回调函数，参数依次为
+  struct _select_def* conf 列表数据结构
+  void* data 当前选择的数据
+  void* extraarg 额外传递的参数
+  */
 typedef int (*READ_KEY_FUNC)(struct _select_def*,void*,void*);
-typedef char *(*READ_ENT_FUNC) (void *, int, void *,void*,struct _select_def*);
+
+/*
+  显示每一项的回调函数
+  参数依次为:
+  char* outputbuf,输出的缓冲区
+  int ent 位置
+  void* data 数据
+  void* readdata 用于显示相关数据的额外参数，比如同主题的主题文章。
+  struct _select_def* conf 列表数据结构
+  返回:
+  显示的字符串。应该是一个指向outputbuf的指针
+  */
+typedef char *(*READ_ENT_FUNC) (char *, int, void *,void*,struct _select_def*);
 int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg);
 int find_nextnew(struct _select_def* conf,int begin);
 
@@ -20,6 +38,7 @@ enum {
 };
 
 struct read_arg {
+    int returnvalue; /* 用于设置i_read的返回值*/
     /* save argument */
     enum BBS_DIR_MODE mode;
     char* direct;
