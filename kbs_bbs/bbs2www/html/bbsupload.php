@@ -18,9 +18,9 @@
 		$attachdir=ATTACHTMPPATH . "/" . $currentuser["userid"] . "_" . $utmpnum;
 		if ($action=="delete") {
 			@$act_attachname=$_GET["attachname"];
-			$fp1=fopen($attachdir . "/.index","r");
+			$fp1=@fopen($attachdir . "/.index","r");
 			if ($fp1!=FALSE) {
-				$fp2=fopen($attachdir . "/.index2","w");
+				$fp2=@fopen($attachdir . "/.index2","w");
 				while (!feof($fp1)) {
 					$buf=fgets($fp1);
 					if (FALSE==($pos=strpos($buf," " . $act_attachname . "\n"))) {
@@ -48,16 +48,8 @@
 				$act_attachname=strtr($act_attachname,$filename_trans);
 				$act_attachname=substr($act_attachname,-60);
 				if ($act_attachname!="") {
-			        	if ($_FILES['attachfile']['size']<=ATTACHMAXSIZE) {
-						@mkdir($attachdir);
-						$tmpfilename=tempnam($attachdir);
-						if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
-				    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
-				        			$attachdir . "/" . $tmpfilename);
-						} else
-							$errno=100;
-					} else
-						$errno=UPLOAD_ERR_FORM_SIZE;
+			        	if ($_FILES['attachfile']['size']>ATTACHMAXSIZE) 
+							$errno=UPLOAD_ERR_FORM_SIZE;
 				} else
 					$errno=100;
 			}
@@ -76,17 +68,20 @@
                     }
                     closedir($handle);
                 }*/
-                if (($fp=fopen($attachdir . "/.index","r"))!=FALSE) {
+                if (($fp=@fopen($attachdir . "/.index","r"))!=FALSE) {
                 	while (!feof($fp)) {
 	                	$buf=fgets($fp);
 	                	$buf=substr($buf,0,-1); //remove "\n"
+	                	if ($buf=="")
+	                		continue;
+	                	$file=substr($buf,0,strpos($buf,' '));
 	                	if ($file=="")
 	                		continue;
-	                	$file=substr($buf,0,strpos(' '));
 	                	$name=strstr($buf,' ');
-                    		$filenames[] = $name;
-	                	$filesizes[$name] = filesize($attachdir . "/" . $file);
-                    		$totalsize+=$filesizes[$filecount];
+						$name=substr($name,1);
+                    	$filenames[] = $name;
+	                	$filesizes[$name] = filesize($file);
+                    		$totalsize+=$filesizes[$name];
                     		$filecount++;
 	                	$allnames = $allnames . $name . ";";
 	                }
@@ -131,20 +126,32 @@ a:hover {  color: #FF0000; text-decoration: none}
 					} else
                 	switch ($errno) {
                 	case UPLOAD_ERR_OK:
-                		/* 填写 .index*/
-				if (($fp=fopen($attachdir . "/.index", "a")==FALSE) {
-                			unlink($attachdir . "/" . $act_attachname);
-                		} else {
-                			fputs($fp,$tmpfilename . " " . $act_attachname . "\n");
-                			fclose($fp);
-                			echo "文件上载成功！";
-	                    		$filenames[] = $act_attachname;
-		                	$filesizes[$act_attachname] = filesize($attachdir . "/" . $tmpfilename);
-	                    		$totalsize+=$filesizes[$filecount];
-	                    		$filecount++;
-		                	$allnames = $allnames . $act_attachname . ";";
-                			break;
-                		}
+						@mkdir($attachdir);
+						$tmpfilename=tempnam($attachdir,"att");
+						if (isset($filesizes[$act_attachname])) {
+							echo "存在同名文件！";
+						} else {
+							if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
+				    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
+				        			$tmpfilename);
+                		         /* 填写 .index*/
+								if (($fp=@fopen($attachdir . "/.index", "a"))==FALSE) {
+                						unlink($attachdir . "/" . $act_attachname);
+                				} else {
+                					fputs($fp,$tmpfilename . " " . $act_attachname . "\n");
+                					fclose($fp);
+                					echo "文件上载成功！";
+	                    			$filenames[] = $act_attachname;
+		                	    	$filesizes[$act_attachname] = filesize($tmpfilename);
+	                    			$totalsize+=$filesizes[$act_attachname];
+	                    			$filecount++;
+		                			$allnames = $allnames . $act_attachname . ";";
+                					break;
+                				}
+							}
+							echo "保存附件文件失败！";
+						}
+						break;
                 	case UPLOAD_ERR_INI_SIZE:
                 	case UPLOAD_ERR_FORM_SIZE:
                 		echo "文件超过预定的大小" . sizestr(ATTACHMAXSIZE) . "字节";

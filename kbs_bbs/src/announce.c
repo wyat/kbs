@@ -544,7 +544,7 @@ MENU *pm;
         else
             sprintf(genbuf, "%-s %-55.55s%-s%c", kind, title, fname, ch);
         strncpy(title, genbuf, STRLEN * 2 - 1);
-        if (pm->item[n].attachpos)
+        if (pm->item[n]->attachpos)
             prints("  %3d  %s\n", n + 1, title);
         else
             prints("  %3d @%s\n", n + 1, title);
@@ -556,7 +556,7 @@ MENU *pm;
            "[31m[44m[¹¦ÄÜ¼ü] [33m ËµÃ÷ h ©¦ Àë¿ª q,¡û ©¦ ÒÆ¶¯ÓÎ±ê k,¡ü,j,¡ý ©¦ ¶ÁÈ¡×ÊÁÏ Rtn,¡ú         [m");
 }
 
-void a_additem(MENU* pm,char* title,char* fname,char* host,char* port,long attachpos)    /* ²úÉúITEM object,²¢³õÊ¼»¯ */
+void a_additem(MENU* pm,char* title,char* fname,char* host,int port,long attachpos)    /* ²úÉúITEM object,²¢³õÊ¼»¯ */
 {
     ITEM *newitem;
 
@@ -615,7 +615,7 @@ MENU *pm;
                     litem.port = atoi(strtok(NULL, "@"));
                 }
                 a_additem(pm, litem.title, litem.fname, (strlen(hostname) == 0) ?       /*²úÉúITEM */
-                          NULL : hostname, litem.port);
+                          NULL : hostname, litem.port, litem.attachpos);
             }
             hostname[0] = '\0';
         } else if (strncmp(buf, "# Title=", 8) == 0) {

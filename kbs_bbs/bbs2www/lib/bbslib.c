@@ -799,22 +799,25 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
         if ((fp2=fopen(filepath,"r"))!=NULL) {
             while (!feof(fp2)) {
                 char* name;
+		long size,begin,save_size;
+		char* ptr;
                 fgets(buf,256,fp2);
                 name=strchr(buf,' ');
                 if (name==NULL)
                     continue;
                 *name=0;
                 name++;
+                ptr=strchr(name,'\n');
+		if (ptr) *ptr=0;
                 
-                    snprintf(filepath,MAXPATH, "%s/%s",attach_dir,buf);
-                    if (-1==(fd=open(filepath,O_RDONLY)))
+                    if (-1==(fd=open(buf,O_RDONLY)))
                         continue;
                     if (post_file.attachment==0) {
                         /* log the attachment begin */
                         post_file.attachment=ftell(fp)+1;
                     }
                     fwrite(ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1,1,fp);
-                    fwrite(dirp->d_name,strlen(name)+1,1,fp);
+                    fwrite(name,strlen(name)+1,1,fp);
                     BBS_TRY {
                         if (safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & size) == 0) {
                             size=0;
