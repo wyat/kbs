@@ -36,7 +36,6 @@ AC_PREFIX_DEFAULT(/home/bbs)
 
 m4_include(config.icc)
 
-
 AC_ARG_ENABLE(innbbsd,
 [  --enable-innbbsd
                 enable innbbsd  support(need innbbsd package)],
@@ -116,11 +115,20 @@ AC_FUNC_ALLOCA
 AC_FUNC_FORK
 AC_FUNC_GETLOADAVG
 AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
+if test "$cross_compiling" != "yes" ; then
+  AC_FUNC_MALLOC
+  AC_FUNC_MEMCMP
+else
+  dnl A quick and dirty workaround.
+  AC_DEFINE(HAVE_MALLOC,1,[ ])
+  AC_DEFINE(HAVE_MEMCMP,1,[ ])
+fi
 AC_FUNC_MKTIME
 AC_FUNC_MMAP
-AC_FUNC_SETPGRP
+dnl In cross compiling we can not check setpgrp().
+if test "$cross_compiling" != "yes" ; then
+  AC_FUNC_SETPGRP
+fi
 AC_FUNC_SETVBUF_REVERSED
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
