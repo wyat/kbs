@@ -323,6 +323,7 @@ int load_ucache()
 #ifdef HAVE_CUSTOM_USER_TITLE
 {
     FILE* titlefile;
+    bzero(uidshm->user_title,sizeof(uidshm->user_title));
     if ((titlefile = fopen(USER_TITLE_FILE, "r")) == -1) {
         bbslog("3system", "Can't open " USER_TITLE_FILE "file %s", strerror(errno));
     } else {
