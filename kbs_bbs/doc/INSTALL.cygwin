@@ -10,7 +10,7 @@ smthbbs 在 cygwin 上的编译和安装。欢迎到 BBS 水木清华站的 BBSMan_Dev 版
 
 1. 需要的软件
 cygwin > 1.5.3         必须      系统中必须已经安装 cygipc 的库
-libesmtp > 0.8         必须      编译时必须加上 --disable-pthreads 选项
+libesmtp > 0.8         可选      编译时必须加上 --disable-pthreads 选项
 autoconf-2.57          可选
 automake-1.6.X         可选
 libtool-1.4.3          可选
@@ -44,11 +44,11 @@ gmp-4.1.2              可选      选择 ssh 方式支持才需要
           tar zxPf libesmtp-cygwin.tar.gz
           tar zxPf gmp-cygwin.tar.gz
     注意：libesmtp-cygwin.tar.gz 和 gmp-cygwin.tar.gz 应替换为实际的文件名。
+          另外，从 smthbbs-1.2.1 开始，libesmtp 不再是必须安装的了，但如果不
+          使用 libesmtp 的话，则系统中必须安装有 sendmail 程序。
 
-2.3 下载 smthbbs-snapshot、apache 和 php 的代码包
-    目前只有 smthbbs-snapshot 版本才支持 cygwin，其他更老的版本都不支持，这
-一点要特别注意。将 smthbbs-snapshot、apache 和 php 的代码包放在 $(SRCDIR)
-目录，然后分别解开。
+2.3 下载 smthbbs-1.2.1、apache 和 php 的代码包
+    将 smthbbs-1.2.1、apache 和 php 的代码包放在 $(SRCDIR) 目录，然后分别解开。
 
 2.4 预安装 apache 和 php
     首先切换目录到 $(SRCDIR)，进入 apache 的源代码目录。为了节省篇幅，下面
@@ -75,7 +75,7 @@ gmp-4.1.2              可选      选择 ssh 方式支持才需要
     然后执行下面的一系列命令：
           ./configure --prefix=/usr/local/bbs --enable-site=devel \
               --with-www=/usr/local/www --with-php=/usr/local/include/php \
-              --without-mysql --enable-ssh
+              --without-mysql --enable-ssh --enable-innbbsd
           make
           make install
           make install-home
@@ -85,7 +85,7 @@ gmp-4.1.2              可选      选择 ssh 方式支持才需要
           mkdir ext/smth_bbs
 
     然后将 smthbbs 源代码目录 bbs2www/phplib/ 下的 config.m4、php_smth_bbs.h
-和 phpbbslib.c 三个文件复制到 ext/smth_bbs 目录，然后执行：
+和 phpbbslib.c 三个文件复制到 ext/smth_bbs 目录，然后在 php 源代码主目录执行：
           ./buildconf --force
 
 2.7 再次编译安装 apache 和 php
@@ -113,10 +113,6 @@ identity.pub 文件可预先在 Linux 或 FreeBSD 下生成，然后复制到 cygwin 里面
 可参考 /etc/passwd 和 /etc/group 文件。
 
     将 smthbbs 源代码目录 bbs2www/xml 下的文件复制到 /usr/local/www/htdocs。
-然后
-          cd /usr/local/www/htdocs
-          cp sites/smth.php site.php
-          cp sites/smth_menu.html menu.html
 
     php 的配置文件可以从 php 源代码目录得到，将 php.ini-dist 复制为
 /usr/local/lib/php.ini，然后编辑 php.ini 文件，将 short_open_tag 的值修改为
@@ -125,6 +121,7 @@ Off 即可。
 4. 运行
 
 4.1 运行 smthbbs
+          ipc-daemon2 &
           cd /usr/local/bbs/bin
           ./miscd daemon
           ./bbslogd
