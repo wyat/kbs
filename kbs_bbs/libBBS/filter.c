@@ -2,7 +2,7 @@
 
 #ifdef FILTER
 extern int prepf(int fp,void** patternbuf,size_t* patt_image_len);
-extern int mgrep(int fp,void* patternbuf);
+extern int mgrep(int fp,void* patternbuf,session_t* session);
 extern int mgrep_str(char* data,int len,void* patternbuf);
 extern void releasepf(void* patternbuf);
 
@@ -28,7 +28,7 @@ int build_badwordimage()
 
     flock(fp,LOCK_UN);
     close(fp);
-    fp = open("etc/badwordv2.img", O_WRONLY|O_TRUNC|O_CREAT,0600);
+    fp = open("etc/badwordv3.img", O_WRONLY|O_TRUNC|O_CREAT,0600);
     if (fp==-1) {
         releasepf(pattern_buf);
     	return -1;

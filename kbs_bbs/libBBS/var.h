@@ -9,8 +9,6 @@ struct UTMPHEAD {
     int list_prev[USHM_SIZE];   /* sorted list prev ptr */
     int list_next[USHM_SIZE];   /* sorted list next ptr */
     time_t uptime;
-    int WORDBOUND, WHOLELINE, NOUPPER, INVERSE, FILENAMEONLY, SILENT, FNAME;
-    int ONLYCOUNT;
 };
 
 /* global unique variable */
@@ -19,7 +17,22 @@ extern struct BCACHE *brdshm;
 extern struct BDIRCACHE	*bdirshm;
 extern struct UTMPFILE *utmpshm;
 extern struct UTMPHEAD *utmphead;
+extern int WORDBOUND, WHOLELINE, NOUPPER, INVERSE, FILENAMEONLY, SILENT, FNAME;
+extern int ONLYCOUNT;
+extern struct UCACHE *uidshm;
 
+
+/* in log.c */
+extern int bdoatexit;
+extern int disablelog;
+extern int logmsqid;
+
+extern struct public_data *publicshm;
+
+struct _sigjmp_stack {
+    sigjmp_buf bus_jump;
+    struct _sigjmp_stack* next;
+};
 
 typedef struct {
     struct userec *currentuser;
@@ -28,14 +41,14 @@ typedef struct {
     
     char fromhost[IPLEN + 1];
 
-    struct favbrd_struct *favbrd_list=NULL;
+    struct favbrd_struct *favbrd_list;
     int *favbrd_list_count;
     struct favbrd_struct mybrd_list[FAVBOARDNUM];
-    int mybrd_list_t = -1;
-    int favnow = 0;
+    int mybrd_list_t;
+    int favnow;
     
     int *zapbuf;
-    int zapbuf_changed = 0;
+    int zapbuf_changed;
 
     char MsgDesUid[20];
     char msgerr[255];
@@ -44,11 +57,25 @@ typedef struct {
     int total_line;
     char *CurrentFileName;
     
+     struct _sigjmp_stack *sigjmp_stack;
 #ifdef SMS_SUPPORT
-        struct sms_shm_head* head;
-        void * smsbuf=NULL;
-        int smsresult=0;
-        struct user_info * smsuin;
+    lastsmsstatus=0;
+    struct sms_shm_head* head;
+    void * smsbuf=NULL;
+    int smsresult=0;
+    struct user_info * smsuin;
 #endif
+
+#ifdef HAVE_BRC_CONTROL
+#if USE_TMPFS==1
+    struct _brc_cache_entry* brc_cache_entry;
+#else
+    struct _brc_cache_entry brc_cache_entry[BRC_CACHE_NUM];
+#endif
+    int brc_currcache;
+#endif
+
+    char gb2big_savec[2];
+    char big2gb_savec[2];
 } session_t;
 #endif

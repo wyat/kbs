@@ -98,7 +98,7 @@ int checkpasswd(const char *passwd, const char *test)
 {
     char *crypt1(char *buf, char *salt);
 
-    static char pwbuf[14];
+    char pwbuf[14];
     char *pw;
 
 /*    return 1; */

@@ -48,7 +48,7 @@ static logconfig logconf[] = {
     {1, 0, NULL, "trace", 0, 0, 0, NULL, 0}     /* 最后所有的记录都在这里 */
 };
 
-static int bdoatexit = 0;
+int bdoatexit = 0;
 
 
 static void getheader(char *header, const char *from, int prio)
@@ -258,10 +258,9 @@ int init_bbslog()
     return msqid;
 }
 
-void newbbslog(int type, const char *fmt, ...)
+
+void newbbslog(int type, session_t* session,const char *fmt, ...)
 {
-    static int disable = 0;
-    static int msqid = -1;
     char buf[512];
     struct bbs_msgbuf *msg = (struct bbs_msgbuf *) buf;
 
@@ -269,12 +268,12 @@ void newbbslog(int type, const char *fmt, ...)
 
     if (!fmt || !*fmt)
         return;
-    if (disable)
+    if (disablelog)
         return;
-    if (msqid == -1 ) {
-        msqid = init_bbslog();
-        if (msqid ==-1 ) {
-            disable = 1;
+    if (logmsqid == -1 ) {
+        logmsqid = init_bbslog();
+        if (logmsqid ==-1 ) {
+            disablelog = 1;
             return;
         }
     }
@@ -290,5 +289,5 @@ void newbbslog(int type, const char *fmt, ...)
         strncpy(msg->userid, "[null]", IDLEN);
 
     vsnprintf(msg->mtext, sizeof(buf) - ((char *) msg->mtext - (char *) msg), fmt, v);
-    msgsnd(msqid, msg, strlen(msg->mtext) + ((char *) msg->mtext - (char *) msg) - sizeof(msg->mtype) + 1, IPC_NOWAIT | MSG_NOERROR);
+    msgsnd(logmsqid, msg, strlen(msg->mtext) + ((char *) msg->mtext - (char *) msg) - sizeof(msg->mtype) + 1, IPC_NOWAIT | MSG_NOERROR);
 }

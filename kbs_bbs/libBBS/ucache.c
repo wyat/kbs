@@ -24,8 +24,6 @@ struct UCACHE {
     struct userec passwd[MAXUSERS];
 };
 
-static struct UCACHE *uidshm = NULL;
-
 #ifndef USE_SEM_LOCK
 static int ucache_lock()
 {

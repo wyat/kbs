@@ -38,8 +38,7 @@ static const char *invalid[] = {
     "guest@",
     NULL
 };
-static char modestr[STRLEN];
-static char hh_mm_ss[8];
+
 int my_system(const char *cmdstring)
 {
     pid_t pid;
@@ -76,6 +75,7 @@ char *idle_str(struct user_info *uent)
 {
     time_t now, diff;
     int hh, mm;
+    char hh_mm_ss[8];
 
     now = time(0);
     diff = now - uent->freshtime;
@@ -103,10 +103,11 @@ char *idle_str(struct user_info *uent)
         sprintf(hh_mm_ss, "   ");
     return hh_mm_ss;
 }
+
 char *modestring(int mode, int towho, int complete, char *chatid)
 {
     struct userec urec;
-
+    char modestr[STRLEN];
 
     /*
      * Leeward: 97.12.18: Below removing ' characters for more display width 
@@ -365,7 +366,7 @@ char *Cdate(time_t clock)
     /*
      * Leeward 2000.01.01 Adjust year display for 20** 
      */
-    static char foo[24 /*22 */ ];
+    char foo[24 /*22 */ ];
     struct tm *mytm = localtime(&clock);
 
     strftime(foo, 24 /*22 */ , "%Y-%m-%d %T %a" /*"%D %T %a" */ , mytm);
@@ -691,7 +692,6 @@ int seek_in_file(const char* filename, const char* seekstr)
     return 0;
 }
 
-static struct public_data *publicshm;
 struct public_data *get_publicshm()
 {
     int iscreate;
@@ -1298,40 +1298,35 @@ int del_from_file(char filename[STRLEN], char str[STRLEN])
     return (f_mv(fnnew, filename));
 }
 
-struct _sigjmp_stack {
-    sigjmp_buf bus_jump;
-    struct _sigjmp_stack* next;
-} static *sigjmp_stack=NULL;
-
-sigjmp_buf* push_sigbus()
+sigjmp_buf* push_sigbus(session_t* session)
 {
   struct _sigjmp_stack* jumpbuf;
   jumpbuf=(struct _sigjmp_stack*) malloc(sizeof(struct _sigjmp_stack));
-  if (sigjmp_stack==NULL) {
-    sigjmp_stack=jumpbuf;
+  if (session->sigjmp_stack==NULL) {
+    session->sigjmp_stack=jumpbuf;
     jumpbuf->next=NULL;
   } else {
-    jumpbuf->next=sigjmp_stack;
-    sigjmp_stack=jumpbuf;
+    jumpbuf->next=session->sigjmp_stack;
+    session->sigjmp_stack=jumpbuf;
   }
   return &(jumpbuf->bus_jump);
 }
 
-void popup_sigbus()
+void popup_sigbus(session_t* session)
 {
-    struct _sigjmp_stack* jumpbuf=sigjmp_stack;
-    if (sigjmp_stack) {
-        sigjmp_stack=jumpbuf->next;
+    struct _sigjmp_stack* jumpbuf=session->sigjmp_stack;
+    if (session->sigjmp_stack) {
+        session->sigjmp_stack=jumpbuf->next;
         free(jumpbuf);
     }
-    if (sigjmp_stack==NULL)
+    if (session->sigjmp_stack==NULL)
         signal(SIGBUS, SIG_IGN);
 }
 
-void sigbus(int signo)
+void sigbus(int signo,session_t* session)
 {
-    if (sigjmp_stack) {
-        siglongjmp(sigjmp_stack->bus_jump, 1);
+    if (session->sigjmp_stack) {
+        siglongjmp(session->sigjmp_stack->bus_jump, 1);
     }
 };
 

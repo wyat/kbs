@@ -5,15 +5,6 @@
 #include "bbs.h"
 #include <zlib.h>
 
-#ifdef HAVE_BRC_CONTROL
-#if USE_TMPFS==1
-struct _brc_cache_entry* brc_cache_entry=NULL;
-#else
-struct _brc_cache_entry brc_cache_entry[BRC_CACHE_NUM];
-#endif
-static int brc_currcache=-1;
-#endif
-
 static const char NullChar[] = "";
 static const char EmptyChar[] = "Пе";
 

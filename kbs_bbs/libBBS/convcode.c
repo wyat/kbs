@@ -6010,8 +6010,6 @@ static const unsigned char BtoG[] = {
 #define BtoG_count 23940
 
 extern int convcode;
-static char gb2big_savec[2];
-static char big2gb_savec[2];
 extern void redoscr();
 
 #ifdef BBSMAIN

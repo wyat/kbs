@@ -1122,7 +1122,6 @@ int chk_smsmsg(int force ){
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	char sql[100];
-	static int lastsmsstatus=0;
 
 	if( ! force )
 		return lastsmsstatus;

@@ -432,7 +432,7 @@ char *crypt1(char *buf, char *salt)
     unsigned long out[2], ll;
     des_cblock key;
     des_key_schedule ks;
-    static unsigned char buff[20];
+    unsigned char buff[20]; /* TS1 static */
     unsigned char bb[9];
     unsigned char *b = bb;
     unsigned char c, u;

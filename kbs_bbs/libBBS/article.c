@@ -217,47 +217,47 @@ int prepare_write_dir(struct write_dir_arg * filearg,struct fileheader* fileinfo
 
 int del_origin(char *board, struct fileheader *fileinfo)
 {
-  	struct write_dir_arg dirarg;
-	char olddirect[PATHLEN];
+    struct write_dir_arg dirarg;
+    char olddirect[PATHLEN];
     struct fileheader fh;
 
-	if( setboardorigin(board, -1) ){
-		board_regenspecial(board,DIR_MODE_ORIGIN,NULL);
-		return 0;
-	}
+    if( setboardorigin(board, -1) ){
+        board_regenspecial(board,DIR_MODE_ORIGIN,NULL);
+        return 0;
+    }
 
-   	init_write_dir_arg(&dirarg);
+    init_write_dir_arg(&dirarg);
 
     setbdir(DIR_MODE_ORIGIN, olddirect, board);
     dirarg.filename=olddirect;
 
- 	if (prepare_write_dir(&dirarg,fileinfo,DIR_MODE_ORIGIN)!=0){
-       	free_write_dir_arg(&dirarg);
+    if (prepare_write_dir(&dirarg,fileinfo,DIR_MODE_ORIGIN)!=0){
+        free_write_dir_arg(&dirarg);
         return-1;
-	}
+    }
 
     BBS_TRY {
         fh=*(dirarg.fileptr + (dirarg.ent - 1));
         memmove(dirarg.fileptr + (dirarg.ent - 1), 
-				dirarg.fileptr + dirarg.ent, 
-				dirarg.size - sizeof(struct fileheader) * dirarg.ent);
+            dirarg.fileptr + dirarg.ent, 
+            dirarg.size - sizeof(struct fileheader) * dirarg.ent);
     }
     BBS_CATCH {
     }
     BBS_END;
 
-	dirarg.needclosefd = false;
-   	free_write_dir_arg(&dirarg);
-	dirarg.size-=sizeof(struct fileheader);
-	ftruncate(dirarg.fd, dirarg.size);
+    dirarg.needclosefd = false;
+    free_write_dir_arg(&dirarg);
+    dirarg.size-=sizeof(struct fileheader);
+    ftruncate(dirarg.fd, dirarg.size);
     if (dirarg.needlock)
         flock(dirarg.fd,LOCK_UN);
-	close(dirarg.fd);
+    close(dirarg.fd);
 
-	return 0;
+    return 0;
 }
 
-int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct fileheader *fileinfo, char *board, int currmode, int decpost)
+int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct fileheader *fileinfo, char *board, int currmode, int decpost,session_t*session)
 {
     int owned;
     struct fileheader fh;
@@ -339,7 +339,7 @@ int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct filehead
    Unlike the fb code which moves the file to the deleted
    board.
 */
-void cancelpost(const char *board,const char *userid,struct fileheader *fh, int owned, int autoappend,session_t session)
+void cancelpost(const char *board,const char *userid,struct fileheader *fh, int owned, int autoappend,session_t*session)
 {
     struct fileheader postfile;
     char oldpath[50];
@@ -692,7 +692,7 @@ void getcross(char *filepath, char *quote_file, struct userec *user, int in_mail
 }
 
 #ifdef COMMEND_ARTICLE
-int post_commend(struct userec *user, char *fromboard, struct fileheader *fileinfo)
+int post_commend(struct userec *user, char *fromboard, struct fileheader *fileinfo,session_t*session)
 {                               /* 推荐 */
     struct fileheader postfile;
     char filepath[STRLEN];
@@ -726,12 +726,12 @@ int post_commend(struct userec *user, char *fromboard, struct fileheader *filein
     strncpy(postfile.owner, user->userid, OWNER_LEN);
     postfile.owner[OWNER_LEN - 1] = 1;
     postfile.eff_size=get_effsize(oldfilepath);
-	postfile.o_id = fileinfo->id;
-	postfile.o_groupid = fileinfo->groupid;
-	postfile.o_reid = fileinfo->reid;
-	postfile.o_bid = getboardnum(fromboard, NULL);
-	//strncpy(postfile.o_board, fromboard, STRLEN- BM_LEN);
-	//postfile.o_board[STRLEN-BM_LEN-1]=0;
+    postfile.o_id = fileinfo->id;
+    postfile.o_groupid = fileinfo->groupid;
+    postfile.o_reid = fileinfo->reid;
+    postfile.o_bid = getboardnum(fromboard, NULL);
+    //strncpy(postfile.o_board, fromboard, STRLEN- BM_LEN);
+    //postfile.o_board[STRLEN-BM_LEN-1]=0;
 
     setbfile(buf, COMMEND_ARTICLE, DOT_DIR);
 
@@ -773,7 +773,7 @@ int post_commend(struct userec *user, char *fromboard, struct fileheader *filein
 #endif
 
 /* Add by SmallPig */
-int post_cross(struct userec *user, char *toboard, char *fromboard, char *title, char *filename, int Anony, int in_mail, char islocal, int mode)
+int post_cross(struct userec *user, char *toboard, char *fromboard, char *title, char *filename, int Anony, int in_mail, char islocal, int mode,session_t*session)
 {                               /* (自动生成文件名) 转贴或自动发信 */
     struct fileheader postfile;
     char filepath[STRLEN];

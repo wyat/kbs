@@ -18,12 +18,6 @@
 #define W_DELIM	   128
 #define L_DELIM    10
 
-extern int ONLYCOUNT, FNAME, SILENT, FILENAMEONLY, num_of_matched;
-extern int INVERSE;
-extern int WORDBOUND, WHOLELINE, NOUPPER;
-extern unsigned char *CurrentFileName;
-extern int total_line;
-
 #ifdef BBSMAIN
 extern void prints(char *fmt, ...);
 #define printf prints
@@ -177,20 +171,19 @@ int mgrep_str(char *text, int num,struct pattern_image* patt_img)
     return num_of_matched;
 }                               /* end mgrep */
 
-static void countline(text, len)
+static int countline(text, len)
 unsigned char *text;
 int len;
 {
-    int i;
+    int i,total_line;
 
     for (i = 0; i < len; i++)
         if (text[i] == '\n')
             total_line++;
+	return total_line;
 }
 
-int mgrep(fd,patt_img)
-int fd;
-struct pattern_image *patt_img;
+int mgrep(int fd,struct pattern_image *patt_img,session_t* session)
 {
     register char r_newline = '\n';
     unsigned char text[2 * BLOCKSIZE + MAXLINE];
@@ -202,7 +195,7 @@ struct pattern_image *patt_img;
 
     while ((num_read = read(fd, text + MAXLINE, BLOCKSIZE)) > 0) {
         if (INVERSE && ONLYCOUNT)
-            countline(text + MAXLINE, num_read);
+            session->total_line=countline(text + MAXLINE, num_read);
         buf_end = end = MAXLINE + num_read - 1;
         while (text[end] != r_newline && end > MAXLINE)
             end--;
