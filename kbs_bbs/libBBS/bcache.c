@@ -1,26 +1,4 @@
-/*
-    Pirate Bulletin Board System
-    Copyright (C) 1990, Edward Luke, lush@Athena.EE.MsState.EDU
-    Eagles Bulletin Board System
-    Copyright (C) 1992, Raymond Rocker, rocker@rock.b11.ingr.com
-                        Guy Vega, gtvega@seabass.st.usm.edu
-                        Dominic Tynes, dbtynes@seabass.st.usm.edu
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 1, or (at your option)
-    any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
-/* 对.BOARDS的cache 处理
+/* 对.BOARDS    及其共享内存区的cache 处理
                     KCN 2001.05.16 */
 
 #include "bbs.h"
@@ -47,10 +25,6 @@ static int bcache_unlock(int fd)
     close(fd);
 }
 
-void
-reload_boards()
-{
-}
 static void bcache_setreadonly(int readonly)
 {
    int boardfd;
@@ -143,21 +117,6 @@ void resolve_boards()
 		bcache_unlock(fd);
 	}
    	close(boardfd);
-}
-
-/* zixia: 真正的所有的版，不会跳过限制阅读/POST的版  */
-int apply_ALL_boards(int (*func)()) 
-{
-    register int i ;
-
-    for(i=0;i<brdshm->numboards;i++){
-        if (bcache[i].filename[0]){
-	    printf( "apply_ALL_boards: %s\n", bcache[i].filename );
-            if((*func)(&bcache[i]) == QUIT)
-                return QUIT;
-	}
-    }
-    return 0;
 }
 
 struct BoardStatus* getbstatus(int index)
@@ -270,9 +229,9 @@ int delete_board(char* boardname,char* title)
         return -1;
     }
     sprintf(buf,"删除讨论区：%s",bcache[bid].filename);
-    securityreport(buf,NULL);
 #endif
 
+    securityreport(buf,NULL);
     sprintf( buf, " << '%s'被 %s 删除 >>",
              bcache[bid].filename, currentuser->userid );
     fd = bcache_lock();
@@ -304,6 +263,7 @@ int add_board(struct boardheader* newboard)
 
     if (bid>0) {
         memcpy(&bcache[bid-1], newboard, sizeof(struct boardheader));
+        newboard->createtime=time(0);
         if (bid>brdshm->numboards)
         	brdshm->numboards= bid;
         bcache_unlock(fd);
