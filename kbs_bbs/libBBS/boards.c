@@ -281,7 +281,7 @@ static int brc_convert_struct(char* dirfile,char* data,int size) /* °Ñ¾ÉµÄbroard
     	    if( num > BRC_MAXNUM ) { 
         		num = BRC_MAXNUM;
     	    }
-    	    memcpy( brc.list[bid], tmp, num * sizeof( int ) );
+    	    memcpy( brc.list[bid-1], tmp, num * sizeof( int ) );
 	}
    	if( (fd = open( dirfile, O_WRONLY|O_CREAT )) != -1 ) {
             write( fd, &brc, sizeof(brc));
@@ -343,7 +343,7 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼þ£¬È¡³ö±£´
 
     entry=brc_getcache(userid);
     bptr=getboard(bid);
-    lseek(fd,bid*BRC_ITEMSIZE,SEEK_SET);
+    lseek(fd,(bid-1)*BRC_ITEMSIZE,SEEK_SET);
     read(fd,&brc_cache_entry[entry].list,BRC_ITEMSIZE);
     /*
     			 ÏÈ²»¼ÓÈë°æÃæµÄ´´½¨Ê±¼äµÄÅÐ¶Ï
