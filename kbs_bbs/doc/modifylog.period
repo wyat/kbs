@@ -34,4 +34,4 @@ record.c --> 增加函数search_record_back()
 bbs.c --> mark_post() 作改动防止多窗口间数据不同步时错误覆盖.DIR
 
 2001-05-15 :
-test branch zixia
+test branch zixia 1
