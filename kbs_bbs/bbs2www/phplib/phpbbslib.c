@@ -24,6 +24,7 @@ static PHP_FUNCTION(bbs_setuserscore);
 static PHP_FUNCTION(bbs_adduserscore);
 #endif
 
+static PHP_FUNCTION(bbs_searchTitle);
 static PHP_FUNCTION(bbs_getnumofsig);
 static PHP_FUNCTION(bbs_postmail);
 static PHP_FUNCTION(bbs_mailwebmsgs);
@@ -121,6 +122,7 @@ static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_setuserscore, NULL)
 		PHP_FE(bbs_adduserscore, NULL)
 #endif
+		PHP_FE(bbs_searchTitle, NULL)
 	    PHP_FE(bbs_getnumofsig, NULL)
 		PHP_FE(bbs_postmail, NULL)
 		PHP_FE(bbs_mailwebmsgs, NULL)
@@ -927,6 +929,158 @@ static PHP_FUNCTION(bbs_printansifile)
     signal(SIGSEGV, SIG_IGN);
 	RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
 }
+
+static PHP_FUNCTION(bbs_searchTitle)
+{
+    char *board,*title, *title2, *title3,*author;
+    long bLen,tLen,tLen2,tLen3,aLen;
+    long date,mmode,origin,attach;
+    bcache_t bh;
+	char dirpath[STRLEN];
+	int fd;
+	struct stat buf;
+	struct flock ldata;
+	struct fileheader *ptr1;
+	char* ptr;
+	long int threadsFounded;
+	unsigned int *IDList;
+	unsigned int *IDList2;
+	long int threads;
+	int total,i;
+	zval * element;
+	int is_bm;
+    char flags[4];              /* flags[0]: flag character
+                                 * flags[1]: imported flag
+                                 * flags[2]: no reply flag
+                                 * flags[3]: attach flag
+                                 */
+    struct boardheader *bp;
+
+
+    if (ZEND_NUM_ARGS() != 9 || zend_parse_parameters(9 TSRMLS_CC, "sssssllll", &board, &bLen,&title,&tLen, &title2, &tLen2, &title3, &tLen3,&author, &aLen, &date,&mmode,&origin,&attach) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (date < 0)
+        date = 0;
+    if (date > 9999)
+        date = 9999;
+    if ((bp = getbcache(board)) == NULL) {
+        RETURN_FALSE;
+    }
+    is_bm = is_BM(bp, currentuser);
+    if (getboardnum(board, &bh) == 0)
+        RETURN_LONG(-1); //"错误的讨论区";
+    if (!check_read_perm(currentuser, &bh))
+        RETURN_LONG(-2); //您无权阅读本版;
+    setbdir(DIR_MODE_NORMAL, dirpath, bh.filename);
+    if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
+        RETURN_LONG(-3);   
+    ldata.l_type = F_RDLCK;
+    ldata.l_whence = 0;
+    ldata.l_len = 0;
+    ldata.l_start = 0;
+    fcntl(fd, F_SETLKW, &ldata);
+	fstat(fd, &buf);
+    total = buf.st_size / sizeof(struct fileheader);
+
+    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+        if (i == 2)
+            end_mmapfile((void *) ptr, buf.st_size, -1);
+        ldata.l_type = F_UNLCK;
+        fcntl(fd, F_SETLKW, &ldata);
+        close(fd);
+        RETURN_LONG(-4);
+    }
+    ptr1 = (struct fileheader *) ptr;
+    /*
+     * fetching articles 
+     */
+    if (array_init(return_value) == FAILURE) {
+        RETURN_FALSE;
+    }
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+	IDList	= emalloc((1000)*sizeof(long int));
+	IDList2	= emalloc((50000)*sizeof(long int));
+
+	threadsFounded=0;
+	threads=0;
+
+	for (i=total-1;i>=0;i--) {
+		if (!foundInArray(ptr1[i].groupid,IDList2,threads))	{
+			unsigned int low, high ,mid, found;
+			int comp;
+			low = 0;
+			high = total - 1;
+			found=-1;
+			while (low <= high) {
+				mid = (high + low) / 2;
+				comp = (ptr1[i].groupid) - (ptr1[mid].id);
+				if (comp == 0) {
+					found=mid;
+					break;
+				} else if (comp < 0)
+					high = mid - 1;
+				else
+					low = mid + 1;
+			}
+			if (found==-1) continue;
+			threads++;
+			if (threads>10000) 
+				break;
+			if (title[0] && !strcasestr(ptr1[i].title, title))
+	            continue;
+	        if (title2[0] && !strcasestr(ptr1[i].title, title2))
+	            continue;
+	        if (author[0] && strcasecmp(ptr1[i].owner, author))
+	            continue;
+	        if (title3[0] && strcasestr(ptr1[i].title, title3))
+	            continue;
+	        if (abs(time(0) - get_posttime(ptr1+i)) > date * 86400)
+	            break;
+	        if (mmode && !(ptr1[i].accessed[0] & FILE_MARKED) && !(ptr1[i].accessed[0] & FILE_DIGEST))
+	            continue;
+	        if (origin && (ptr1[i].groupid!=ptr1[i].id) )
+	            continue;
+			if (origin && ptr1[i].attachment==0)
+				continue;
+			if (!foundInArray(ptr1[i].groupid,IDList,threadsFounded))	{
+				IDList[threadsFounded]=ptr1[i].groupid;
+				threadsFounded++;
+				MAKE_STD_ZVAL(element);
+				array_init(element);
+				flags[0] = get_article_flag(ptr1+found, currentuser, board, is_bm);
+				if (is_bm && (ptr1[found].accessed[0] & FILE_IMPORTED))
+					flags[1] = 'y';
+				else
+					flags[1] = 'n';
+				if (ptr1[found].accessed[1] & FILE_READ)
+					flags[2] = 'y';
+				else
+					flags[2] = 'n';
+				if (ptr1[found].attachment)
+					flags[3] = '@';
+				else
+					flags[3] = ' ';
+				bbs_make_article_array(element, ptr1+found, flags, sizeof(flags));
+				add_assoc_long(element, "threadsnum",threads);
+				zend_hash_index_update(Z_ARRVAL_P(return_value),threadsFounded, (void *) &element, sizeof(zval *), NULL);
+				if (threadsFounded>=999){
+					break;
+				}
+			}
+		}
+	}
+    end_mmapfile((void *) ptr, buf.st_size, -1);
+    ldata.l_type = F_UNLCK;
+    fcntl(fd, F_SETLKW, &ldata);        /* 退出互斥区域*/
+    close(fd);
+    efree(IDList);
+    efree(IDList2);
+
+}
+
 
 
 /* function bbs_caneditfile(string board, string filename);
