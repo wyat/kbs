@@ -5,24 +5,40 @@
 #include "bbs.h"
 #include "read.h"
 
+extern char MsgDesUid[14];
+
 /*用于apply_record的回调函数*/
 static int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
 {
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
     int mode=(int)extraarg;
     switch (mode) {
         case SR_FIRSTNEWDOWNSEARCH:
-#ifdef HAVE_BRC_CONTROL
-            if (brc_unread(fh->id)) {
-                conf->new_pos=ent;
-            }
-#endif
-            break;
         case SR_FIRSTNEW:
 #ifdef HAVE_BRC_CONTROL
+			if (read_arg->mode==DIR_MODE_MAIL) {
+                if (!(fh->accessed[0] & FILE_READ)) {
+                conf->new_pos=ent;
+				if (mode==SR_FIRSTNEW)
+                    return APPLY_CONTINUE;
+			    if (mode==SR_FIRSTNEWDOWNSEARCH)
+                    return APPLY_QUIT;
+                }
+            } else {
             if (brc_unread(fh->id)) {
                 conf->new_pos=ent;
-                return APPLY_CONTINUE;
+				if (mode==SR_FIRSTNEW)
+                    return APPLY_CONTINUE;
+			    if (mode==SR_FIRSTNEWDOWNSEARCH)
+                    return APPLY_QUIT;
             }
+            }
+/* readed */
+			if (mode==SR_FIRSTNEW)
+                    return APPLY_CONTINUE;
+            else
+			if (mode==SR_FIRSTNEWDOWNSEARCH)
+                    return APPLY_CONTINUE;
             break;
 #endif
         case SR_FIRST:
@@ -102,19 +118,19 @@ static int read_key(struct _select_def *conf, int command)
             ret=SHOW_QUIT;
             break;
         case READ_NEXT:
-            if (arg->readmoe==READ_NORMAL) {
+            if (arg->readmode==READ_NORMAL) {
                 if (conf->pos<conf->item_count) {
                     conf->new_pos = conf->pos + 1;
                     list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 } else ret=SHOW_REFRESH;
             } else  { /* 处理同主题阅读*/
-                apply_thread(conf,
+                int findthread=apply_thread(conf,
                     arg->data+(conf->pos - conf->page_pos) * arg->ssize,
                     fileheader_thread_read,
                     true,
                     (void*)SR_NEXT);
-                if (conf->newpos!=0) {
+                if (findthread!=0) {
                     list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 }
@@ -122,19 +138,19 @@ static int read_key(struct _select_def *conf, int command)
             }
             break;
         case READ_PREV:
-            if (arg->readmoe==READ_NORMAL) {
+            if (arg->readmode==READ_NORMAL) {
                 if (conf->pos>1) {
                     conf->new_pos = conf->pos - 1;
                     list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 } else ret= SHOW_REFRESH;
             } else { /* 处理同主题阅读*/
-                apply_thread(conf,
+                int findthread=apply_thread(conf,
                     arg->data+(conf->pos - conf->page_pos) * arg->ssize,
                     fileheader_thread_read,
                     false,
                     (void*)SR_PREV);
-                if (conf->newpos!=0) {
+                if (findthread!=0) {
                     list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 }

@@ -1464,7 +1464,7 @@ struct key_command mail_comms[] = {
     {Ctrl('O'), (READ_KEY_FUNC)read_addauthorfriend,NULL},
 
     {Ctrl('Y'), (READ_KEY_FUNC)read_zsend,NULL},
-    {Ctrl('C'), (READ_KEY_FUNC)read_cross,NULL}, */
+    {Ctrl('C'), (READ_KEY_FUNC)read_cross,NULL}, 
 
 #ifdef PERSONAL_CORP
 	{'y', (READ_KEY_FUNC)read_importpc,NULL},
