@@ -412,11 +412,13 @@ void brc_add_read(char *filename) {
         	n++;
         	if (n!=BRC_MAXNUM)
         		brc_cache_entry[n]=0;
+        	brc_cache_entry[brc_currcache].changed = 1;
         }
 }
 
 int brc_clear() {
-	brc_cache_entry[brc_currcache].list[0]=0;
+	brc_cache_entry[brc_currcache].list[0]=time(0);
+	brc_cache_entry[brc_currcache].list[1]=0;
 }
 
 int brc_clear_new_flag(char* filename)
