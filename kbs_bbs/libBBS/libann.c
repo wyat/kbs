@@ -77,8 +77,8 @@ int ann_load_directory(MENU * pm, session_t* session)
                 strncpy(litem.fname, buf + 5, sizeof(litem.fname) - 1);
             if (strstr(litem.fname,"..")) continue;
             litem.fname[sizeof(litem.fname) - 1] = '\0';
-            /*if ((!strstr(litem.title,"(BM: BMS)")||HAS_PERM(session->currentuser,PERM_BOARDS))&&
-               (!strstr(litem.title,"(BM: SYSOPS)")||HAS_PERM(session->currentuser,PERM_SYSOP))) */
+            /*if ((!strstr(litem.title,"(BM: BMS)")||HAS_PERM(session->getCurrentUser(),PERM_BOARDS))&&
+               (!strstr(litem.title,"(BM: SYSOPS)")||HAS_PERM(session->getCurrentUser(),PERM_SYSOP))) */
             if (ann_can_access(litem.title, board, session->currentuser)) {
                 if (strstr(litem.fname, "!@#$%")) {     /*ȡ host & port */
                     char *ptr1, *ptr2, gtmp[STRLEN];
@@ -263,9 +263,9 @@ int ann_traverse_check(char *path, struct userec *user)
                 continue;
             if (strncmp(currpath, path, strlen(currpath)) != 0)
                 continue;
-            /*if ((!strstr(title,"(BM: BMS)")||HAS_PERM(session->currentuser,PERM_BOARDS))&&
-               (!strstr(title,"(BM: SYSOPS)")||HAS_PERM(session->currentuser,PERM_SYSOP))&&
-               (!strstr(title,"(BM: ZIXIAs)")||HAS_PERM(session->currentuser,PERM_SECANC))) */
+            /*if ((!strstr(title,"(BM: BMS)")||HAS_PERM(session->getCurrentUser(),PERM_BOARDS))&&
+               (!strstr(title,"(BM: SYSOPS)")||HAS_PERM(session->getCurrentUser(),PERM_SYSOP))&&
+               (!strstr(title,"(BM: ZIXIAs)")||HAS_PERM(session->getCurrentUser(),PERM_SECANC))) */
             if ((t = ann_can_access(title, board, user)) != 0) {
                 if (ret < t)
                     ret = t;    /* directory can be accessed but it should be access with some
@@ -476,7 +476,7 @@ void load_import_path(char ** i_path,char ** i_title, time_t* i_path_time,int * 
                 buf[0] = 0;
             /*
              * TODO: access check need complete!
-             * if (buf[0]!=0&&(ann_traverse_check(buf, session->currentuser)!=0))
+             * if (buf[0]!=0&&(ann_traverse_check(buf, session->getCurrentUser())!=0))
              * buf[0]=0;  can't access 
              */
 

@@ -49,7 +49,7 @@ int get_msg(char * uid, char * msg, int line, int sms)
         if (genbuf[0] == 'n' || genbuf[0] == 'N')
             return false;
         if (genbuf[0] == 'G') {
-            if (HAS_PERM(currentuser, PERM_SYSOP))
+            if (HAS_PERM(getCurrentUser(), PERM_SYSOP))
                 return 2;
             else
                 return true;
@@ -130,7 +130,7 @@ int mode;
             inremsg = false;
             return -1;
         }
-        if (!canmsg(currentuser, uin)) {
+        if (!canmsg(getCurrentUser(), uin)) {
             move(2, 0);
             prints("对方已经关闭接受讯息的呼叫器...");
             pressreturn();
@@ -149,7 +149,7 @@ int mode;
 
     } else {
         /*
-         * if(!strcasecmp(uentp->userid,currentuser->userid))  rem by Haohmaru,这样才可以自己给自己发msg
+         * if(!strcasecmp(uentp->userid,getCurrentUser()->userid))  rem by Haohmaru,这样才可以自己给自己发msg
          * return 0;    
          */ uin = uentp;
         strcpy(uident, uin->userid);
@@ -243,18 +243,18 @@ int show_allmsgs()
     int oldmode, count, i, j, page, ch, y, all=0, reload=0;
     struct msghead head;
 
-    if(!HAS_PERM(currentuser, PERM_PAGE)) return -1;
+    if(!HAS_PERM(getCurrentUser(), PERM_PAGE)) return -1;
     oldmode = uinfo.mode;
     modify_user_mode(LOOKMSGS);
 //    set_alarm(0, 0, NULL, NULL);
 
     page = 0;
-    count = get_msgcount(0, currentuser->userid);
+    count = get_msgcount(0, getCurrentUser()->userid);
     while(1) {
         if(reload) {
             reload = 0;
             page = 0;
-            count = get_msgcount(all?2:0, currentuser->userid);
+            count = get_msgcount(all?2:0, getCurrentUser()->userid);
         }
         clear();
         if(count==0) {
@@ -265,15 +265,15 @@ int show_allmsgs()
         else {
             y = 0;
             i = page;
-            load_msghead(all?2:0, currentuser->userid, i, &head);
-            load_msgtext(currentuser->userid, &head, buf);
+            load_msghead(all?2:0, getCurrentUser()->userid, i, &head);
+            load_msgtext(getCurrentUser()->userid, &head, buf);
             j = translate_msg(buf, &head, showmsg);
             while(y<=t_lines-1) {
                 y+=j; i++;
                 prints("%s", showmsg);
                 if(i>=count) break;
-                load_msghead(all?2:0, currentuser->userid, i, &head);
-                load_msgtext(currentuser->userid, &head, buf);
+                load_msghead(all?2:0, getCurrentUser()->userid, i, &head);
+                load_msgtext(getCurrentUser()->userid, &head, buf);
                 j = translate_msg(buf, &head, showmsg);
             }
         }
@@ -324,7 +324,7 @@ reenter:
             case 's':
             case 'S':
                 reload = 1;
-                count = get_msgcount(0, currentuser->userid);
+                count = get_msgcount(0, getCurrentUser()->userid);
                 if(count==0) break;
                 move(t_lines-1, 0);
                 clrtoeol();
@@ -336,15 +336,15 @@ reenter:
                     struct msghead head;
                     int i;
                     bool init=false;
-                    sethomefile(fname, currentuser->userid, "msgindex");
-                    sethomefile(fname2, currentuser->userid, "msgindex3");
+                    sethomefile(fname, getCurrentUser()->userid, "msgindex");
+                    sethomefile(fname2, getCurrentUser()->userid, "msgindex3");
                     fd = open(fname, O_RDONLY, 0644);
                     fd2 = open(fname2, O_WRONLY|O_CREAT, 0644);
                     write(fd2, &i, 4);
                     lseek(fd, 4, SEEK_SET);
                     for(i=0;i<count;i++) {
                         read(fd, &head, sizeof(struct msghead));
-                        if(toupper(ch)=='S') load_msgtext(currentuser->userid, &head, buf);
+                        if(toupper(ch)=='S') load_msgtext(getCurrentUser()->userid, &head, buf);
                         if((toupper(ch)=='I'&&!strncasecmp(chk, head.id, IDLEN))
                           ||(toupper(ch)=='S'&&bm_strcasestr_rp(buf, chk, bm_search, &init) != NULL))
                             write(fd2, &head, sizeof(struct msghead));
@@ -356,12 +356,12 @@ reenter:
                 break;
             case 'c':
             case 'C':
-                clear_msg(currentuser->userid);
+                clear_msg(getCurrentUser()->userid);
                 goto outofhere;
             case 'a':
             case 'A':
                 if(all) {
-                    sethomefile(buf, currentuser->userid, "msgindex3");
+                    sethomefile(buf, getCurrentUser()->userid, "msgindex3");
                     unlink(buf);
                     all = 0;
                     reload = 1;
@@ -369,7 +369,7 @@ reenter:
                 break;
             case 'm':
             case 'M':
-                if(count!=0)mail_msg(currentuser);
+                if(count!=0)mail_msg(getCurrentUser());
                 goto outofhere;
             default:
                 goto reenter;
@@ -378,7 +378,7 @@ reenter:
 outofhere:
     
     if(all) {
-        sethomefile(buf, currentuser->userid, "msgindex3");
+        sethomefile(buf, getCurrentUser()->userid, "msgindex3");
         unlink(buf);
     }
     clear();
@@ -439,7 +439,7 @@ int wall()
         prints("没有任何使用者上线\n");
         pressanykey();
     }
-    sprintf(genbuf, "%s 广播:%s", currentuser->userid, buf2);
+    sprintf(genbuf, "%s 广播:%s", getCurrentUser()->userid, buf2);
     securityreport(genbuf, NULL, NULL);
     prints("\n已经广播完毕....\n");
     pressanykey();
@@ -478,8 +478,8 @@ void r_msg()
     for(i=0;i<=23;i++)
         saveline(i, 0, savebuffer[i]);
 
-    hasnewmsg=get_unreadcount(currentuser->userid);
-    if ((savemode == POSTING || savemode == SMAIL) && !DEFINE(currentuser, DEF_LOGININFORM)) {      /*Haohmaru.99.12.16.发文章时不回msg */
+    hasnewmsg=get_unreadcount(getCurrentUser()->userid);
+    if ((savemode == POSTING || savemode == SMAIL) && !DEFINE(getCurrentUser(), DEF_LOGININFORM)) {      /*Haohmaru.99.12.16.发文章时不回msg */
         move(0, 0);
         if (hasnewmsg) {
             prints("\033[1m\033[33m你有新的讯息，请发表完文章后按 Ctrl+Z 回讯息\033[m");
@@ -495,7 +495,7 @@ void r_msg()
         clrtoeol();
         goto outhere;
     }
-    count = get_msgcount(1, currentuser->userid);
+    count = get_msgcount(1, getCurrentUser()->userid);
     if (!count) {
         move(0, 0);
         prints("\033[1m没有任何的讯息存在！！\033[m");
@@ -506,22 +506,22 @@ void r_msg()
         goto outhere;
     }
 
-    now = get_unreadmsg(currentuser->userid);
+    now = get_unreadmsg(getCurrentUser()->userid);
     if(now==-1) now = count-1;
     else {
-        load_msghead(1, currentuser->userid, now, &head);
+        load_msghead(1, getCurrentUser()->userid, now, &head);
         while(head.topid!=getuinfopid()&&now<count-1){
-            now = get_unreadmsg(currentuser->userid);
-            load_msghead(1, currentuser->userid, now, &head);
+            now = get_unreadmsg(getCurrentUser()->userid);
+            load_msghead(1, getCurrentUser()->userid, now, &head);
         };
     }
     while(1){
         int reg=0;
-        load_msghead(1, currentuser->userid, now, &head);
-        load_msgtext(currentuser->userid, &head, buf);
+        load_msghead(1, getCurrentUser()->userid, now, &head);
+        load_msgtext(getCurrentUser()->userid, &head, buf);
         translate_msg(buf, &head, outmsg);
         
-        if (first&&hasnewmsg&&DEFINE(currentuser, DEF_SOUNDMSG)&&(head.mode!=6))
+        if (first&&hasnewmsg&&DEFINE(getCurrentUser(), DEF_SOUNDMSG)&&(head.mode!=6))
             bell();
         move(0,0);
         if(head.mode==6&&(!strcmp(outmsg,"REQUIRE:BIND")||!strcmp(outmsg,"REQUIRE:UNBIND"))) {
@@ -544,7 +544,7 @@ void r_msg()
             clrtoeol();
             do{
                 ch = igetkey();
-            }while(!DEFINE(currentuser, DEF_IGNOREMSG)&&ch!=Ctrl('Z')&&ch!='r'&&ch!='R');
+            }while(!DEFINE(getCurrentUser(), DEF_IGNOREMSG)&&ch!=Ctrl('Z')&&ch!='r'&&ch!='R');
             first = 0;
             move(y, x);
         }
@@ -627,8 +627,8 @@ void r_msg()
 //                                            curruserdata.mobileregistered = 0;
                                             currentmemo->ud.mobileregistered = 0;
                                         }
-//                                        write_userdata(currentuser->userid, &curruserdata);
-                                        write_userdata(currentuser->userid, &(currentmemo->ud));
+//                                        write_userdata(getCurrentUser()->userid, &curruserdata);
+                                        write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
                                         sprintf(msgerr, "%s 成功", (reg==1)?"注册":"取消注册");
                                     }
                                     else sprintf(msgerr, "%s 失败", (reg==1)?"注册":"取消注册");
@@ -700,7 +700,7 @@ void r_lastmsg()
 
 int myfriend_wall(struct user_info *uin, char *buf, int i)
 {
-    if ((uin->pid - uinfo.pid == 0) || !uin->active || !uin->pid || !canmsg(currentuser, uin))
+    if ((uin->pid - uinfo.pid == 0) || !uin->active || !uin->pid || !canmsg(getCurrentUser(), uin))
         return -1;
     if (myfriend(uin->uid, NULL)) {
         move(1, 0);
@@ -808,8 +808,8 @@ int register_sms()
     signal(SIGUSR1, talk_request);
 //    curruserdata.mobileregistered = 1;
     currentmemo->ud.mobileregistered = 1;
-//    write_userdata(currentuser->userid, &curruserdata);
-    write_userdata(currentuser->userid, &(currentmemo->ud));
+//    write_userdata(getCurrentUser()->userid, &curruserdata);
+    write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
     move(7, 0);
     prints("手机注册成功！ 你可以在bbs上发送短信啦！");
     pressreturn();
@@ -854,8 +854,8 @@ int unregister_sms()
 
 	    currentmemo->ud.mobileregistered = 0;
         currentmemo->ud.mobilenumber[0]=0;
-//	    write_userdata(currentuser->userid, &curruserdata);
-	    write_userdata(currentuser->userid, &(currentmemo->ud));
+//	    write_userdata(getCurrentUser()->userid, &curruserdata);
+	    write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
             smsbuf=NULL;
             return -1;
         }
@@ -866,8 +866,8 @@ int unregister_sms()
         currentmemo->ud.mobilenumber[0]=0;
 //        curruserdata.mobileregistered = 0;
         currentmemo->ud.mobileregistered = 0;
-//        write_userdata(currentuser->userid, &curruserdata);
-        write_userdata(currentuser->userid, &(currentmemo->ud));
+//        write_userdata(getCurrentUser()->userid, &curruserdata);
+        write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
     }
     shmdt(head);
     smsbuf=NULL;
@@ -997,8 +997,8 @@ int do_send_sms_func(char * dest, char * msgstr)
         currentmemo->ud.mobilenumber[0]=0;
 //        curruserdata.mobileregistered = 0;
         currentmemo->ud.mobileregistered = 0;
-//        write_userdata(currentuser->userid, &curruserdata);
-        write_userdata(currentuser->userid, &(currentmemo->ud));
+//        write_userdata(getCurrentUser()->userid, &curruserdata);
+        write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
     }
     if(ret) {
         clrtoeol();
@@ -1020,13 +1020,13 @@ int do_send_sms_func(char * dest, char * msgstr)
         h.sent = 1;
         h.time = time(0);
         strcpy(h.id, uident);
-        save_msgtext(currentuser->userid, &h, buf);
+        save_msgtext(getCurrentUser()->userid, &h, buf);
 #if HAVE_MYSQL_SMTH == 1
-        save_smsmsg(currentuser->userid, &h, buf, 1);
+        save_smsmsg(getCurrentUser()->userid, &h, buf, 1);
 #endif
         if(!isdigit(uident[0])) {
             h.sent = 0;
-            strcpy(h.id, currentuser->userid);
+            strcpy(h.id, getCurrentUser()->userid);
             save_msgtext(uident, &h, buf);
 #if HAVE_MYSQL_SMTH == 1
         	save_smsmsg(uident, &h, buf, 1);

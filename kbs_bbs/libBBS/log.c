@@ -38,7 +38,7 @@ typedef struct _logconfig {
     int fd;                     /* 文件句柄 */
 } logconfig;
 
-static logconfig logconf[] = {
+static const logconfig logconf[] = {
     {1, 3, NULL, "error.log", 0, 1, 0, NULL, 0},        /* 错误记录 */
     {1, 0, "connect", "connect.log", 0, 0, 0, NULL, 0}, /* 连接记录 */
     {1, 0, "user", "user.log", 0, 0, 0, NULL, 0},       /*所有用户的使用记录，使用缓冲 */

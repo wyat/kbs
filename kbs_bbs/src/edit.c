@@ -159,7 +159,7 @@ void msgline()
         display_buffer();
         showansi = 1;
     }
-    if (DEFINE(currentuser,DEF_HIGHCOLOR))
+    if (DEFINE(getCurrentUser(),DEF_HIGHCOLOR))
         strcpy(buf, "\033[1;33m\033[44m");
     else
         strcpy(buf, "\033[33m\033[44m");
@@ -932,9 +932,9 @@ int write_file(char* filename,int saveheader,long* effsize,long* pattachpos, lon
     /* 增加转信标记 czz 020819 */
         if (saveheader) {
             if (local_article == 1)
-                write_header(fp, currentuser, in_mail, quote_board, quote_title, Anony, 0);
+                write_header(fp, getCurrentUser(), in_mail, quote_board, quote_title, Anony, 0);
             else
-                write_header(fp, currentuser, in_mail, quote_board, quote_title, Anony, 2);
+                write_header(fp, getCurrentUser(), in_mail, quote_board, quote_title, Anony, 2);
         }
     }
     if (effsize)
@@ -1088,8 +1088,8 @@ void keep_fail_post()
     struct textline *p = firstline;
     FILE *fp;
 
-    sethomepath(tmpbuf, currentuser->userid);
-    sprintf(filename, "%s/%s.deadve", tmpbuf, currentuser->userid);
+    sethomepath(tmpbuf, getCurrentUser()->userid);
+    sprintf(filename, "%s/%s.deadve", tmpbuf, getCurrentUser()->userid);
     if ((fp = fopen(filename, "w")) == NULL) {
         indigestion(5);
         return;
@@ -1365,7 +1365,7 @@ static int process_ESC_action(int action, int arg)
         process_MARK_action(arg, msg);
         break;
     case 'I':
-        sprintf(filename, "tmp/clip/%s.%c", currentuser->userid, arg);
+        sprintf(filename, "tmp/clip/%s.%c", getCurrentUser()->userid, arg);
         if ((fp = fopen(filename, "r")) != NULL) {
             insert_from_fp(fp,NULL);
             fclose(fp);
@@ -1377,7 +1377,7 @@ static int process_ESC_action(int action, int arg)
         go();
         break;
     case 'E':
-        sprintf(filename, "tmp/clip/%s.%c", currentuser->userid, arg);
+        sprintf(filename, "tmp/clip/%s.%c", getCurrentUser()->userid, arg);
         if ((fp = fopen(filename, "w")) != NULL) {
             if (mark_on) {
                 struct textline *p;
@@ -1594,7 +1594,7 @@ void vedit_key(int ch)
             break;
         case Ctrl('R'):
 #ifdef CHINESE_CHARACTER
-            SET_CHANGEDEFINE(currentuser, DEF_CHCHAR);
+            SET_CHANGEDEFINE(getCurrentUser(), DEF_CHCHAR);
             break;
 #endif            
         case KEY_LEFT:         /* backward character */
@@ -1607,7 +1607,7 @@ void vedit_key(int ch)
                 currpnt = currline->len;
             }
 #ifdef CHINESE_CHARACTER
-            if (DEFINE(currentuser, DEF_CHCHAR)) {
+            if (DEFINE(getCurrentUser(), DEF_CHCHAR)) {
                 int i,j=0;
                 for(i=0;i<currpnt;i++)
                     if(j) j=0;
@@ -1648,7 +1648,7 @@ void vedit_key(int ch)
                 }
             }
 #ifdef CHINESE_CHARACTER
-            if (DEFINE(currentuser, DEF_CHCHAR)) {
+            if (DEFINE(getCurrentUser(), DEF_CHCHAR)) {
                 int i,j=0;
                 for(i=0;i<currpnt;i++)
                     if(j) j=0;
@@ -1667,7 +1667,7 @@ void vedit_key(int ch)
                 currpnt = (currline->len > lastindent) ? lastindent : currline->len;
             }
 #ifdef CHINESE_CHARACTER
-            if (DEFINE(currentuser, DEF_CHCHAR)) {
+            if (DEFINE(getCurrentUser(), DEF_CHCHAR)) {
                 int i,j=0;
                 for(i=0;i<currpnt;i++)
                     if(j) j=0;
@@ -1691,7 +1691,7 @@ void vedit_key(int ch)
                 currpnt = (currline->len > lastindent) ? lastindent : currline->len;
             }
 #ifdef CHINESE_CHARACTER
-            if (DEFINE(currentuser, DEF_CHCHAR)) {
+            if (DEFINE(getCurrentUser(), DEF_CHCHAR)) {
                 int i,j=0;
                 for(i=0;i<currpnt;i++)
                     if(j) j=0;
@@ -1805,7 +1805,7 @@ void vedit_key(int ch)
             currpnt--;
             delete_char();
 #ifdef CHINESE_CHARACTER
-            if (DEFINE(currentuser, DEF_CHCHAR)) {
+            if (DEFINE(getCurrentUser(), DEF_CHCHAR)) {
                 int i,j=0;
                 for(i=0;i<currpnt;i++)
                     if(j) j=0;
@@ -1836,7 +1836,7 @@ void vedit_key(int ch)
                 break;
             }
 #ifdef CHINESE_CHARACTER
-            if (DEFINE(currentuser, DEF_CHCHAR)) {
+            if (DEFINE(getCurrentUser(), DEF_CHCHAR)) {
                 int i,j=0;
                 for(i=0;i<currpnt+1;i++)
                     if(j) j=0;
@@ -2027,7 +2027,7 @@ int vedit(char *filename,int saveheader,long* eff_size,long *pattachpos)
 
     t = showansi;
     showansi = 0;
-    ismsgline = (DEFINE(currentuser, DEF_EDITMSG)) ? 1 : 0;
+    ismsgline = (DEFINE(getCurrentUser(), DEF_EDITMSG)) ? 1 : 0;
     domsg();
 #ifdef NEW_HELP
 	helpmode = HELP_EDIT;
@@ -2046,7 +2046,7 @@ int vedit_post(char *filename,int saveheader,long* eff_size,long* pattachpos)
 
     t = showansi;
     showansi = 0;
-    ismsgline = (DEFINE(currentuser, DEF_EDITMSG)) ? 1 : 0;
+    ismsgline = (DEFINE(getCurrentUser(), DEF_EDITMSG)) ? 1 : 0;
     domsg();
     ans = raw_vedit(filename, saveheader, 4, eff_size,pattachpos);   /*Haohmaru.99.5.5.应该保留一个空行 */
     showansi = t;

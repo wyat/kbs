@@ -961,7 +961,7 @@ int canIsend2(struct userec *src, char *userid)
         return false;
     /*
      * sethomefile(path, userid, "/bads");
-     * if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, session->currentuser->userid))
+     * if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, session->getCurrentUser()->userid))
      * return false;
      * 
      * else

@@ -257,22 +257,22 @@ void check_register_info()
 
     clear();
     sprintf(buf, "%s", email_domain());
-    if (!(currentuser->userlevel & PERM_BASIC)) {
-        currentuser->userlevel = PERM_DENYMAIL|PERM_DENYRELAX;
+    if (!(getCurrentUser()->userlevel & PERM_BASIC)) {
+        getCurrentUser()->userlevel = PERM_DENYMAIL|PERM_DENYRELAX;
         return;
     }
     /*urec->userlevel |= PERM_DEFAULT; */
     perm = PERM_DEFAULT & sysconf_eval("AUTOSET_PERM",PERM_DEFAULT);
 
-//    invalid_realmail(currentuser->userid,curruserdata.realemail,STRLEN - 16);
-    invalid_realmail(currentuser->userid,currentmemo->ud.realemail,STRLEN - 16);
+//    invalid_realmail(getCurrentUser()->userid,curruserdata.realemail,STRLEN - 16);
+    invalid_realmail(getCurrentUser()->userid,currentmemo->ud.realemail,STRLEN - 16);
 
-    do_after_login(currentuser,utmpent,0);
+    do_after_login(getCurrentUser(),utmpent,0);
 
     /*    if( sysconf_str( "IDENTFILE" ) != NULL ) {  commented out by netty to save time */
-    while (strlen(currentuser->username) < 2) {
+    while (strlen(getCurrentUser()->username) < 2) {
         getdata(2, 0, "请输入您的昵称:(例如," DEFAULT_NICK ") << ", buf, NAMELEN, DOECHO, NULL, true);
-        strcpy(currentuser->username, buf);
+        strcpy(getCurrentUser()->username, buf);
         strcpy(uinfo.username, buf);
         UPDATE_UTMP_STR(username, uinfo);
     }
@@ -295,7 +295,7 @@ void check_register_info()
     }
 
 	/* 加入转让ID后的代码   by binxun 2003-5-23 */
-	sethomefile(buf,currentuser->userid,"conveyID");
+	sethomefile(buf,getCurrentUser()->userid,"conveyID");
 	if(dashf(buf))
 	{
 	
@@ -315,8 +315,8 @@ void check_register_info()
 		strncpy(currentmemo->ud.realemail,buf,STRLEN-16);
 //		curruserdata.realemail[STRLEN-16-1]='\0';
 		currentmemo->ud.realemail[STRLEN-16-1]='\0';
-//		write_userdata(currentuser->userid,&curruserdata);
-		write_userdata(currentuser->userid,&(currentmemo->ud));
+//		write_userdata(getCurrentUser()->userid,&curruserdata);
+		write_userdata(getCurrentUser()->userid,&(currentmemo->ud));
 		
 	}
 
@@ -352,7 +352,7 @@ void check_register_info()
         prints("\033[1m\033[33m如果您已经通过注册，成为合法" NAME_USER_SHORT "，却依然看到本信息，那可能是由于您没有在\n‘个人工具箱’内设定‘电子邮件信箱’。\033[m\n");
 	prints("\nI) 个人工具箱 --> I) 设定个人资料\n");
 
-	prints("\n如果您实在没有任何可用的'电子邮件信箱'可以设定，又不愿意看到本信息，可以使用\n%s.bbs@%s进行设定。\n\033[33;1m注意: 上面的电子邮件信箱不能接收电子邮件，仅用来使系统不再显示本信息。\033[m", currentuser->userid, NAME_BBS_ENGLISH);
+	prints("\n如果您实在没有任何可用的'电子邮件信箱'可以设定，又不愿意看到本信息，可以使用\n%s.bbs@%s进行设定。\n\033[33;1m注意: 上面的电子邮件信箱不能接收电子邮件，仅用来使系统不再显示本信息。\033[m", getCurrentUser()->userid, NAME_BBS_ENGLISH);
         pressreturn();
     }
 #endif
@@ -424,23 +424,23 @@ void check_register_info()
 		} while (!is_valid_date(currentmemo->ud.birthyear + 1900,
 					currentmemo->ud.birthmonth,
 					currentmemo->ud.birthday));
-//		write_userdata(currentuser->userid, &curruserdata);
-		write_userdata(currentuser->userid, &(currentmemo->ud));
+//		write_userdata(getCurrentUser()->userid, &curruserdata);
+		write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
 	}
 #endif
 #ifdef NEW_COMERS
-	if (currentuser->numlogins == 1)
+	if (getCurrentUser()->numlogins == 1)
 	{
 		FILE *fout;
 		char buf2[STRLEN];
 
 		gettmpfilename( buf, "newcomer" );
-		//sprintf(buf, "tmp/newcomer.%s", currentuser->userid);
+		//sprintf(buf, "tmp/newcomer.%s", getCurrentUser()->userid);
 		if ((fout = fopen(buf, "w")) != NULL)
 		{
 			fprintf(fout, "大家好,\n\n");
-			fprintf(fout, "我是 %s (%s), 来自 %s\n", currentuser->userid,
-					currentuser->username, SHOW_USERIP(currentuser, fromhost));
+			fprintf(fout, "我是 %s (%s), 来自 %s\n", getCurrentUser()->userid,
+					getCurrentUser()->username, SHOW_USERIP(getCurrentUser(), fromhost));
 			fprintf(fout, "今天%s初来此站报到, 请大家多多指教。\n",
 #ifdef HAVE_BIRTHDAY
 //					(curruserdata.gender == 'M') ? "小弟" : "小女子");
@@ -468,28 +468,28 @@ void check_register_info()
 				}
 			}
 			fclose(fout);
-			sprintf(buf2, "新手上路: %s", currentuser->username);
-			post_file(currentuser, "", buf, "newcomers", buf2, 0, 2);
+			sprintf(buf2, "新手上路: %s", getCurrentUser()->username);
+			post_file(getCurrentUser(), "", buf, "newcomers", buf2, 0, 2);
 			unlink(buf);
 		}
 		pressanykey();
 	}
 #endif
-    if (!strcmp(currentuser->userid, "SYSOP")) {
-        currentuser->userlevel = ~0;
-        currentuser->userlevel &= ~PERM_SUICIDE;        /* Leeward 98.10.13 */
-        currentuser->userlevel &= ~(PERM_DENYMAIL|PERM_DENYRELAX);       /* Bigman 2000.9.22 */
-        currentuser->userlevel &= ~PERM_JURY;       /* 不能是仲裁 */
+    if (!strcmp(getCurrentUser()->userid, "SYSOP")) {
+        getCurrentUser()->userlevel = ~0;
+        getCurrentUser()->userlevel &= ~PERM_SUICIDE;        /* Leeward 98.10.13 */
+        getCurrentUser()->userlevel &= ~(PERM_DENYMAIL|PERM_DENYRELAX);       /* Bigman 2000.9.22 */
+        getCurrentUser()->userlevel &= ~PERM_JURY;       /* 不能是仲裁 */
     }
-    if (!(currentuser->userlevel & PERM_LOGINOK)) {
-        if (HAS_PERM(currentuser, PERM_SYSOP))
+    if (!(getCurrentUser()->userlevel & PERM_LOGINOK)) {
+        if (HAS_PERM(getCurrentUser(), PERM_SYSOP))
             return;
-//        if (!invalid_realmail(currentuser->userid, curruserdata.realemail, STRLEN - 16)) {
-        if (!invalid_realmail(currentuser->userid, currentmemo->ud.realemail, STRLEN - 16)) {
-            currentuser->userlevel |= PERM_DEFAULT;
+//        if (!invalid_realmail(getCurrentUser()->userid, curruserdata.realemail, STRLEN - 16)) {
+        if (!invalid_realmail(getCurrentUser()->userid, currentmemo->ud.realemail, STRLEN - 16)) {
+            getCurrentUser()->userlevel |= PERM_DEFAULT;
             /*
-            if (HAS_PERM(currentuser, PERM_DENYPOST) && !HAS_PERM(currentuser, PERM_SYSOP))
-                currentuser->userlevel &= ~PERM_POST;
+            if (HAS_PERM(getCurrentUser(), PERM_DENYPOST) && !HAS_PERM(getCurrentUser(), PERM_SYSOP))
+                getCurrentUser()->userlevel &= ~PERM_POST;
             */
         } else {
             /* added by netty to automatically send a mail to new user. */
@@ -570,11 +570,11 @@ void check_register_info()
     }
 //    	curruserdata.realemail[STRLEN -16 - 1] = '\0';  //纠错代码
     	currentmemo->ud.realemail[STRLEN -16 - 1] = '\0';  //纠错代码
-//	write_userdata(currentuser->userid, &curruserdata);
-	write_userdata(currentuser->userid, &(currentmemo->ud));
+//	write_userdata(getCurrentUser()->userid, &curruserdata);
+	write_userdata(getCurrentUser()->userid, &(currentmemo->ud));
     newregfile = sysconf_str("NEWREGFILE");
-    /*if (currentuser->lastlogin - currentuser->firstlogin < REGISTER_WAIT_TIME && !HAS_PERM(currentuser, PERM_SYSOP) && newregfile != NULL) {
-        currentuser->userlevel &= ~(perm);
+    /*if (getCurrentUser()->lastlogin - getCurrentUser()->firstlogin < REGISTER_WAIT_TIME && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && newregfile != NULL) {
+        getCurrentUser()->userlevel &= ~(perm);
         ansimore(newregfile, true);
     }先注释掉*/
 }
@@ -588,11 +588,11 @@ void ConveyID()
 	int i;
 
     //检查权限
-        if (HAS_PERM(currentuser, PERM_SYSOP) || HAS_PERM(currentuser, PERM_BOARDS) || HAS_PERM(currentuser, PERM_OBOARDS) || HAS_PERM(currentuser, PERM_ACCOUNTS)
-        || HAS_PERM(currentuser, PERM_ANNOUNCE)
-        || HAS_PERM(currentuser, PERM_JURY) || HAS_PERM(currentuser, PERM_SUICIDE) || HAS_PERM(currentuser, PERM_CHATOP) || (!HAS_PERM(currentuser, PERM_POST))
-        || HAS_PERM(currentuser, PERM_DENYMAIL)
-        || HAS_PERM(currentuser, PERM_DENYRELAX)) {
+        if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_BOARDS) || HAS_PERM(getCurrentUser(), PERM_OBOARDS) || HAS_PERM(getCurrentUser(), PERM_ACCOUNTS)
+        || HAS_PERM(getCurrentUser(), PERM_ANNOUNCE)
+        || HAS_PERM(getCurrentUser(), PERM_JURY) || HAS_PERM(getCurrentUser(), PERM_SUICIDE) || HAS_PERM(getCurrentUser(), PERM_CHATOP) || (!HAS_PERM(getCurrentUser(), PERM_POST))
+        || HAS_PERM(getCurrentUser(), PERM_DENYMAIL)
+        || HAS_PERM(getCurrentUser(), PERM_DENYRELAX)) {
         clear();
         move(11, 28);
 		prints("\033[1;33m你有重任在身,不能转让ID!\033[m");
@@ -612,7 +612,7 @@ void ConveyID()
     if (askyn("你确定要转让这个 ID 吗？", 0) == 1) {
         clear();
         getdata(0, 0, "请输入原密码(输入正确的话会立刻断线): ", buf, 39, NOECHO, NULL, true);   /*Haohmaru,98.10.12,check the passwds */
-        if (*buf == '\0' || !checkpasswd2(buf, currentuser)) {
+        if (*buf == '\0' || !checkpasswd2(buf, getCurrentUser())) {
             prints("\n\n很抱歉, 您输入的密码不正确。\n");
             pressanykey();
             return;
@@ -621,15 +621,15 @@ void ConveyID()
         //记录备份信息
         now = time(0);
 		gettmpfilename( filename, "convey" );
-        //sprintf(filename, "tmp/%s.tmp", currentuser->userid);
+        //sprintf(filename, "tmp/%s.tmp", getCurrentUser()->userid);
         fn = fopen(filename, "w");
 		if(fn){
-			fprintf(fn,"\033[1m %s \033[m 在 \033[1m%24.24s\033[m 转让ID了,以下是他的资料，请保留...",currentuser->userid,ctime(&now));
-			getuinfo(fn, currentuser);
+			fprintf(fn,"\033[1m %s \033[m 在 \033[1m%24.24s\033[m 转让ID了,以下是他的资料，请保留...",getCurrentUser()->userid,ctime(&now));
+			getuinfo(fn, getCurrentUser());
 			fprintf(fn, "\n                     \033[1m 系统自动发信系统留\033[m\n");
 			fclose(fn);
-			sprintf(buf, "%s 转让ID的备份资料", currentuser->userid);
-			post_file(currentuser, "", filename, "Registry", buf, 0, 1);
+			sprintf(buf, "%s 转让ID的备份资料", getCurrentUser()->userid);
+			post_file(getCurrentUser(), "", filename, "Registry", buf, 0, 1);
 			unlink(filename);
 		}
 		else{
@@ -639,17 +639,17 @@ void ConveyID()
 		}
 
 		//清空所有存在的配置文件,信箱
-		setmailpath(buf,currentuser->userid);
+		setmailpath(buf,getCurrentUser()->userid);
 		sprintf(systembuf,"/bin/rm -fr %s",buf);
 		system(systembuf);
-		sethomepath(buf,currentuser->userid);
+		sethomepath(buf,getCurrentUser()->userid);
 		sprintf(systembuf,"/bin/rm %s/*",buf);
 		system(systembuf);
 		sprintf(systembuf,"/bin/rm %s/.*",buf);
         system(systembuf);
 
 		//生成转让ID文件
-        sethomefile(filename,currentuser->userid,"conveyID");
+        sethomefile(filename,getCurrentUser()->userid,"conveyID");
 		if((fn=fopen(filename,"w")) != NULL){
 		    fprintf(fn,"Convey ID at %s",ctime(&now));
 			fclose(fn);
@@ -659,39 +659,39 @@ void ConveyID()
 		    prints("不能生成转让ID文件!转让ID失败,请与SYSOP联系.");
 			return;
 		}
-		currentuser->userlevel = 0;
-		currentuser->userlevel |= PERM_BASIC;
+		getCurrentUser()->userlevel = 0;
+		getCurrentUser()->userlevel |= PERM_BASIC;
 
-		currentuser->numposts = 0;
-		if(currentuser->numlogins > 10)currentuser->numlogins = 10;
-		currentuser->stay = 0;
-		strncpy(currentuser->username,currentuser->userid,IDLEN);
-		SET_UNDEFINE(currentuser,DEF_NOTMSGFRIEND);
+		getCurrentUser()->numposts = 0;
+		if(getCurrentUser()->numlogins > 10)getCurrentUser()->numlogins = 10;
+		getCurrentUser()->stay = 0;
+		strncpy(getCurrentUser()->username,getCurrentUser()->userid,IDLEN);
+		SET_UNDEFINE(getCurrentUser(),DEF_NOTMSGFRIEND);
 #ifdef HAVE_WFORUM
-		SET_UNDEFINE(currentuser,DEF_SHOWREALUSERDATA);
+		SET_UNDEFINE(getCurrentUser(),DEF_SHOWREALUSERDATA);
 #endif
         if (convcode)
-            SET_UNDEFINE(currentuser,DEF_USEGB);
+            SET_UNDEFINE(getCurrentUser(),DEF_USEGB);
 
-        currentuser->notemode = -1;
+        getCurrentUser()->notemode = -1;
 
-        currentuser->flags = CURSOR_FLAG;
-        currentuser->flags |= PAGER_FLAG;
-        currentuser->title = 0;
+        getCurrentUser()->flags = CURSOR_FLAG;
+        getCurrentUser()->flags |= PAGER_FLAG;
+        getCurrentUser()->title = 0;
 		for(i = 0; i < MAXCLUB>>5 ; i++){
-		    currentuser->club_read_rights[i] = 0;
-			currentuser->club_write_rights[i] = 0;
+		    getCurrentUser()->club_read_rights[i] = 0;
+			getCurrentUser()->club_write_rights[i] = 0;
 		}
-		currentuser->signature = 0;
-		currentuser->usedspace = 0;
+		getCurrentUser()->signature = 0;
+		getCurrentUser()->usedspace = 0;
 
 		//clear 用户信息
 //		bzero(&curruserdata,sizeof(struct userdata));
 		bzero(&(currentmemo->ud),sizeof(struct userdata));
-//		strcpy(curruserdata.userid,currentuser->userid);
-		strcpy(currentmemo->ud.userid,currentuser->userid);
-//		write_userdata(currentuser->userid,&curruserdata);
-		write_userdata(currentuser->userid,&(currentmemo->ud));
+//		strcpy(curruserdata.userid,getCurrentUser()->userid);
+		strcpy(currentmemo->ud.userid,getCurrentUser()->userid);
+//		write_userdata(getCurrentUser()->userid,&curruserdata);
+		write_userdata(getCurrentUser()->userid,&(currentmemo->ud));
 
         move(12,0);
 		prints("转让ID成功,马上断线了,告别这个ID吧.");
@@ -711,14 +711,14 @@ int ProtectID()
 	FILE* fp;
 	
 	clear();
-	if(!HAS_PERM(currentuser,PERM_LOGINOK)) {
+	if(!HAS_PERM(getCurrentUser(),PERM_LOGINOK)) {
         	move(11, 28);
 		prints("\033[1;33m你尚未通过身份认证,不能设定密码保护!\033[m");
         	pressanykey();
 		return -1;
         }
 	
-	sethomefile(buf,currentuser->userid,"protectID");
+	sethomefile(buf,getCurrentUser()->userid,"protectID");
 	if(dashf(buf)) {
         	move(11, 28);
 		prints("\033[1;33m你已经设定密码保护功能,不能再更改设定!\033[m");
@@ -803,7 +803,7 @@ int ProtectID()
 
 	if (askyn("你确定要设定吗？", 0) == 1) {	
 		move(12,0);
-		sethomefile(buf,currentuser->userid,"protectID");	
+		sethomefile(buf,getCurrentUser()->userid,"protectID");	
 		
 		fp = fopen(buf,"w");
 		if(!fp) {

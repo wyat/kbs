@@ -24,19 +24,19 @@ char *cmd;
 
     sprintf(buf, "EGROUP%c", *cmd);
     boardprefix = sysconf_str(buf);
-    choose_board(DEFINE(currentuser, DEF_NEWPOST) ? 1 : 0, boardprefix,0,0);
+    choose_board(DEFINE(getCurrentUser(), DEF_NEWPOST) ? 1 : 0, boardprefix,0,0);
 }
 
 void ENewGroup(cmd)
 char *cmd;
 {
-	choose_board(DEFINE(currentuser,DEF_NEWPOST) ? 1 : 0, NULL, -2, 0);
+	choose_board(DEFINE(getCurrentUser(),DEF_NEWPOST) ? 1 : 0, NULL, -2, 0);
 }
 
 static int clear_all_board_read_flag_func(struct boardheader *bh,void* arg)
 {
 #ifdef HAVE_BRC_CONTROL
-    if (brc_initial(currentuser->userid, bh->filename) != 0)
+    if (brc_initial(getCurrentUser()->userid, bh->filename) != 0)
         brc_clear();
 #endif
     return 0;
@@ -81,7 +81,7 @@ struct newpostdata *ptr;
 
     num = ptr->total + 1;
     if (ptr->unread && (fd = open(dirfile, O_RDWR)) > 0) {
-        if (!brc_initial(currentuser->userid, ptr->name)) {
+        if (!brc_initial(getCurrentUser()->userid, ptr->name)) {
             num = 1;
         } else {
             offset = (int) ((char *) &(fh.id) - (char *) &(fh));
@@ -215,7 +215,7 @@ static int check_newpost(struct newpostdata *ptr)
     ptr->currentusers = bptr->currentusers;
 
 #ifdef HAVE_BRC_CONTROL
-    if (!brc_initial(currentuser->userid, ptr->name)) {
+    if (!brc_initial(getCurrentUser()->userid, ptr->name)) {
         ptr->unread = 1;
     } else {
         if (brc_unread(bptr->lastpost)) {
@@ -547,7 +547,7 @@ static int fav_onselect(struct _select_def *conf)
         struct boardheader bh;
         int tmp;
 
-        if (getboardnum(ptr->name, &bh) != 0 && check_read_perm(currentuser, &bh)) {
+        if (getboardnum(ptr->name, &bh) != 0 && check_read_perm(getCurrentUser(), &bh)) {
             int bid;
 	    int returnmode;
             bid = getbnum(ptr->name);
@@ -556,10 +556,10 @@ static int fav_onselect(struct _select_def *conf)
             currboard=(struct boardheader*)getboard(bid);
 
 #ifdef HAVE_BRC_CONTROL
-            brc_initial(currentuser->userid, ptr->name);
+            brc_initial(getCurrentUser()->userid, ptr->name);
 #endif
             memcpy(currBM, ptr->BM, BM_LEN - 1);
-            if (DEFINE(currentuser, DEF_FIRSTNEW)&&(getPos(DIR_MODE_NORMAL,currboard->filename,currboard)==0)) {
+            if (DEFINE(getCurrentUser(), DEF_FIRSTNEW)&&(getPos(DIR_MODE_NORMAL,currboard->filename,currboard)==0)) {
                 setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
                 tmp = unread_position(buf, ptr);
                 savePos(DIR_MODE_NORMAL,currboard->filename,tmp+1,currboard);
@@ -596,7 +596,7 @@ static int fav_key(struct _select_def *conf, int command)
         break;
     case 'X':                  /* Leeward 98.03.28 Set a board READONLY */
         {
-            if (!HAS_PERM(currentuser, PERM_SYSOP) && !HAS_PERM(currentuser, PERM_OBOARDS))
+            if (!HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS))
                 break;
             if (!strcmp(ptr->name, "syssecurity")
                 || !strcmp(ptr->name, "Filter")
@@ -623,7 +623,7 @@ static int fav_key(struct _select_def *conf, int command)
         }
     case 'Y':                  /* Leeward 98.03.28 Set a board READABLE */
         {
-            if (!HAS_PERM(currentuser, PERM_SYSOP) && !HAS_PERM(currentuser, PERM_OBOARDS))
+            if (!HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS))
                 break;
             if (ptr->dir)
                 break;
@@ -650,7 +650,7 @@ static int fav_key(struct _select_def *conf, int command)
         break;
     case 'W':
     case 'w':                  /* Luzi 1997.10.31 */
-        if (!HAS_PERM(currentuser, PERM_PAGE))
+        if (!HAS_PERM(getCurrentUser(), PERM_PAGE))
             break;
         s_msg();
         return SHOW_REFRESH;
@@ -685,7 +685,7 @@ static int fav_key(struct _select_def *conf, int command)
 
             savemode = uinfo.mode;
 
-            if (!HAS_PERM(currentuser, PERM_BASIC))
+            if (!HAS_PERM(getCurrentUser(), PERM_BASIC))
                 break;
             t_friends();
             modify_user_mode(savemode);
@@ -733,7 +733,7 @@ static int fav_key(struct _select_def *conf, int command)
             return SHOW_REFRESH;
         }
     case 'S':
-        currentuser->flags ^= BRDSORT_FLAG;  /*排序方式 */
+        getCurrentUser()->flags ^= BRDSORT_FLAG;  /*排序方式 */
         return SHOW_DIRCHANGE;
     case 's':                  /* sort/unsort -mfchen */
 	{
@@ -772,7 +772,7 @@ static int fav_key(struct _select_def *conf, int command)
 				return SHOW_CONTINUE;
 			if(arg->favmode != 2 && arg->favmode!=3 )
 				return SHOW_CONTINUE;
-			if(!HAS_PERM(currentuser,PERM_SYSOP))
+			if(!HAS_PERM(getCurrentUser(),PERM_SYSOP))
 				return SHOW_CONTINUE;
 			if(! ptr->dir)
 				return SHOW_CONTINUE;
@@ -797,7 +797,7 @@ static int fav_key(struct _select_def *conf, int command)
 
             if (BOARD_FAV == arg->yank_flag) {
 
-			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(currentuser,PERM_SYSOP))
+			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(getCurrentUser(),PERM_SYSOP))
 				return SHOW_REFRESH;
 
 
@@ -907,7 +907,7 @@ static int fav_key(struct _select_def *conf, int command)
         if (BOARD_FAV == arg->yank_flag) {
             char bname[STRLEN];
 
-			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(currentuser,PERM_SYSOP))
+			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(getCurrentUser(),PERM_SYSOP))
 				return SHOW_REFRESH;
 
 
@@ -933,7 +933,7 @@ static int fav_key(struct _select_def *conf, int command)
         if (BOARD_FAV == arg->yank_flag) {
             char bname[20];
 
-			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(currentuser,PERM_SYSOP))
+			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(getCurrentUser(),PERM_SYSOP))
 				return SHOW_REFRESH;
 
 			if (arg->favmode == 1)
@@ -955,7 +955,7 @@ static int fav_key(struct _select_def *conf, int command)
         if (BOARD_FAV == arg->yank_flag) {
             char bname[STRLEN];
 
-			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(currentuser,PERM_SYSOP))
+			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(getCurrentUser(),PERM_SYSOP))
 				return SHOW_REFRESH;
 
 
@@ -974,10 +974,10 @@ static int fav_key(struct _select_def *conf, int command)
     case 'm':
         if (arg->yank_flag == BOARD_FAV) {
 
-			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(currentuser,PERM_SYSOP))
+			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(getCurrentUser(),PERM_SYSOP))
 				return SHOW_REFRESH;
 
-            if (currentuser->flags & BRDSORT_FLAG) {
+            if (getCurrentUser()->flags & BRDSORT_FLAG) {
                 move(0, 0);
                 prints("排序模式下不能移动，请用'S'键切换!");
                 pressreturn();
@@ -1012,7 +1012,7 @@ static int fav_key(struct _select_def *conf, int command)
     case 'd':
         if (BOARD_FAV == arg->yank_flag) {
 
-			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(currentuser,PERM_SYSOP))
+			if ((arg->favmode == 2 || arg->favmode == 3) && !HAS_PERM(getCurrentUser(),PERM_SYSOP))
 				return SHOW_REFRESH;
 
             if (ptr->tag >= 0){
@@ -1042,7 +1042,7 @@ static int fav_key(struct _select_def *conf, int command)
     case 'z':                  /* Zap */
         if (arg->yank_flag < BOARD_FAV) {
                                 /*--- Modified 4 FavBoard 2000-09-11	---*/
-            if (HAS_PERM(currentuser, PERM_BASIC) && !(ptr->flag & BOARD_NOZAPFLAG)) {
+            if (HAS_PERM(getCurrentUser(), PERM_BASIC) && !(ptr->flag & BOARD_NOZAPFLAG)) {
                 ptr->zap = !ptr->zap;
                 ptr->total = -1;
                 zapbuf[ptr->pos] = (ptr->zap ? 0 : login_start_time);
@@ -1052,7 +1052,7 @@ static int fav_key(struct _select_def *conf, int command)
         }
         break;
     case 'v':                  /*Haohmaru.2000.4.26 */
-        if(!strcmp(currentuser->userid, "guest") || !HAS_PERM(currentuser, PERM_READMAIL)) return SHOW_CONTINUE;
+        if(!strcmp(getCurrentUser()->userid, "guest") || !HAS_PERM(getCurrentUser(), PERM_READMAIL)) return SHOW_CONTINUE;
         clear();
 		if (HAS_MAILBOX_PROP(&uinfo, MBP_MAILBOXSHORTCUT))
 			MailProc();
@@ -1070,7 +1070,7 @@ static int fav_refresh(struct _select_def *conf)
 
     clear();
     ptr = &arg->nbrd[conf->pos - conf->page_pos];
-    if (DEFINE(currentuser, DEF_HIGHCOLOR)) {
+    if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
         if (arg->yank_flag == BOARD_FAV){
 			if(arg->favmode == 2 || arg->favmode == 3){
             	docmdtitle("[讨论区列表]",
@@ -1093,7 +1093,7 @@ static int fav_refresh(struct _select_def *conf)
             docmdtitle("[讨论区列表]", "  \033[m主选单[←,e] 阅读[→,r] 选择[↑,↓] 列出[y] 排序[S] 搜寻[/] 切换[c] 求助[h]");
     }
     move(2, 0);
-    setfcolor(WHITE, DEFINE(currentuser, DEF_HIGHCOLOR));
+    setfcolor(WHITE, DEFINE(getCurrentUser(), DEF_HIGHCOLOR));
     setbcolor(BLUE);
     clrtoeol();
 #ifdef BOARD_SHOW_ONLINE
@@ -1124,9 +1124,9 @@ static int fav_getdata(struct _select_def *conf, int pos, int len)
     	}
     }
     if (pos==-1) 
-        fav_loaddata(NULL, arg->father,1, conf->item_count,currentuser->flags & BRDSORT_FLAG,arg->namelist);
+        fav_loaddata(NULL, arg->father,1, conf->item_count,getCurrentUser()->flags & BRDSORT_FLAG,arg->namelist);
     else
-        conf->item_count = fav_loaddata(arg->nbrd, arg->father,pos, len,currentuser->flags & BRDSORT_FLAG,NULL);
+        conf->item_count = fav_loaddata(arg->nbrd, arg->father,pos, len,getCurrentUser()->flags & BRDSORT_FLAG,NULL);
     return SHOW_CONTINUE;
 }
 
@@ -1142,9 +1142,9 @@ static int boards_getdata(struct _select_def *conf, int pos, int len)
     	}
     }
     if (pos==-1) 
-         load_boards(NULL, arg->boardprefix,arg->father,1, conf->item_count,currentuser->flags & BRDSORT_FLAG,arg->yank_flag,arg->namelist);
+         load_boards(NULL, arg->boardprefix,arg->father,1, conf->item_count,getCurrentUser()->flags & BRDSORT_FLAG,arg->yank_flag,arg->namelist);
     else
-         conf->item_count = load_boards(arg->nbrd, arg->boardprefix,arg->father,pos, len,currentuser->flags & BRDSORT_FLAG,arg->yank_flag,NULL);
+         conf->item_count = load_boards(arg->nbrd, arg->boardprefix,arg->father,pos, len,getCurrentUser()->flags & BRDSORT_FLAG,arg->yank_flag,NULL);
     return SHOW_CONTINUE;
 }
 int choose_board(int newflag, char *boardprefix,int group,int favmode)

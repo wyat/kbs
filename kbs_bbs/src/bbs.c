@@ -131,7 +131,7 @@ int UndeleteArticle(struct _select_def* conf,struct fileheader *fileinfo,void* e
         return DONOTHING;
     if ((arg->mode!= DIR_MODE_JUNK)&& (arg->mode != DIR_MODE_DELETED))
         return DONOTHING;
-    if (!chk_currBM(currBM, currentuser))
+    if (!chk_currBM(currBM, getCurrentUser()))
         return DONOTHING;
 
     sprintf(buf, "boards/%s/%s", currboard->filename, fileinfo->filename);
@@ -223,7 +223,7 @@ int UndeleteArticle(struct _select_def* conf,struct fileheader *fileinfo,void* e
     move(2, 0);
     prints("'%s' 已恢复到版面 \n", UFile.title);
     pressreturn();
-    bmlog(currentuser->userid, currboard->filename, 9, 1);
+    bmlog(getCurrentUser()->userid, currboard->filename, 9, 1);
 
     return FULLUPDATE;
 }
@@ -252,7 +252,7 @@ void printutitle()
     int isadm;
     const char *fmtadm = "#上站 #文章", *fmtcom = "           ";
 
-    isadm = HAS_PERM(currentuser, PERM_ADMINMENU);
+    isadm = HAS_PERM(getCurrentUser(), PERM_ADMINMENU);
 #endif
 
     move(2, 0);
@@ -277,7 +277,7 @@ void printutitle()
 
 int g_board_names(struct boardheader *fhdrp,void* arg)
 {
-    if (check_read_perm(currentuser, fhdrp)) {
+    if (check_read_perm(getCurrentUser(), fhdrp)) {
         AddNameList(fhdrp->filename);
     }
     return 0;
@@ -290,7 +290,7 @@ void make_blist(int addfav)
 	if(addfav){
 		int i;
 		for( i=0; i<bdirshm->allbrd_list_t; i++){
-			if( bdirshm->allbrd_list[i].ename[0] && HAS_PERM(currentuser, bdirshm->allbrd_list[i].level) )
+			if( bdirshm->allbrd_list[i].ename[0] && HAS_PERM(getCurrentUser(), bdirshm->allbrd_list[i].level) )
 				AddNameList( bdirshm->allbrd_list[i].ename );
 		}
 	}
@@ -344,7 +344,7 @@ int get_a_boardname(char *bname, char *prompt)
 int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long flag)
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
-    bool    isbm=chk_currBM(currboard->BM, currentuser);
+    bool    isbm=chk_currBM(currboard->BM, getCurrentUser());
     struct write_dir_arg dirarg;
     struct fileheader data;
     int ret;
@@ -376,7 +376,7 @@ int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long f
     
 #ifdef FILTER
 #ifdef SMTH
-    if (!strcmp(currboard->filename,"NewsClub")&&haspostperm(currentuser, currboard->filename)) 
+    if (!strcmp(currboard->filename,"NewsClub")&&haspostperm(getCurrentUser(), currboard->filename)) 
             isbm=true;
 #endif
 #endif
@@ -425,7 +425,7 @@ int do_commend(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     if (arg->mode!=DIR_MODE_NORMAL) {
         return DONOTHING;
     }
-    if ((fileinfo->accessed[1] & FILE_COMMEND) && !HAS_PERM(currentuser, PERM_SYSOP)) {
+    if ((fileinfo->accessed[1] & FILE_COMMEND) && !HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
         clear();
         move(1, 0);
         prints("本文章已经推荐过，感谢您的热心推荐");
@@ -441,7 +441,7 @@ int do_commend(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         pressreturn();
         return FULLUPDATE;
     }
-    if ( deny_me(currentuser->userid, COMMEND_ARTICLE) ) {
+    if ( deny_me(getCurrentUser()->userid, COMMEND_ARTICLE) ) {
         clear();
         move(1, 0);
         prints("对不起，您被停止了推荐的权力");
@@ -457,7 +457,7 @@ int do_commend(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     move(1, 0);
     getdata(1, 0, "确定? [y/N]: ", ispost, 2, DOECHO, NULL, true);
     if (ispost[0] == 'y' || ispost[0] == 'Y') {
-        if (post_commend(currentuser, currboard->filename, fileinfo ) == -1) {
+        if (post_commend(getCurrentUser(), currboard->filename, fileinfo ) == -1) {
         	prints("推荐失败，系统错误 \n");
             pressreturn();
             move(2, 0);
@@ -490,11 +490,11 @@ int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 
     if (fileinfo==NULL)
         return DONOTHING;
-    if (!HAS_PERM(currentuser, PERM_POST)) {    /* 判断是否有POST权 */
+    if (!HAS_PERM(getCurrentUser(), PERM_POST)) {    /* 判断是否有POST权 */
         return DONOTHING;
     }
 #ifndef NINE_BUILD
-    if ((fileinfo->accessed[0] & FILE_FORWARDED) && !HAS_PERM(currentuser, PERM_SYSOP)) {
+    if ((fileinfo->accessed[0] & FILE_FORWARDED) && !HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
         clear();
         move(1, 0);
         prints("本文章已经转贴过一次，无法再次转贴");
@@ -506,7 +506,7 @@ int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     if (uinfo.mode != RMAIL)
         sprintf(q_file, "boards/%s/%s", currboard->filename, fileinfo->filename);
     else
-        setmailfile(q_file, currentuser->userid, fileinfo->filename);
+        setmailfile(q_file, getCurrentUser()->userid, fileinfo->filename);
     strcpy(quote_title, fileinfo->title);
 
     clear();
@@ -541,8 +541,8 @@ int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             clear();
             return FULLUPDATE;
         }
-        if (deny_me(currentuser->userid, bname) ) {    /* 版主禁止POST 检查 */
-			if( HAS_PERM(currentuser, PERM_SYSOP) ){
+        if (deny_me(getCurrentUser()->userid, bname) ) {    /* 版主禁止POST 检查 */
+			if( HAS_PERM(getCurrentUser(), PERM_SYSOP) ){
 				char buf[3];
 
 				clear();
@@ -596,7 +596,7 @@ int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 	    }
         } else conf->new_pos=conf->pos; */
         /*add old*/
-        if (post_cross(currentuser, bname, currboard->filename, 
+        if (post_cross(getCurrentUser(), bname, currboard->filename, 
             quote_title, q_file, Anony, 
             arg->mode==DIR_MODE_MAIL?1:0, 
             ispost[0], 0) == -1) { /* 转贴 */
@@ -639,8 +639,8 @@ void readtitle(struct _select_def* conf)
     if (currBM[0] == '\0' || currBM[0] == ' ') {
         strcpy(header, "诚征版主中");
     } else {
-        //if (HAS_PERM(currentuser, PERM_OBOARDS)) {
-		if ( chk_currBM(currBM, currentuser) ) {
+        //if (HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
+		if ( chk_currBM(currBM, getCurrentUser()) ) {
             char *p1, *p2;
 
             strcpy(header, "版主: ");
@@ -693,7 +693,7 @@ void readtitle(struct _select_def* conf)
     update_endline();
     move(1, 0);
     clrtoeol();
-    if (DEFINE(currentuser, DEF_HIGHCOLOR))
+    if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
         prints
             ("离开[\x1b[1;32m←\x1b[m,\x1b[1;32me\x1b[m] 选择[\x1b[1;32m↑\x1b[m,\x1b[1;32m↓\x1b[m] 阅读[\x1b[1;32m→\x1b[m,\x1b[1;32mr\x1b[m] 发表文章[\x1b[1;32mCtrl-P\x1b[m] 砍信[\x1b[1;32md\x1b[m] 备忘录[\x1b[1;32mTAB\x1b[m] 求助[\x1b[1;32mh\x1b[m]\033[m");
     else
@@ -720,7 +720,7 @@ void readtitle(struct _select_def* conf)
         strcpy(readmode, "搜索");
 
     move(2, 0);
-    setfcolor(WHITE, DEFINE(currentuser, DEF_HIGHCOLOR));
+    setfcolor(WHITE, DEFINE(getCurrentUser(), DEF_HIGHCOLOR));
     setbcolor(BLUE);
     clrtoeol();
     prints(" 编号   %-12s %6s %s", 
@@ -757,7 +757,7 @@ int isonline(char *s){
 		return 7;
 	if( seecount != 0 )
 		return 2;
-    if (HAS_PERM(currentuser, PERM_SEECLOAK))
+    if (HAS_PERM(getCurrentUser(), PERM_SEECLOAK))
 		return 6;
 	return 7;
 }
@@ -779,9 +779,9 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
    /* typesufix = typeprefix = "";*/
    typesufix = typeprefix = ""; 
 
-    manager = chk_currBM(currBM, currentuser);
+    manager = chk_currBM(currBM, getCurrentUser());
 
-    type = get_article_flag(ent, currentuser, currboard->filename, manager);
+    type = get_article_flag(ent, getCurrentUser(), currboard->filename, manager);
     if (manager && (ent->accessed[0] & FILE_IMPORTED)) {        /* 文件已经被收入精华区 */
         if (type == ' ') {
             typeprefix = "\x1b[42m";
@@ -834,7 +834,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         && strcmp(currboard->filename, "sysmail")) { /* 新方法比较*/
             if ((ent->groupid != ent->id)&&(arg->mode==DIR_MODE_THREAD||!strncasecmp(TITLE,"Re:",3)||!strncmp(TITLE,"回复:",5))) {      /*Re的文章 */
                 if ((readfh&&readfh->groupid == ent->groupid))     /* 当前阅读主题 标识 */
-                    if (DEFINE(currentuser, DEF_HIGHCOLOR))
+                    if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 #ifdef COLOR_ONLINE
                         sprintf(buf, " \033[1;36m%4d\033[m %s%c%s \033[1;3%dm%-12.12s\033[m %s\033[1;36m.%c%-44.44s\033[m ", num, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, attachch, TITLE);
 #else
@@ -854,7 +854,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 #endif
             } else {
                 if (readfh&&(readfh->groupid == ent->groupid))     /* 当前阅读主题 标识 */
-                    if (DEFINE(currentuser, DEF_HIGHCOLOR))
+                    if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 #ifdef COLOR_ONLINE
                         sprintf(buf, " \033[1;33m%4d\033[m %s%c%s \033[1;3%dm%-12.12s\033[m %s\033[1;33m.%c● %-44.44s\033[m ", num, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, attachch, TITLE);
 #else
@@ -877,7 +877,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     } else                     /* 允许 相同主题标识 */
         if (!strncmp("Re:", ent->title, 3)) {   /*Re的文章 */
             if (readfh&&isThreadTitle(readfh->title, ent->title)) /* 当前阅读主题 标识 */
-                if (DEFINE(currentuser, DEF_HIGHCOLOR))
+                if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 #ifdef COLOR_ONLINE
                     sprintf(buf, " \033[1;36m%4d\033[m %s%c%s \033[1;3%dm%-12.12s\033[m %s\033[1;36m.%c%-44.44s\033[m ", num, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, attachch, TITLE);
 #else
@@ -897,7 +897,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 #endif
         } else {
             if ((readfh!=NULL)&&!strcmp(readfh->title, ent->title))      /* 当前阅读主题 标识 */
-                if (DEFINE(currentuser, DEF_HIGHCOLOR))
+                if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 #ifdef COLOR_ONLINE
                     sprintf(buf, " \033[1;33m%4d\033[m %s%c%s \033[1;3%dm%-12.12s\033[m %s\033[1;33m.%c● %-44.44s\033[m ", num, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, attachch, TITLE);
 #else
@@ -987,7 +987,7 @@ int zsend_attach(int ent, struct fileheader *fileinfo, char *direct)
                 left-=(attach-p)+attach_len-1;
                 p=attach+attach_len-1;
 #if USE_TMPFS==1
-                setcachehomefile(name, currentuser->userid,utmpent, "attach.tmp");
+                setcachehomefile(name, getCurrentUser()->userid,utmpent, "attach.tmp");
 #else
                 gettmpfilename(name, "attach%06d", rand()%100000);
 #endif
@@ -1055,19 +1055,19 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     move(t_lines - 1, 0);
     switch (arg->readmode) {
     case READ_THREAD:
-        if (DEFINE(currentuser, DEF_HIGHCOLOR))
+        if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 	        prints("\x1b[44m\x1b[1;31m[主题阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
         else
 	        prints("\x1b[44m\x1b[31m[主题阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
         break;
     case READ_AUTHOR:
-        if (DEFINE(currentuser, DEF_HIGHCOLOR))
+        if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 	        prints("\x1b[44m\x1b[1;31m[同作者阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
         else
 	        prints("\x1b[44m\x1b[31m[同作者阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
         break;
     default:
-        if (DEFINE(currentuser, DEF_HIGHCOLOR))
+        if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
             prints("\033[44m\033[1;31m[阅读文章] \033[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓│主题阅读 ^X或p ");
         else
             prints("\033[44m\033[31m[阅读文章] \033[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓│主题阅读 ^X或p ");
@@ -1145,7 +1145,7 @@ reget:
     case Ctrl('U'):
         if (arg->readmode==READ_NORMAL) {
             move(t_lines - 1, 0);
-            if (DEFINE(currentuser, DEF_HIGHCOLOR))
+            if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
                 prints("\x1b[44m\x1b[1;31m[同作者阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
             else
 	        prints("\x1b[44m\x1b[31m[同作者阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
@@ -1157,7 +1157,7 @@ reget:
     case Ctrl('H'):
         if (arg->readmode==READ_NORMAL) {
             move(t_lines - 1, 0);
-            if (DEFINE(currentuser, DEF_HIGHCOLOR))
+            if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
                 prints("\x1b[44m\x1b[1;31m[同作者阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
             else
 	        prints("\x1b[44m\x1b[31m[同作者阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
@@ -1173,7 +1173,7 @@ reget:
     case 'p':                  /*Add by SmallPig */
         if (arg->readmode==READ_NORMAL) {
            move(t_lines - 1, 0);
-           if (DEFINE(currentuser, DEF_HIGHCOLOR))
+           if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 	        prints("\x1b[44m\x1b[1;31m[主题阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
            else
 	        prints("\x1b[44m\x1b[31m[主题阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
@@ -1186,7 +1186,7 @@ reget:
     case KEY_RIGHT:
         if (arg->readmode==READ_NORMAL) {
            move(t_lines - 1, 0);
-           if (DEFINE(currentuser, DEF_HIGHCOLOR))
+           if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
 	        prints("\x1b[44m\x1b[1;31m[主题阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
            else
 	        prints("\x1b[44m\x1b[31m[主题阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
@@ -1211,7 +1211,7 @@ reget:
         return READ_NEXT;
     case 'Z':
     case 'z':
-        if (!HAS_PERM(currentuser, PERM_PAGE))
+        if (!HAS_PERM(getCurrentUser(), PERM_PAGE))
             break;
         read_sendmsgtoauthor(conf, fileinfo, NULL);
         return READ_NEXT;
@@ -1234,7 +1234,7 @@ reget:
         r_lastmsg();
         break;
     case 'w':                  /* Luzi 1997.11.1 */
-        if (!HAS_PERM(currentuser, PERM_PAGE))
+        if (!HAS_PERM(getCurrentUser(), PERM_PAGE))
             break;
         s_msg();
         break;
@@ -1244,7 +1244,7 @@ reget:
     case 'C':
     case 'c':
 #endif
-        if (!HAS_PERM(currentuser, PERM_BASIC))
+        if (!HAS_PERM(getCurrentUser(), PERM_BASIC))
             break;
         t_friends();
         break;
@@ -1338,7 +1338,7 @@ static int sb_refresh(struct _select_def *conf)
     docmdtitle("[超级版面选择]",
                "退出[\x1b[1;32m←\x1b[0;37m] 选择[\x1b[1;32m↑\x1b[0;37m,\x1b[1;32m↓\x1b[0;37m] 进入版面[\x1b[1;32mENTER\x1b[0;37m]");
     move(2, 0);
-    setfcolor(WHITE, DEFINE(currentuser, DEF_HIGHCOLOR));
+    setfcolor(WHITE, DEFINE(getCurrentUser(), DEF_HIGHCOLOR));
     setbcolor(BLUE);
     clrtoeol();
     prints("  %s 讨论区名称        V 类别 转信  %-24s            ", "全部 " , "中  文  叙  述");
@@ -1507,7 +1507,7 @@ int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     currboard=(struct boardheader*)getboard(bid);
 
 #ifdef HAVE_BRC_CONTROL
-    brc_initial(currentuser->userid, bname);
+    brc_initial(getCurrentUser()->userid, bname);
 #endif
 
     move(0, 0);
@@ -1543,18 +1543,18 @@ int isJury()
 {
     char buf[STRLEN];
 
-    if (!HAS_PERM(currentuser, PERM_JURY))
+    if (!HAS_PERM(getCurrentUser(), PERM_JURY))
         return 0;
     makevdir(currboard->filename);
     setvfile(buf, currboard->filename, "jury");
-    return seek_in_file(buf, currentuser->userid);
+    return seek_in_file(buf, getCurrentUser()->userid);
 }
 
 int deleted_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
 /* Allow user in file "jury" to see deleted area. stephen 2001.11.1 */
-    if (!chk_currBM(currBM, currentuser) && !isJury()) {
+    if (!chk_currBM(currBM, getCurrentUser()) && !isJury()) {
         return DONOTHING;
     }
 
@@ -1724,7 +1724,7 @@ int title_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
 int junk_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
-    if (!HAS_PERM(currentuser, PERM_SYSOP)) {
+    if (!HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
         return DONOTHING;
     }
 
@@ -1928,7 +1928,7 @@ int read_hot_info()
         pressanykey();
         break;
     case '5':
-            if (currentuser&&!HAS_PERM(currentuser,PERM_DENYRELAX))
+            if (getCurrentUser()&&!HAS_PERM(getCurrentUser(),PERM_DENYRELAX))
             exec_mbem("@mod:service/libcalendar.so#calendar_main");
         break;
     case '1':
@@ -2074,11 +2074,11 @@ void do_quote(char *filepath, char quote_mode, char *q_file, char *q_user)
      * *q_user = '\0';
      */
 
-    if ((currentmemo->ud.signum > 0) && !(currentuser->signature == 0 || Anony == 1)) {       /* 签名档为0则不添加 */
-        if (currentuser->signature < 0)
-            addsignature(outf, currentuser, (rand() % currentmemo->ud.signum) + 1);
+    if ((currentmemo->ud.signum > 0) && !(getCurrentUser()->signature == 0 || Anony == 1)) {       /* 签名档为0则不添加 */
+        if (getCurrentUser()->signature < 0)
+            addsignature(outf, getCurrentUser(), (rand() % currentmemo->ud.signum) + 1);
         else
-            addsignature(outf, currentuser, currentuser->signature);
+            addsignature(outf, getCurrentUser(), getCurrentUser()->signature);
     }
     fclose(outf);
 }
@@ -2106,17 +2106,17 @@ int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
 
     if (fileinfo==NULL)
         return DONOTHING;
-    if (!HAS_PERM(currentuser, PERM_LOGINOK) || !strcmp(currentuser->userid, "guest"))  /* guest 无权 */
+    if (!HAS_PERM(getCurrentUser(), PERM_LOGINOK) || !strcmp(getCurrentUser()->userid, "guest"))  /* guest 无权 */
         return 0;
     /*
      * 太狠了吧,被封post就不让回信了
-     * if (!HAS_PERM(currentuser,PERM_POST)) return; Haohmaru.99.1.18 
+     * if (!HAS_PERM(getCurrentUser(),PERM_POST)) return; Haohmaru.99.1.18 
      */
 
     /*
      * 封禁Mail Bigman:2000.8.22 
      */
-    if (HAS_PERM(currentuser, PERM_DENYMAIL)) {
+    if (HAS_PERM(getCurrentUser(), PERM_DENYMAIL)) {
         clear();
         move(3, 10);
         prints("很抱歉,您目前没有Mail权限!");
@@ -2213,7 +2213,7 @@ int add_attach(char* file1, char* file2, char* filename)
     int i;
     if(stat(file2, &st)==-1)
         return 0;
-    if(st.st_size>=2*1024*1024&&!HAS_PERM(currentuser, PERM_SYSOP)) {
+    if(st.st_size>=2*1024*1024&&!HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
         unlink(file2);
         return 0;
     }
@@ -2285,7 +2285,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         clear();
         return FULLUPDATE;
     }
-    if (!haspostperm(currentuser, currboard->filename)) { /* POST权限检查 */
+    if (!haspostperm(getCurrentUser(), currboard->filename)) { /* POST权限检查 */
         move(3, 0);
         clrtobot();
             prints("\n\n        此讨论区是唯读的, 或是您尚无权限在此发表文章.\n");
@@ -2294,8 +2294,8 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
             prints("        谢谢合作！ :-) \n");
         clear();
         return FULLUPDATE;
-    } else if (deny_me(currentuser->userid, currboard->filename)) { /* 版主禁止POST 检查 */
-		if( !HAS_PERM(currentuser, PERM_SYSOP) ){
+    } else if (deny_me(getCurrentUser()->userid, currboard->filename)) { /* 版主禁止POST 检查 */
+		if( !HAS_PERM(getCurrentUser(), PERM_SYSOP) ){
         	move(3, 0);
         	clrtobot();
         	prints("\n\n                     很抱歉，你被版主停止了 POST 的权力...\n");
@@ -2340,9 +2340,9 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         replymode = 0;
     }
     if (currentmemo->ud.signum == 0)
-        currentuser->signature = 0;
-    else if (currentuser->signature > currentmemo->ud.signum)      /*签名档No.检查 */
-        currentuser->signature = 1;
+        getCurrentUser()->signature = 0;
+    else if (getCurrentUser()->signature > currentmemo->ud.signum)      /*签名档No.检查 */
+        getCurrentUser()->signature = 1;
     anonyboard = anonymousboard(currboard->filename);     /* 是否为匿名版 */
     if (!strcmp(currboard->filename, "Announce"))
         Anony = 1;
@@ -2359,10 +2359,10 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         clrtoeol();
         prints("使用标题: %s\n", (buf[0] == '\0') ? "[正在设定主题]" : buf);
         clrtoeol();
-        if (currentuser->signature < 0)
+        if (getCurrentUser()->signature < 0)
             prints("使用随机签名档     %s", (replymode) ? buf3 : " ");
         else
-            prints("使用第 %d 个签名档     %s", currentuser->signature, (replymode) ? buf3 : " ");
+            prints("使用第 %d 个签名档     %s", getCurrentUser()->signature, (replymode) ? buf3 : " ");
 
         if (buf4[0] == '\0' || buf4[0] == '\n') {
             move(t_lines - 1, 0);
@@ -2391,7 +2391,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         ans[0] = toupper(ans[0]);       /* Leeward 98.09.24 add; delete below toupper */
         if ((ans[0] - '0') >= 0 && ans[0] - '0' <= 9) {
             if (atoi(ans) <= currentmemo->ud.signum)
-                currentuser->signature = atoi(ans);
+                getCurrentUser()->signature = atoi(ans);
         } else if ((ans[0] == 'S' || ans[0] == 'Y' || ans[0] == 'N' || ans[0] == 'A' || ans[0] == 'R') && replymode) {
             include_mode = ans[0];
         } else if (ans[0] == 'T') {
@@ -2414,9 +2414,9 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         } else if (ans[0] == 'M') {
             Anony = (Anony == 1) ? 0 : 1;
         } else if (ans[0] == 'L') {
-            currentuser->signature = -1;
+            getCurrentUser()->signature = -1;
         } else if (ans[0] == 'V') {     /* Leeward 98.09.24 add: viewing signature(s) while setting post head */
-            sethomefile(buf2, currentuser->userid, "signatures");
+            sethomefile(buf2, getCurrentUser()->userid, "signatures");
             move(t_lines - 1, 0);
             if (askyn("预设显示前三个签名档, 要显示全部吗", false) == true)
                 ansimore(buf2, 0);
@@ -2471,9 +2471,9 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 
     /*
      * strncpy(post_file.owner,(anonyboard&&Anony)?
-     * "Anonymous":currentuser->userid,STRLEN) ;
+     * "Anonymous":getCurrentUser()->userid,STRLEN) ;
      */
-    strncpy(post_file.owner, (anonyboard && Anony) ? currboard->filename : currentuser->userid, OWNER_LEN);
+    strncpy(post_file.owner, (anonyboard && Anony) ? currboard->filename : getCurrentUser()->userid, OWNER_LEN);
     post_file.owner[OWNER_LEN - 1] = 0;
 
 	/* 回复到信箱，stiger */
@@ -2548,7 +2548,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 						post_file.title[ARTICLE_TITLE_LEN - 1] = '\0';
 					}
 
-					write_header(fp, currentuser, 0, currboard->filename, post_file.title, Anony, 0);
+					write_header(fp, getCurrentUser(), 0, currboard->filename, post_file.title, Anony, 0);
 					while(fgets(buff,255,fp1))
 						fprintf(fp,"%s",buff);
 					fclose(fp);
@@ -2583,7 +2583,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 
     post_file.eff_size = eff_size;
 
-    add_loginfo(filepath, currentuser, currboard->filename, Anony);       /*添加最后一行 */
+    add_loginfo(filepath, getCurrentUser(), currboard->filename, Anony);       /*添加最后一行 */
 
     strncpy(post_file.title, save_title, ARTICLE_TITLE_LEN - 1);
 	post_file.title[ARTICLE_TITLE_LEN - 1] = '\0';
@@ -2605,7 +2605,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     /*
      * 在boards版版主发文自动添加文章标记 Bigman:2000.8.12 
      */
-    if (!strcmp(currboard->filename, "BM_Apply") && !HAS_PERM(currentuser, PERM_OBOARDS) && HAS_PERM(currentuser, PERM_BOARDS)) {
+    if (!strcmp(currboard->filename, "BM_Apply") && !HAS_PERM(getCurrentUser(), PERM_OBOARDS) && HAS_PERM(getCurrentUser(), PERM_BOARDS)) {
         post_file.accessed[0] |= FILE_SIGN;
     }
     if(upload) {
@@ -2614,7 +2614,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 #ifdef FILTER
     returnvalue =
 #endif
-        after_post(currentuser, &post_file, currboard->filename, re_file, !(Anony && anonyboard));
+        after_post(getCurrentUser(), &post_file, currboard->filename, re_file, !(Anony && anonyboard));
 
     if(upload) {
         char sbuf[PATHLEN];
@@ -2628,7 +2628,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     }
     
     if (!junkboard(currboard->filename)) {
-        currentuser->numposts++;
+        getCurrentUser()->numposts++;
     }
 #ifdef FILTER
     if (returnvalue == 2) {
@@ -2680,18 +2680,18 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 
     modify_user_mode(EDIT);
 
-    if (!HAS_PERM(currentuser, PERM_SYSOP))     /* SYSOP、当前版主、原发信人 可以编辑 */
-        if (!chk_currBM(currBM, currentuser)) {
+    if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))     /* SYSOP、当前版主、原发信人 可以编辑 */
+        if (!chk_currBM(currBM, getCurrentUser())) {
             /*
              * change by KCN 1999.10.26
-             * if(strcmp( fileinfo->owner, currentuser->userid))
+             * if(strcmp( fileinfo->owner, getCurrentUser()->userid))
              */
-            if (!isowner(currentuser, fileinfo))
+            if (!isowner(getCurrentUser(), fileinfo))
                 return DONOTHING;
             else dobmlog=true;
         }
 
-    if (deny_me(currentuser->userid, currboard->filename) && !HAS_PERM(currentuser, PERM_SYSOP)) {        /* 版主禁止POST 检查 */
+    if (deny_me(getCurrentUser()->userid, currboard->filename) && !HAS_PERM(getCurrentUser(), PERM_SYSOP)) {        /* 版主禁止POST 检查 */
         move(3, 0);
         clrtobot();
         prints("\n\n                     很抱歉，你被版主停止了 POST 的权力...\n");
@@ -2717,7 +2717,7 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 		if( fileinfo->eff_size != eff_size ){
         	fileinfo->eff_size = eff_size;
 			//fileinfo->eff_size = calc_effsize(genbuf);
-            //change_post_flag(currBM, currentuser, arg->mode, currboard->filename, ent, 
+            //change_post_flag(currBM, getCurrentUser(), arg->mode, currboard->filename, ent, 
                 //fileinfo, direct, FILE_EFFSIZE_FLAG, 0);
 		}
         if (ADD_EDITMARK)
@@ -2765,13 +2765,13 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     if (true == check_readonly(currboard->filename))      /* Leeward 98.03.28 */
         return FULLUPDATE;
 
-    if (!HAS_PERM(currentuser, PERM_SYSOP))     /* 权限检查 */
-        if (!chk_currBM(currBM, currentuser))
+    if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))     /* 权限检查 */
+        if (!chk_currBM(currBM, getCurrentUser()))
             /*
              * change by KCN 1999.10.26
-             * if(strcmp( fileinfo->owner, currentuser->userid))
+             * if(strcmp( fileinfo->owner, getCurrentUser()->userid))
              */
-            if (!isowner(currentuser, fileinfo)) {
+            if (!isowner(getCurrentUser(), fileinfo)) {
                 return DONOTHING;
             }
     strcpy(buf, fileinfo->title);
@@ -2876,7 +2876,7 @@ int del_ding(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         return DONOTHING;
     if ( arg->mode != DIR_MODE_NORMAL) return DONOTHING;
 
-    if (!HAS_PERM(currentuser, PERM_SYSOP) && !chk_currBM(currBM, currentuser))
+    if (!HAS_PERM(getCurrentUser(), PERM_SYSOP) && !chk_currBM(currBM, getCurrentUser()))
             return DONOTHING;
     clear();
     prints("删除文章 '%s'.", fileinfo->title);
@@ -2933,12 +2933,12 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     struct boardheader bp;
 
     bnum = getboardnum(COMMEND_ARTICLE,&bp);
-    if( bnum && chk_currBM(bp.BM, currentuser) )
+    if( bnum && chk_currBM(bp.BM, getCurrentUser()) )
 		mode |= 0x2 ;
 #endif
     if (fileinfo==NULL)
         return DONOTHING;
-	if(chk_currBM(currBM, currentuser)) mode |= 0x1;
+	if(chk_currBM(currBM, getCurrentUser())) mode |= 0x1;
 
 #ifdef COMMEND_ARTICLE
 	if ( ! (mode & 0x1) && !(mode & 0x2) ) return DONOTHING;
@@ -2999,8 +2999,8 @@ int del_range(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         || strstr(arg->direct, ".THREAD") /*Haohmaru.98.10.16 */ )   /* Leeward : 98.01.22 */
         return DONOTHING;
 
-    if (arg->mode!=DIR_MODE_MAIL&&!HAS_PERM(currentuser, PERM_SYSOP))
-        if (!chk_currBM(currBM, currentuser)) {
+    if (arg->mode!=DIR_MODE_MAIL&&!HAS_PERM(getCurrentUser(), PERM_SYSOP))
+        if (!chk_currBM(currBM, getCurrentUser())) {
             return DONOTHING;
         }
 
@@ -3043,7 +3043,7 @@ int del_range(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     if (*num1 == 'Y' || *num1 == 'y') {
         struct write_dir_arg dirarg;
 	if (!mailmode)
-            bmlog(currentuser->userid, currboard->filename, 5, 1);
+            bmlog(getCurrentUser()->userid, currboard->filename, 5, 1);
         init_write_dir_arg(&dirarg);
         dirarg.fd=arg->fd;
         dirarg.filename=arg->direct;
@@ -3055,7 +3055,7 @@ int del_range(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             fixkeep(arg->direct, 1, 1);*/
         if (!mailmode) {
             updatelastpost(currboard->filename);
-            bmlog(currentuser->userid, currboard->filename, 8, inum2-inum1);
+            bmlog(getCurrentUser()->userid, currboard->filename, 8, inum2-inum1);
             newbbslog(BBSLOG_USER, "del %d-%d on %s", inum1, inum2, currboard->filename);
         }
         prints("删除%s\n", result ? "失败！" : "完成"); /* Leeward: 97.12.15 */
@@ -3090,13 +3090,13 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 
     if (arg->mode== DIR_MODE_DELETED|| arg->mode== DIR_MODE_JUNK)
         return DONOTHING;
-    owned = isowner(currentuser, fileinfo);
+    owned = isowner(getCurrentUser(), fileinfo);
     /*
-     * change by KCN  ! strcmp( fileinfo->owner, currentuser->userid ); 
+     * change by KCN  ! strcmp( fileinfo->owner, getCurrentUser()->userid ); 
      */
     strcpy(usrid, fileinfo->owner);
-    if (!(owned) && !HAS_PERM(currentuser, PERM_SYSOP))
-        if (!chk_currBM(currboard->BM, currentuser)) {
+    if (!(owned) && !HAS_PERM(getCurrentUser(), PERM_SYSOP))
+        if (!chk_currBM(currboard->BM, getCurrentUser())) {
             return DONOTHING;
         }
     if (!(flag&&ARG_NOPROMPT_FLAG)) {
@@ -3121,10 +3121,10 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             delarg.fd=arg->fd;
             delarg.ent=conf->pos;
         }
-        ret=do_del_post(currentuser, &delarg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
+        ret=do_del_post(getCurrentUser(), &delarg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
         free_write_dir_arg(&delarg);
     } else
-        ret=do_del_post(currentuser, arg->writearg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
+        ret=do_del_post(getCurrentUser(), arg->writearg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
     if (ret != 0) {
         if (!(flag&ARG_NOPROMPT_FLAG)) {
             move(2, 0);
@@ -3159,8 +3159,8 @@ int Save_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 {
     int ret;
     struct read_arg* arg=(struct read_arg*)conf->arg;
-    if (!HAS_PERM(currentuser, PERM_SYSOP))
-        if (!chk_currBM(currBM, currentuser))
+    if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
+        if (!chk_currBM(currBM, getCurrentUser()))
             return DONOTHING;
     ret=a_Save(NULL, currboard->filename, fileinfo, false, arg->direct, conf->pos);
     if (ret) {
@@ -3186,8 +3186,8 @@ int Semi_save(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 {
     int ret;
     struct read_arg* arg=(struct read_arg*)conf->arg;
-    if (!HAS_PERM(currentuser, PERM_SYSOP))
-        if (!chk_currBM(currBM, currentuser))
+    if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
+        if (!chk_currBM(currBM, getCurrentUser()))
             return DONOTHING;
     ret=a_SeSave("0Announce", currboard->filename, fileinfo, false,arg->direct,conf->pos,1);
     if (ret) {
@@ -3214,8 +3214,8 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     struct read_arg* arg=(struct read_arg*)conf->arg;
     int ret=FULLUPDATE;
 
-    if (!HAS_PERM(currentuser, PERM_SYSOP))
-        if (!chk_currBM(currBM, currentuser))
+    if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
+        if (!chk_currBM(currBM, getCurrentUser()))
             return DONOTHING;
 
     if (fileinfo->accessed[0] & FILE_IMPORTED) {        /* Leeward 98.04.15 */
@@ -3293,7 +3293,7 @@ int show_sec_b_note(struct _select_def* conf,struct fileheader *fileinfo,void* e
 
 int into_announce(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
-    if (a_menusearch("0Announce", currboard->filename, (HAS_PERM(currentuser, PERM_ANNOUNCE) || HAS_PERM(currentuser, PERM_SYSOP) || HAS_PERM(currentuser, PERM_OBOARDS)) ? PERM_BOARDS : 0))
+    if (a_menusearch("0Announce", currboard->filename, (HAS_PERM(getCurrentUser(), PERM_ANNOUNCE) || HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) ? PERM_BOARDS : 0))
         return FULLUPDATE;
     return DONOTHING;
 }
@@ -3342,7 +3342,7 @@ int range_flag(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     int fflag;
     struct read_arg* arg=conf->arg;
     
-    if (!chk_currBM(currBM, currentuser)) return DONOTHING;
+    if (!chk_currBM(currBM, getCurrentUser())) return DONOTHING;
     if (arg->mode!=DIR_MODE_SUPERFITER) return DONOTHING;
     if(stat(arg->direct, &st)==-1) return DONOTHING;
     total = st.st_size/sizeof(struct fileheader);
@@ -3361,13 +3361,13 @@ int range_flag(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     }
     sprintf(buf, "1-保留标记m  2-删除标记t  3-文摘标记g  4-不可Re标记  5-标记#%s:[0]",
 #ifdef FILTER
-        HAS_PERM(currentuser, PERM_SYSOP)?"  6-审查标记@":"");
+        HAS_PERM(getCurrentUser(), PERM_SYSOP)?"  6-审查标记@":"");
 #else
         "");
 #endif
     getdata(4, 0, buf, ans, 4, DOECHO, NULL, true);
 #ifdef FILTER
-    if(ans[0]=='6'&&!HAS_PERM(currentuser, PERM_SYSOP)) return FULLUPDATE;
+    if(ans[0]=='6'&&!HAS_PERM(getCurrentUser(), PERM_SYSOP)) return FULLUPDATE;
 #else
     if(ans[0]=='6') return FULLUPDATE;
 #endif
@@ -3413,7 +3413,7 @@ int range_flag(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
 
 int show_t_friends()
 {
-    if (!HAS_PERM(currentuser, PERM_BASIC))
+    if (!HAS_PERM(getCurrentUser(), PERM_BASIC))
         return PARTUPDATE;
     t_friends();
     return FULLUPDATE;
@@ -3424,7 +3424,7 @@ int b_note_edit_new(struct _select_def* conf,struct fileheader *fileinfo,void* e
 {
 	char ans[4];
 
-	if(!chk_currBM(currBM, currentuser)) return DONOTHING;
+	if(!chk_currBM(currBM, getCurrentUser())) return DONOTHING;
 
     move(t_lines - 1, 0);
     clrtoeol();
@@ -3505,7 +3505,7 @@ void notepad()
     clear();
     move(0, 0);
     prints("开始你的留言吧！大家正拭目以待....\n");
-    sprintf(tmpname, "etc/notepad_tmp/%s.notepad", currentuser->userid);
+    sprintf(tmpname, "etc/notepad_tmp/%s.notepad", getCurrentUser()->userid);
     if ((in = fopen(tmpname, "w")) != NULL) {
         for (i = 0; i < 3; i++)
             memset(note[i], 0, STRLEN - 4);
@@ -3527,7 +3527,7 @@ void notepad()
                 break;
         }
         if (note1[0] != 'N' && note1[0] != 'n') {
-            sprintf(tmp, "\033[32m%s\033[37m（%.24s）", currentuser->userid, currentuser->username);
+            sprintf(tmp, "\033[32m%s\033[37m（%.24s）", getCurrentUser()->userid, getCurrentUser()->username);
             fprintf(in, "\033[m\033[31m⊙┬——————————————┤\033[37m酸甜苦辣板\033[31m├——————————————┬⊙\033[m\n");
             fprintf(in, "\033[31m□┤%-43s\033[33m在 \033[36m%.19s\033[33m 离开时留下的话\033[31m├□\n", tmp, Ctime(thetime));
             if (i > 2)
@@ -3540,7 +3540,7 @@ void notepad()
                             fprintf(in, "\033[31m│\033[m%-74.74s\033[31m│\033[m\n", note[t]);
 			fclose(in);
 
-                        post_file(currentuser, "", tmpname, FILTER_BOARD, "---留言版过滤器---", 0, 2);
+                        post_file(getCurrentUser(), "", tmpname, FILTER_BOARD, "---留言版过滤器---", 0, 2);
 
 			unlink(tmpname);
 			return;
@@ -3568,12 +3568,12 @@ void notepad()
 
 void record_exit_time()
 {                               /* 记录离线时间  Luzi 1998/10/23 */
-    currentuser->exittime = time(NULL);
+    getCurrentUser()->exittime = time(NULL);
     /*
      * char path[80];
      * FILE *fp;
      * time_t now;
-     * sethomefile( path, currentuser->userid , "exit");
+     * sethomefile( path, getCurrentUser()->userid , "exit");
      * fp=fopen(path, "wb");
      * if (fp!=NULL)
      * {
@@ -3656,8 +3656,8 @@ int Goodbye()
     if (choose == 0)
         choose = 2;
     clear();
-    if (strcmp(currentuser->userid, "guest") && choose == 1) {  /* 写信给站长 */
-        if (PERM_LOGINOK & currentuser->userlevel) {    /*Haohmaru.98.10.05.没通过注册的只能给注册站长发信 */
+    if (strcmp(getCurrentUser()->userid, "guest") && choose == 1) {  /* 写信给站长 */
+        if (PERM_LOGINOK & getCurrentUser()->userlevel) {    /*Haohmaru.98.10.05.没通过注册的只能给注册站长发信 */
             prints("        ID        负责的职务\n");
             prints("   ============ =============\n");
             for (i = 1; i <= num_sysop; i++) {
@@ -3736,9 +3736,9 @@ int Goodbye()
     }
     if (choose == 2)            /*返回BBS */
         return 0;
-    if (strcmp(currentuser->userid, "guest") != 0) {
+    if (strcmp(getCurrentUser()->userid, "guest") != 0) {
         if (choose == 3)        /*留言簿 */
-            if (USE_NOTEPAD == 1 && HAS_PERM(currentuser, PERM_POST))
+            if (USE_NOTEPAD == 1 && HAS_PERM(getCurrentUser(), PERM_POST))
                 notepad();
     }
 
@@ -3746,10 +3746,10 @@ int Goodbye()
     prints("\n\n\n\n");
     stay = time(NULL) - login_start_time;       /*本次线上时间 */
 
-    currentuser->stay += stay;
+    getCurrentUser()->stay += stay;
 
-    if (DEFINE(currentuser, DEF_OUTNOTE /*退出时显示用户备忘录 */ )) {
-        sethomefile(notename, currentuser->userid, "notes");
+    if (DEFINE(getCurrentUser(), DEF_OUTNOTE /*退出时显示用户备忘录 */ )) {
+        sethomefile(notename, getCurrentUser()->userid, "notes");
         if (dashf(notename))
             ansimore(notename, true);
     }
@@ -3757,15 +3757,15 @@ int Goodbye()
     /*
      * Leeward 98.09.24 Use SHARE MEM and disable the old code 
      */
-    if (DEFINE(currentuser, DEF_LOGOUT)) {      /* 使用自己的离站画面 */
-        sethomefile(fname, currentuser->userid, "logout");
+    if (DEFINE(getCurrentUser(), DEF_LOGOUT)) {      /* 使用自己的离站画面 */
+        sethomefile(fname, getCurrentUser()->userid, "logout");
         if (dashf(fname))
             mylogout = true;
     }
     if (mylogout) {
         logouts = countlogouts(fname);  /* logouts 为 离站画面 总数 */
         if (logouts >= 1) {
-            user_display(fname, (logouts == 1) ? 1 : (currentuser->numlogins % (logouts)) + 1, true);
+            user_display(fname, (logouts == 1) ? 1 : (getCurrentUser()->numlogins % (logouts)) + 1, true);
         }
     } else {
         logouts = countlogouts("etc/logout");   /* logouts 为 离站画面 总数 */
@@ -3773,9 +3773,9 @@ int Goodbye()
     }
 
     /*
-     * if(DEFINE(currentuser,DEF_LOGOUT\*使用自己的离站画面*\)) Leeward: disable the old code
+     * if(DEFINE(getCurrentUser(),DEF_LOGOUT\*使用自己的离站画面*\)) Leeward: disable the old code
      * {
-     * sethomefile( fname,currentuser->userid, "logout" );
+     * sethomefile( fname,getCurrentUser()->userid, "logout" );
      * if(!dashf(fname))
      * strcpy(fname,"etc/logout");
      * }else
@@ -3786,7 +3786,7 @@ int Goodbye()
      * if(logouts>=1)
      * {
      * user_display(fname,(logouts==1)?1:
-     * (currentuser->numlogins%(logouts))+1,true);
+     * (getCurrentUser()->numlogins%(logouts))+1,true);
      * }
      * } 
      */
@@ -3798,7 +3798,7 @@ int Goodbye()
     /*
      * Haohmaru.98.11.10.简单判断是否用上站机 
      */
-    if ( /*strcmp(currentuser->username,"guest")&& */ stay <= Time) {
+    if ( /*strcmp(getCurrentUser()->username,"guest")&& */ stay <= Time) {
 /*        strcpy(lbuf, "自首-");
         strftime(lbuf + 5, 30, "%Y-%m-%d%Y:%H:%M", localtime(&login_start_time));
         sprintf(tmpfile, "tmp/.tmp%d", getpid());
@@ -3806,35 +3806,35 @@ int Goodbye()
         if (fp) {
             fputs(lbuf, fp);
             fclose(fp);
-            mail_file(currentuser->userid, tmpfile, "surr", "自首", BBSPOST_MOVE, NULL);
+            mail_file(getCurrentUser()->userid, tmpfile, "surr", "自首", BBSPOST_MOVE, NULL);
         }*/
     }
     /*
      * stephen on 2001.11.1: 上站不足5分钟不计算上站次数 
      */
-    if (stay <= 300 && currentuser->numlogins > 5) {
-        currentuser->numlogins--;
-        if (currentuser->stay > stay)
-            currentuser->stay -= stay;
+    if (stay <= 300 && getCurrentUser()->numlogins > 5) {
+        getCurrentUser()->numlogins--;
+        if (getCurrentUser()->stay > stay)
+            getCurrentUser()->stay -= stay;
     }
     if (started) {
         record_exit_time();     /* 记录用户的退出时间 Luzi 1998.10.23 */
         /*---	period	2000-10-19	4 debug	---*/
         /*
-         * sprintf( genbuf, "Stay:%3ld (%s)", stay / 60, currentuser->username ); 
+         * sprintf( genbuf, "Stay:%3ld (%s)", stay / 60, getCurrentUser()->username ); 
          */
-        newbbslog(BBSLOG_USIES, "EXIT: Stay:%3ld (%s)[%d %d]", stay / 60, currentuser->username, utmpent, usernum);
+        newbbslog(BBSLOG_USIES, "EXIT: Stay:%3ld (%s)[%d %d]", stay / 60, getCurrentUser()->username, utmpent, usernum);
         u_exit();
         started = 0;
     }
 
-    if (num_user_logins(currentuser->userid) == 0 || !strcmp(currentuser->userid, "guest")) {   /*检查还有没有人在线上 */
+    if (num_user_logins(getCurrentUser()->userid) == 0 || !strcmp(getCurrentUser()->userid, "guest")) {   /*检查还有没有人在线上 */
         FILE *fp;
         char buf[STRLEN], *ptr;
 
-//        sethomefile(fname, currentuser->userid, "msgfile");
-        if (DEFINE(currentuser, DEF_MAILMSG /*离站时寄回所有信息 */ ) && (get_msgcount(0, currentuser->userid))) {
-                mail_msg(currentuser);
+//        sethomefile(fname, getCurrentUser()->userid, "msgfile");
+        if (DEFINE(getCurrentUser(), DEF_MAILMSG /*离站时寄回所有信息 */ ) && (get_msgcount(0, getCurrentUser()->userid))) {
+                mail_msg(getCurrentUser());
 /*    #ifdef NINE_BUILD
             time_t now, timeout;
             char ans[3];
@@ -3854,12 +3854,12 @@ int Goodbye()
 
                 now = time(0);
                 sprintf(title, "[%12.12s] 所有讯息备份", ctime(&now) + 4);
-                mail_file(currentuser->userid, fname, currentuser->userid, title, BBSPOST_MOVE);
+                mail_file(getCurrentUser()->userid, fname, getCurrentUser()->userid, title, BBSPOST_MOVE);
 #ifdef NINE_BUILD
             }
 #endif*/
         } else
-            clear_msg(currentuser->userid);
+            clear_msg(getCurrentUser()->userid);
         fp = fopen("friendbook", "r");  /*搜索系统 寻人名单 */
         while (fp != NULL && fgets(buf, sizeof(buf), fp) != NULL) {
             char uid[14];
@@ -3873,7 +3873,7 @@ int Goodbye()
             strcpy(uid, ptr);
             ptr = strstr(uid, "\n");
             *ptr = '\0';
-            if (!strcmp(uid, currentuser->userid))      /*删除本用户的 寻人名单 */
+            if (!strcmp(uid, getCurrentUser()->userid))      /*删除本用户的 寻人名单 */
                 del_from_file("friendbook", buf);       /*寻人名单只在本次上线有效 */
         }
         if (fp)                                                                                        /*---	add by period 2000-11-11 fix null hd bug	---*/
@@ -3953,12 +3953,12 @@ void RemoveAppendedSpace(char *ptr)
 
 int i_read_mail()
 {
-    if(!HAS_PERM(currentuser, PERM_BASIC)||!strcmp(currentuser->userid, "guest")) return DONOTHING;
+    if(!HAS_PERM(getCurrentUser(), PERM_BASIC)||!strcmp(getCurrentUser()->userid, "guest")) return DONOTHING;
     if (HAS_MAILBOX_PROP(&uinfo, MBP_MAILBOXSHORTCUT))
     	MailProc();
     else
     	m_read();
-    setmailcheck(currentuser->userid);
+    setmailcheck(getCurrentUser()->userid);
     return FULLUPDATE;
 }
 
@@ -4105,7 +4105,7 @@ static int set_acl_list_key(struct _select_def *conf, int key)
     case 'W':
     case 'w':
         oldmode = uinfo.mode;
-        if (!HAS_PERM(currentuser, PERM_PAGE))
+        if (!HAS_PERM(getCurrentUser(), PERM_PAGE))
             break;
         s_msg();
         modify_user_mode(oldmode);
@@ -4155,7 +4155,7 @@ int set_ip_acl()
 
     clear();
     getdata(3, 0, "请输入你的密码: ", buf, 39, NOECHO, NULL, true);
-    if (*buf == '\0' || !checkpasswd2(buf, currentuser)) {
+    if (*buf == '\0' || !checkpasswd2(buf, getCurrentUser())) {
         prints("\n\n很抱歉, 您输入的密码不正确。\n");
         pressanykey();
         return 0;
@@ -4164,7 +4164,7 @@ int set_ip_acl()
     acl = (struct acl_struct *) malloc(sizeof(struct acl_struct)*ACL_MAX);
     aclt=0;
     bzero(acl, sizeof(struct acl_struct)*ACL_MAX);
-    sethomefile(fn, currentuser->userid, "ipacl");
+    sethomefile(fn, getCurrentUser()->userid, "ipacl");
     fp=fopen(fn, "r");
     if(fp){
         i=0;
@@ -4239,7 +4239,7 @@ int tmpl_init(int mode){
 	int newmode=0;
 	int ret;
 
-	if(mode==1 || chk_currBM(currBM, currentuser)) newmode = 1;
+	if(mode==1 || chk_currBM(currBM, getCurrentUser())) newmode = 1;
 
 	ret = orig_tmpl_init(currboard->filename, newmode, & ptemplate);
 
@@ -4768,7 +4768,7 @@ int m_template()
 	POINT *pts;
     struct _select_def grouplist_conf;
 
-	if (!chk_currBM(currBM, currentuser)) {
+	if (!chk_currBM(currBM, getCurrentUser())) {
 		return DONOTHING;
 	}
 
@@ -5254,7 +5254,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         return DONOTHING;
     func_arg.delpostnum=(bool)extraarg;
     func_arg.setflag=true;
-    if (!chk_currBM(currBM, currentuser)) {
+    if (!chk_currBM(currBM, getCurrentUser())) {
         return DONOTHING;
     }
     if (arg->mode != DIR_MODE_NORMAL && arg->mode != DIR_MODE_DIGEST)     /* KCN:暂不允许 */
@@ -5336,10 +5336,10 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         fromfirst=true;
         break;
     }
-    bmlog(currentuser->userid, currboard->filename, 14, 1);
+    bmlog(getCurrentUser()->userid, currboard->filename, 14, 1);
 
     if(BM_TOTAL == BMch ){ //作合集
-        sprintf(annpath,"tmp/bm.%s",currentuser->userid);
+        sprintf(annpath,"tmp/bm.%s",getCurrentUser()->userid);
         if(dashf(annpath))unlink(annpath);
         snprintf(buf, 256, "是否保留引文(Y/N/C)? [Y]: ");
         getdata(t_lines - 2, 0, buf, ch, 3, DOECHO, NULL, true);
@@ -5394,14 +5394,14 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         if(strlen(buf) >= STRLEN )buf[STRLEN-1] = 0;
         strcpy(title,buf);
         //post file to the board
-        if(post_file(currentuser,"",annpath,currboard->filename,title,0,2) < 0) {//fail
+        if(post_file(getCurrentUser(),"",annpath,currboard->filename,title,0,2) < 0) {//fail
             sprintf(buf,"发表文章到版面出错!请按任意键退出 << ");
             a_prompt(-1,buf,annpath); //annpath no use
             saveline(t_lines - 2, 1, NULL);
             saveline(t_lines - 3, 1, linebuffer);
         }
         unlink(annpath);
-        sprintf(annpath,"tmp/se.%s",currentuser->userid);
+        sprintf(annpath,"tmp/se.%s",getCurrentUser()->userid);
         unlink(annpath);
         return DIRCHANGED;
     }
@@ -5548,7 +5548,7 @@ int Read()
 
     if (currboard->flag&BOARD_GROUP) return -2;
 #ifdef HAVE_BRC_CONTROL
-    brc_initial(currentuser->userid, currboard->filename);
+    brc_initial(getCurrentUser()->userid, currboard->filename);
 #endif
 
     setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
@@ -5592,8 +5592,8 @@ int Read()
     helpmode = oldhelpmode;
 #endif
     newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", currboard->filename, time(0) - usetime);
-    bmlog(currentuser->userid, currboard->filename, 0, time(0) - usetime);
-    bmlog(currentuser->userid, currboard->filename, 1, 1);
+    bmlog(getCurrentUser()->userid, currboard->filename, 0, time(0) - usetime);
+    bmlog(getCurrentUser()->userid, currboard->filename, 1, 1);
 
     board_setcurrentuser(uinfo.currentboard, -1);
     uinfo.currentboard = 0;

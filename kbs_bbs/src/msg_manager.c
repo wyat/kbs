@@ -154,9 +154,9 @@ static int set_smsg_getdata(struct _select_def *conf,int pos,int len)
 	bzero( s_m, sizeof(struct smsmsg) * BBS_PAGESIZE );
 
 	if( conf->item_count - conf->page_pos < BBS_PAGESIZE )
-		conf->item_count = count_sql_smsmsg( currentuser->userid, sm_dest, 0, 0, sm_type, 0, sm_msgtxt);
+		conf->item_count = count_sql_smsmsg( getCurrentUser()->userid, sm_dest, 0, 0, sm_type, 0, sm_msgtxt);
 
-	i = get_sql_smsmsg(s_m, currentuser->userid, sm_dest, 0, 0, sm_type, 0, conf->page_pos-1, BBS_PAGESIZE,sm_msgtxt,sm_desc);
+	i = get_sql_smsmsg(s_m, getCurrentUser()->userid, sm_dest, 0, 0, sm_type, 0, conf->page_pos-1, BBS_PAGESIZE,sm_msgtxt,sm_desc);
 
 	if( i <= 0){
 
@@ -165,7 +165,7 @@ static int set_smsg_getdata(struct _select_def *conf,int pos,int len)
 		sm_type = -1;
 		sm_msgtxt[0]=0;
 		
-		i = get_sql_smsmsg(s_m, currentuser->userid, sm_dest, 0, 0, sm_type, 0, conf->page_pos-1, BBS_PAGESIZE,sm_msgtxt,sm_desc);
+		i = get_sql_smsmsg(s_m, getCurrentUser()->userid, sm_dest, 0, 0, sm_type, 0, conf->page_pos-1, BBS_PAGESIZE,sm_msgtxt,sm_desc);
 
 		if(i <= 0)
 			return SHOW_QUIT;
@@ -317,7 +317,7 @@ static int set_smsg_key(struct _select_def *conf, int key)
 		}else
 			currentmemo->ud.smsend[0]=0;
 
-		write_userdata( currentuser->userid, &(currentmemo->ud) );
+		write_userdata( getCurrentUser()->userid, &(currentmemo->ud) );
 
 		move(18,0);
 		prints("ÐÞ¸Ä³É¹¦");
@@ -383,8 +383,8 @@ int smsmsg_read()
 
 
 	bzero( s_m, sizeof(struct smsmsg) * BBS_PAGESIZE );
-	group_conf.item_count = count_sql_smsmsg( currentuser->userid, NULL, 0, 0, -1, 0, NULL);
-	i = get_sql_smsmsg(s_m, currentuser->userid, NULL, 0, 0, -1, 0, 0, BBS_PAGESIZE, NULL,sm_desc);
+	group_conf.item_count = count_sql_smsmsg( getCurrentUser()->userid, NULL, 0, 0, -1, 0, NULL);
+	i = get_sql_smsmsg(s_m, getCurrentUser()->userid, NULL, 0, 0, -1, 0, 0, BBS_PAGESIZE, NULL,sm_desc);
 	
 	if(i <= 0){
 		free(s_m);

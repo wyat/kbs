@@ -575,17 +575,17 @@ int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode,session_t*
     /*
     if (uin->mode == WEBEXPLORE) {
         if (send_webmsg(get_utmpent_num(uin), uident, utmpent, 
-						session->currentuser->userid, head.time, msgstr) < 0) {
+						session->getCurrentUser()->userid, head.time, msgstr) < 0) {
             strcpy(msgerr, "无法发送Web消息...");
             return -1;
         }
         if (save_msgtext(uident, &head, msgstr) < 0)
             return -2;
         //save_smsmsg(uident, &head, msgstr, 1);
-        if (strcmp(session->currentuser->userid, uident)&&mode!=3) {
-            if (save_msgtext(session->currentuser->userid, &head2, msgstr) < 0)
+        if (strcmp(session->getCurrentUser()->userid, uident)&&mode!=3) {
+            if (save_msgtext(session->getCurrentUser()->userid, &head2, msgstr) < 0)
                 return -2;
-            //save_smsmsg(session->currentuser->userid, &head2, msgstr, 1) ;
+            //save_smsmsg(session->getCurrentUser()->userid, &head2, msgstr, 1) ;
         }
         return 1;
     }
@@ -605,7 +605,7 @@ int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode,session_t*
     if (strcmp(session->currentuser->userid, uident)&&mode!=3) {
         if (save_msgtext(session->currentuser->userid, &head2, msgstr) < 0)
             return -2;
-        //save_smsmsg(session->currentuser->userid, &head2, msgstr, 1) ;
+        //save_smsmsg(session->getCurrentUser()->userid, &head2, msgstr, 1) ;
     }
 	if( uin->mode == WWW ){
 		uin->mailcheck |= CHECK_MSG;

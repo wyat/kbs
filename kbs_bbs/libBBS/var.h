@@ -40,6 +40,17 @@ extern int logmsqid;
 
 extern struct public_data *publicshm;
 
+/* some other global
+00000000 l     O .bss   00000004 sysconf_ptr
+0000000c l     O .bss   00000004 sysconf_len
+00000004 l     O .bss   00000004 sysconf_buf
+00000008 l     O .bss   00000004 sysconf_key
+00000010 l     O .bss   00000004 sysconf_diff
+00000014 l     O .bss   00000004 sysconf_size
+00000000 l     O .bss   00000004 badword_img
+00000004 l     O .bss   00000004 badimg_time
+00000008 l     O .bss   00000004 badword_img_size
+*/
 struct _sigjmp_stack {
     sigjmp_buf bus_jump;
     struct _sigjmp_stack* next;

@@ -49,9 +49,9 @@ int chkusermail(struct userec *user)
         }
         sum = get_mailusedspace(user, 0) / 1024;
         /*
-         * if(user==session->currentuser)sum=user->usedspace/1024;
+         * if(user==session->getCurrentUser())sum=user->usedspace/1024;
          * else sum = get_sum_records(recmaildir, sizeof(fileheader)); 
-         * if(user!=session->currentuser)sum += get_sum_records(recmaildir, sizeof(fileheader));
+         * if(user!=session->getCurrentUser())sum += get_sum_records(recmaildir, sizeof(fileheader));
          */
         if (num > numlimit || sum > sumlimit)
             return 1;
@@ -380,7 +380,7 @@ char *bbs_readmailfile(char **buf, int *len, void *arg)
     pout = *buf;
     if (pmo->bfirst) {
 
-/*	sprintf(pout,"Reply-To: %s.bbs@%s\r\n\r\n", session->currentuser->userid, email_domain());
+/*	sprintf(pout,"Reply-To: %s.bbs@%s\r\n\r\n", session->getCurrentUser()->userid, email_domain());
 */
         if (pmo->isbig5)
             sprintf(pout, "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=big5\r\nContent-Transfer-Encoding: 8bit\r\nFrom: %s\r\nTo: %s\r\n\r\n",pmo->from,pmo->to);

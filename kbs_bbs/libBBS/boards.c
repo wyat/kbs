@@ -1000,7 +1000,7 @@ int chk_BM_instr(const char BMstr[STRLEN - 1], const char bmname[IDLEN + 2])
     while (1) {
         if (ptr == NULL)
             return false;
-        if (!strcmp(ptr, bmname /*,strlen(session->currentuser->userid) */ ))
+        if (!strcmp(ptr, bmname /*,strlen(session->getCurrentUser()->userid) */ ))
             return true;
         ptr = strtok(NULL, ",: ;|&()\0\n");
     }
