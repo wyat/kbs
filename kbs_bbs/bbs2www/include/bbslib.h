@@ -316,8 +316,6 @@ int add_favboard(char *brdname);
 
 struct boardheader const* getboard(int num);
 
-int isowner(struct userec *user, struct fileheader *fileinfo);
-
 void write_header2(FILE *fp, char *board, char *title, 
 					char *userid, char *username, int anony);
 
