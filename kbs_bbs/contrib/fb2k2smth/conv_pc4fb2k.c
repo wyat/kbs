@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#ifdef PERSONAL_CORP
 #include <sys/stat.h>
 #include <dirent.h>
 #include "bbs.h"
@@ -526,3 +527,10 @@ int add_pc_topic(char *topic, int uid)
 
 	return tid;
 }
+#else
+int main()
+{
+	fprintf(stderr, "You had disabled mysql support.\n");
+	return 0;
+}
+#endif
