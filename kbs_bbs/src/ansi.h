@@ -19,13 +19,13 @@ enum UBBTYPE {UBB_TYPE_IMG,
 
 enum ATTACHMENTTYPE {
 	ATTACH_IMG,
-	ATTACH_SWF,
+	ATTACH_FLASH,
 	ATTACH_OTHERS
 };
 
-#define STATE_SET(s, b) (s |= b)
-#define STATE_CLR(s, b) (s &= ~b)
-#define STATE_ISSET(s, b) (s & b)
+#define STATE_SET(s, b) ((s) |= (b))
+#define STATE_CLR(s, b) ((s) &= ~(b))
+#define STATE_ISSET(s, b) ((s) & (b))
 #define STATE_ZERO(s) (s = 0)
 
 #define STYLE_SET_FG(s, c) (s = (s & ~0x07) | (c & 0x07))
