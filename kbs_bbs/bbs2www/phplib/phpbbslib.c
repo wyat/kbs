@@ -33,6 +33,7 @@ static PHP_FUNCTION(bbs_getboard);
 static PHP_FUNCTION(bbs_checkreadperm);
 static PHP_FUNCTION(bbs_getbname);
 static PHP_FUNCTION(bbs_checkpostperm);
+static PHP_FUNCTION(bbs_postarticle);
 #ifdef HAVE_BRC_CONTROL
 static PHP_FUNCTION(bbs_brcaddread);
 #endif
@@ -113,6 +114,7 @@ static function_entry smth_bbs_functions[] = {
         PHP_FE(bbs_brcaddread, NULL)
 #endif
         PHP_FE(bbs_getboard, NULL)
+		PHP_FE(bbs_postarticle,NULL)
         PHP_FE(bbs_ann_traverse_check, NULL)
         PHP_FE(bbs_ann_get_board, NULL)
         PHP_FE(bbs_getboards, NULL)
@@ -1475,6 +1477,124 @@ static PHP_FUNCTION(bbs_checkpostperm)
     if (user == NULL)
         RETURN_LONG(0);
     RETURN_LONG(haspostperm(user, getboard(boardnum)));
+}
+
+
+/*  function bbs_postarticle(string boardName, string title,string text, long signature, long reid, long outgo,long anony)  
+ *
+ *
+ */
+static PHP_FUNCTION(bbs_postarticle)
+{
+	FILE *fp;
+	char *boardName, *title, *content;
+    char filename[80], dir[80], buf[80], buf2[80],path[80],board[80];
+	int blen, tlen, clen;
+    int r, i, sig;
+	int reid;
+    struct fileheader x, *oldx;
+    bcache_t *brd;
+    int local, anony;
+    /*int filtered = 0;*/
+
+	int ac = ZEND_NUM_ARGS();
+
+    /*
+     * getting arguments 
+     */
+    
+	if (ac != 7 || zend_parse_parameters(7 TSRMLS_CC, "ss/s/llll", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &local,&anony) == FAILURE) {
+		WRONG_PARAM_COUNT;
+
+	} 
+
+    brd = getbcache(boardName);
+    if (currentuser == NULL) {
+
+		RETURN_FALSE;
+  //用户未初始化
+	} 
+    if (brd == 0)
+        RETURN_LONG(-1); //错误的讨论区名称
+    if (brd->flag&BOARD_GROUP)
+        RETURN_LONG(-2); //二级目录版
+    strcpy(board, brd->filename);
+    
+    for (i = 0; i < tlen; i++) {
+        if (title[i] <= 27 && title[i] >= -1)
+            title[i] = ' ';
+    }
+    local = local ? 0 : 1;
+    anony = anony ? 1 : 0;
+    if (tlen == 0)
+        RETURN_LONG(-3); //标题为NULL
+    sprintf(dir, "boards/%s/.DIR", board);
+    if (true == checkreadonly(board) || !haspostperm(currentuser, board))
+        RETURN_LONG(-4); //此讨论区是唯读的, 或是您尚无权限在此发表文章.
+    if (deny_me(currentuser->userid, board) && !HAS_PERM(currentuser, PERM_SYSOP))
+        RETURN_LONG(-5); //很抱歉, 你被版务人员停止了本版的post权利.
+    /*
+    if (abs(time(0) - *(int *) (u_info->from + 36)) < 6) {
+        *(int *) (u_info->from + 36) = time(0);
+        RETURN_LONG(-6); // 两次发文间隔过密, 请休息几秒后再试
+    }
+    *(int *) (u_info->from + 36) = time(0);
+    */
+    sprintf(filename, "tmp/%s.%d.tmp", getcurruserid(), getpid());
+    f_append(filename, unix_string(content));
+    if(reid > 0){
+        int pos;int fd;
+        oldx = (struct fileheader*)emalloc(sizeof(struct fileheader));
+
+		setbfile(path,board,DOT_DIR);
+		fd =open(path,O_RDWR);
+		if(fd < 0) RETURN_LONG(-7); //索引文件不存在
+		get_records_from_id(fd,reid,oldx,1,&pos);
+
+		close(fd);
+        if (pos < 0) {
+    		efree(oldx);
+    		oldx = NULL;
+        }
+        else
+        if (oldx->accessed[1] & FILE_READ)
+           RETURN_LONG(-8); //本文不能回复
+    }
+    else {
+        oldx = NULL;
+    }
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+    if (is_outgo_board(board) && local == 0)
+        local = 0;
+    else
+        local = 1;
+    if (brd->flag&BOARD_ATTACH) {
+#if USE_TMPFS==1
+        snprintf(buf,MAXPATH,"%s/home/%c/%s/%d/upload",TMPFSROOT,toupper(currentuser->userid[0]),
+			currentuser->userid,utmpent);
+#else
+        snprintf(buf,MAXPATH,"%s/%s_%d",ATTACHTMPPATH,currentuser->userid,utmpent);
+#endif
+        r = post_article(board, title, filename, currentuser, fromhost, sig, local, anony, oldx,buf);
+        f_rm(buf);
+    }
+    else
+        r = post_article(board, title, filename, currentuser, fromhost, sig, local, anony, oldx,NULL);
+    if (r < 0)
+        RETURN_LONG(-9) ; //"内部错误，无法发文";
+#ifdef HAVE_BRC_CONTROL
+    brc_update(currentuser->userid);
+#endif
+    if(oldx)
+    	efree(oldx);
+    unlink(filename);
+    if (!junkboard(board)) {
+        currentuser->numposts++;
+        write_posts(currentuser->userid, board, title);
+    }
+    RETURN_LONG(0);
 }
 
 static PHP_FUNCTION(bbs_wwwlogoff)
