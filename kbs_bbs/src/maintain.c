@@ -448,7 +448,6 @@ int m_newbrd()
         clear();
         return -1;
     }
-    reload_boards();
     getdata(7, 0, "是否加入匿名板 (Y/N)? [N]: ", ans, 4, DOECHO, NULL, YEA);
     if (ans[0] == 'Y' || ans[0] == 'y')
         addtofile("etc/anonymous", newboard.filename);
