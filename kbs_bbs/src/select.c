@@ -351,6 +351,12 @@ static int do_select_internal(struct _select_def *conf, int key)
         return (*conf->key_command) (conf, key);
     return SHOW_CONTINUE;
 }
+
+static void adjust_conf(struct _select_def* conf)
+{
+    conf->page_pos=((conf->pos-1)/conf->item_per_page)*conf->item_per_page+1;
+}
+
 int list_select(struct _select_def *conf, int key)
 {
     int ret;
@@ -365,6 +371,7 @@ int list_select(struct _select_def *conf, int key)
 checkret:
 	    switch (ret) {
 	    case SHOW_DIRCHANGE:
+                adjust_conf(conf);
 	        if (conf->get_data) {
 	            ret=(*conf->get_data) (conf, conf->page_pos, conf->item_per_page);
 	            if (ret==SHOW_DIRCHANGE) goto checkret; //possible loop.....

@@ -556,7 +556,7 @@ int countperf(struct userec *udata)
 /*
  * 根据阅读模式 取某版 目录路径 
  */
-char *setbdir(int digestmode, char *buf, char *boardname)
+char *setbdir(int digestmode, char *buf,const  char *boardname)
 {
     char dir[STRLEN];
 
@@ -642,7 +642,7 @@ char *setbpath(char *buf, char *boardname)
     strcat(buf, boardname);
     return buf;
 }
-char *setbfile(char *buf, char *boardname, char *filename)
+char *setbfile(char *buf,const char *boardname,const char *filename)
 {                               /* 取某版下文件 */
     sprintf(buf, "boards/%s/%s", boardname, filename);
     return buf;
@@ -1791,7 +1791,7 @@ int setmailcheck(char *userid)
 	return apply_utmp( (APPLY_UTMP_FUNC) setutmpmailcheck, 0, userid, 0 );
 }
 
-int gen_title(char *boardname )
+int gen_title(const char *boardname )
 {
     struct fileheader mkpost, *ptr1, *ptr2;
     struct flock ldata, ldata2;
