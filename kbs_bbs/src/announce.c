@@ -695,6 +695,21 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg, char
     bool findattach=false;
     struct fileheader savefileheader;
 
+    sprintf(filepath, "tmp/bm.%s", currentuser->userid);
+    ans[0]='N';
+    if (dashf(filepath)) {
+    	if (!nomsg) {
+            sprintf(buf, "要附加在旧暂存档之后吗?(Y/N/C) [Y]: ");
+            a_prompt(-1, buf, ans);
+    	}
+        if ((ans[0] == 'N' || ans[0] == 'n') && (!nomsg)) {
+            ans[0]='N';
+        } else if (((ans[0] == 'C' || ans[0] == 'c')) && (!nomsg))
+            return 1;
+        else {
+            ans[0]='Y';
+        }
+    }
     sprintf(qfile, "boards/%s/%s", key, fileinfo->filename);
     sprintf(filepath, "tmp/se.%s", currentuser->userid);
     outf = fopen(filepath, "w");
@@ -724,13 +739,15 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg, char
 
     fclose(outf);
     memcpy(&savefileheader,fileinfo,sizeof(savefileheader));
+    savefileheader.attachment=0;
     if (fileinfo->attachment) {
         int fsrc,fdst;
         char *src = (char *) malloc(BLK_SIZ);
-        if ((fsrc = open(filepath, O_RDONLY)) >= 0) {
-            fseek(fsrc,fileinfo->attachment,SEEK_SET);
+        if ((fsrc = open(qfile, O_RDONLY)) >= 0) {
+            lseek(fsrc,fileinfo->attachment-1,SEEK_SET);
             sprintf(genbuf,"tmp/bm.%s.attach",currentuser->userid);
-            if ((fdst=open(genbuf,O_WRONLY | O_CREAT, 0600)) >= 0) {
+            if ((fdst=open(genbuf,O_WRONLY | O_CREAT | O_APPEND, 0600)) >= 0) {
+                long ret;
                 do {
                     ret = read(fsrc, src, BLK_SIZ);
                     if (ret <= 0)
@@ -741,9 +758,10 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg, char
             close(fsrc);
         }
         free(src);
-        savefileheader.attachment=0;
     }
-    a_Save(filepath, key, &savefileheader, nomsg,direct,ent);
+    if (ans[0]!='N') /*如果需要附加暂存档，调用a_Save去保存正文。*/
+    	a_Save(filepath, key, &savefileheader, true,NULL,ent);
+    change_post_flag(currBM, currentuser, digestmode, currboard, ent, fileinfo, direct, FILE_IMPORT_FLAG, 0);
     return 1;
 }
 
@@ -778,7 +796,7 @@ int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *
         if (ans[0]=='Y')
             mode=O_APPEND;
         else
-            mode=0;
+            mode=O_TRUNC;
         if (path==NULL) {
             sprintf(buf, "boards/%s/%s", key, fileinfo->filename);
             filepath=buf;
@@ -788,18 +806,17 @@ int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *
             sprintf(genbuf,"tmp/bm.%s.attach",currentuser->userid);
             if ((fdst2=open(board,O_WRONLY | O_CREAT | mode, 0600)) >= 0) {
                 int ret;
-                char *src,pool = (char *) malloc(BLK_SIZ);
+                char *src = (char *) malloc(BLK_SIZ);
                 long saved=0,needsave;
                 if ((fdst1=open(genbuf,O_WRONLY | O_CREAT | mode, 0600)) >= 0) {
-                    src = pool;
                     do {
                         /* read content and save (fileinfo->attachment) bytes */
                         ret = read(fsrc, src, BLK_SIZ);
                         if (ret <= 0)
                             break;
                         if (fileinfo->attachment) {
-                            if (saved+ret>fileinfo->attachment) {
-                                needsave=fileinfo->attachment-saved;
+                            if (saved+ret>fileinfo->attachment-1) {
+                                needsave=fileinfo->attachment-1-saved;
                             } else needsave=ret;
                         } else needsave=ret;
                         saved+=needsave;
@@ -815,13 +832,14 @@ int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *
                         if (ret <= 0)
                             break;
                     } while (write(fdst1, src, ret) > 0);
-                free(pool);
+                free(src);
                 close(fdst1);
             }
             close(fsrc);
         }
     }
     sprintf(buf, "将 boards/%s/%s 存入暂存档", key, fileinfo->filename);
+    if (direct!=NULL)
     change_post_flag(currBM, currentuser, digestmode, currboard, ent, fileinfo, direct, FILE_IMPORT_FLAG, 0);
     a_report(buf);
     if (!nomsg) {
@@ -1059,10 +1077,16 @@ int mode;
                 f_mv(board, fpath);
                 sprintf(fpath2, "tmp/bm.%s.attach", currentuser->userid);
                 if ((fsrc = open(fpath2, O_RDONLY)) != NULL) {
-                    if ((fdst = open(fpath, O_WRONLY | O_CREAT | mode, 0600)) >= 0) {
-                        fstat(fdst,&st);
+                    if ((fdst = open(fpath, O_RDWR , 0600)) >= 0) {
                         char *src = (char *) malloc(BLK_SIZ);
                         long ret;
+                        fstat(fdst,&st);
+                        if (st.st_size>1) {
+                            lseek(fdst,st.st_size-1,SEEK_SET);
+			    read(fdst,src,1);
+			    if (src[0]!='\n')
+                                write(fdst, "\n", 1);
+                        }
                         do {
                             ret = read(fsrc, src, BLK_SIZ);
                             if (ret <= 0)
