@@ -28,6 +28,9 @@ static PHP_FUNCTION(bbs_saveuserdata);
 static PHP_FUNCTION(bbs_checkuserpasswd);
 static PHP_FUNCTION(bbs_setuserpasswd);
 
+static PHP_FUNCTION(bbs_getuserparam);
+static PHP_FUNCTION(bbs_setuserparam);
+
 static PHP_FUNCTION(bbs_getuserlevel);
 static PHP_FUNCTION(bbs_get_today_article_num);
 static PHP_FUNCTION(bbs_searchtitle);
@@ -129,6 +132,8 @@ static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_adduserscore, NULL)
 #endif
 		PHP_FE(bbs_saveuserdata, NULL)
+		PHP_FE(bbs_getuserparam, NULL)
+		PHP_FE(bbs_setuserparam, NULL)
 
 		PHP_FE(bbs_checkuserpasswd, NULL)
 		PHP_FE(bbs_setuserpasswd, NULL)
@@ -659,6 +664,28 @@ static PHP_FUNCTION(bbs_checkpasswd)
         }
     }
     RETURN_LONG(ret);
+}
+
+static PHP_FUNCTION(bbs_getuserparam){
+	if (ZEND_NUM_ARGS() != 0) {
+		WRONG_PARAM_COUNT;
+	}
+	if (currentuser==NULL) {
+		RETURN_FALSE;
+	}
+	RETURN_LONG(currentuser->userdefine);
+}
+
+static PHP_FUNCTION(bbs_setuserparam){
+	int userparam;
+	if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(1 TSRMLS_CC, "l", &userparam) != SUCCESS) {
+		WRONG_PARAM_COUNT;
+	}
+	if (currentuser==NULL) {
+		RETURN_LONG(-1);
+	}
+	currentuser->userdefine=userparam;
+	RETURN_LONG(0);
 }
 
 static PHP_FUNCTION(bbs_wwwlogin)
@@ -3858,6 +3885,8 @@ static PHP_FUNCTION(bbs_fillidinfo)
     RETURN_LONG(0);
 }
 
+#ifdef HAVE_WFORUM
+
 static PHP_FUNCTION(bbs_saveuserdata)
 {
     char*   userid,
@@ -4006,6 +4035,8 @@ static PHP_FUNCTION(bbs_saveuserdata)
     RETURN_LONG(0);
 
 }
+
+#endif
 
 #ifdef HAVE_WFORUM
 /**
