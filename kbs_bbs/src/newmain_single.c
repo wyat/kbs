@@ -173,15 +173,15 @@ void u_enter()
 //    strncpy(uinfo.realname, curruserdata.realname, 20);
     strncpy(uinfo.realname, currentmemo->ud.realname, 20);
     strncpy(uinfo.username, getCurrentUser()->username, 40);
-    utmpent = getnewutmpent(&uinfo);
-    if (utmpent == -1) {
+    getSession()->utmpent = getnewutmpent(&uinfo);
+    if (getSession()->utmpent == -1) {
         prints("人数已满,无法分配用户条目!\n");
         oflush();
         Net_Sleep(20);
         exit(-1);
     }
 
-    getfriendstr(getCurrentUser(),get_utmpent(utmpent), getSession());
+    getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent), getSession());
     listmode = 0;
 }
 
@@ -225,8 +225,8 @@ void u_exit()
     brc_update(getCurrentUser()->userid, getSession());
 #endif
 
-    if (utmpent > 0)
-        clear_utmp(utmpent, usernum, getpid());
+    if (getSession()->utmpent > 0)
+        clear_utmp(getSession()->utmpent, usernum, getpid());
 }
 
 int cmpuids(uid, up)
@@ -274,7 +274,7 @@ void abort_bbs(int signo)
         record_exit_time();
         stay = time(0) - login_start_time;
 /*---	period	2000-10-20	4 debug	---*/
-        newbbslog(BBSLOG_USIES, "AXXED Stay: %3ld (%s)[%d %d]", stay / 60, getCurrentUser()->username, utmpent, usernum);
+        newbbslog(BBSLOG_USIES, "AXXED Stay: %3ld (%s)[%d %d]", stay / 60, getCurrentUser()->username, getSession()->utmpent, usernum);
         u_exit();
     }
     shutdown(0, 2);
@@ -823,7 +823,7 @@ void user_login()
 
     bbslog("user","%s",genbuf);
 /*---	period	2000-10-19	4 debug	---*/
-    newbbslog(BBSLOG_USIES,"ALLOC: [%d %d]", utmpent, usernum);
+    newbbslog(BBSLOG_USIES,"ALLOC: [%d %d]", getSession()->utmpent, usernum);
 /*---	---*/
     started = 1;
     if (USE_NOTEPAD == 1)

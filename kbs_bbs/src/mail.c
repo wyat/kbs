@@ -51,7 +51,7 @@ int chkmail()
     char curmaildir[STRLEN];
 
 	if( CHECK_UENT(uinfo.uid) ){
-		uinfo.mailcheck = utmpshm->uinfo[ utmpent - 1 ].mailcheck;
+		uinfo.mailcheck = utmpshm->uinfo[ getSession()->utmpent - 1 ].mailcheck;
 	}else
 		uinfo.mailcheck = 0;
 
@@ -59,7 +59,7 @@ int chkmail()
 		return ismail;
 	}
 
-	utmpshm->uinfo[ utmpent - 1 ].mailcheck |= CHECK_MAIL;
+	utmpshm->uinfo[ getSession()->utmpent - 1 ].mailcheck |= CHECK_MAIL;
 	uinfo.mailcheck |= CHECK_MAIL;
 
     setmailfile(curmaildir, getCurrentUser()->userid, DOT_DIR);
@@ -1670,7 +1670,7 @@ int g_send()
         case 'i':
             n = 0;
             clear();
-            u = get_utmpent(utmpent);
+            u = get_utmpent(getSession()->utmpent);
             for (i = cnt; i < maxrecp && n < u->friendsnum; i++) {
                 int key;
 
@@ -1910,7 +1910,7 @@ static int do_gsend(char *userid[], char *title, int num)
         struct userec *user;
 
         if (G_SENDMODE == 1)
-            getuserid(uid, get_utmpent(utmpent)->friends_uid[cnt]);
+            getuserid(uid, get_utmpent(getSession()->utmpent)->friends_uid[cnt]);
         else if (G_SENDMODE == 2) {
             if (fgets(buf, STRLEN, mp) != NULL) {
                 if (strtok(buf, " \n\r\t") != NULL)
@@ -1994,7 +1994,7 @@ int ov_send()
     move(1, 0);
     clrtobot();
     move(2, 0);
-    u = get_utmpent(utmpent);
+    u = get_utmpent(getSession()->utmpent);
     prints("寄信给好友名单中的人，目前本站限制仅可以寄给 \033[1m%d\033[m 位。\n", maxrecp);
     if (u->friendsnum <= 0) {
         prints("你并没有设定好友。\n");

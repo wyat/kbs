@@ -594,7 +594,7 @@ void clear_utmp2(int uent)
     if (!uent) {
         if (!CHECK_UENT(uinfo.uid))
             return;
-        uent = utmpent;
+        uent = getSession()->utmpent;
     }
 #endif
     user=getuserbynum(utmpshm->uinfo[uent-1].uid);

@@ -987,7 +987,7 @@ int zsend_attach(int ent, struct fileheader *fileinfo, char *direct)
                 left-=(attach-p)+attach_len-1;
                 p=attach+attach_len-1;
 #if USE_TMPFS==1
-                setcachehomefile(name, getCurrentUser()->userid,utmpent, "attach.tmp");
+                setcachehomefile(name, getCurrentUser()->userid,getSession()->utmpent, "attach.tmp");
 #else
                 gettmpfilename(name, "attach%06d", rand()%100000);
 #endif
@@ -3823,7 +3823,7 @@ int Goodbye()
         /*
          * sprintf( genbuf, "Stay:%3ld (%s)", stay / 60, getCurrentUser()->username ); 
          */
-        newbbslog(BBSLOG_USIES, "EXIT: Stay:%3ld (%s)[%d %d]", stay / 60, getCurrentUser()->username, utmpent, usernum);
+        newbbslog(BBSLOG_USIES, "EXIT: Stay:%3ld (%s)[%d %d]", stay / 60, getCurrentUser()->username, getSession()->utmpent, usernum);
         u_exit();
         started = 0;
     }

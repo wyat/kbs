@@ -574,7 +574,7 @@ int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode,session_t*
     strncpy(head2.id, uident, IDLEN+2);
     /*
     if (uin->mode == WEBEXPLORE) {
-        if (send_webmsg(get_utmpent_num(uin), uident, utmpent, 
+        if (send_webmsg(get_utmpent_num(uin), uident, getSession()->utmpent, 
 						session->getCurrentUser()->userid, head.time, msgstr) < 0) {
             strcpy(msgerr, "无法发送Web消息...");
             return -1;

@@ -83,12 +83,12 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     void detach_utmp(ARG_VOID);
     int getnewutmpent(struct user_info *up);
     int real_getnewutmpent(struct user_info *up);
-#define CHECK_UENT(uident) ((utmpent > 0 && utmpent <= USHM_SIZE ) && \
-			(utmpshm->uinfo[ utmpent - 1 ].uid==(uident)))
+#define CHECK_UENT(uident) ((getSession()->utmpent > 0 && getSession()->utmpent <= USHM_SIZE ) && \
+			(utmpshm->uinfo[ getSession()->utmpent - 1 ].uid==(uident)))
 #define UPDATE_UTMP(field,entp) { if (CHECK_UENT((entp).uid)) \
-			utmpshm->uinfo[ utmpent- 1 ].field=(entp).field; }
+			utmpshm->uinfo[ getSession()->utmpent- 1 ].field=(entp).field; }
 #define UPDATE_UTMP_STR(field,entp) { if (CHECK_UENT((entp).uid)) \
-			strcpy(utmpshm->uinfo[ utmpent- 1 ].field,(entp).field); }
+			strcpy(utmpshm->uinfo[ getSession()->utmpent- 1 ].field,(entp).field); }
     int search_ulist(struct user_info *uentp, int (*fptr) (int, struct user_info *), int farg); /* ulist 中 search 符合fptr函数的 user */
 #if 0
     void clear_utmp2(struct user_info *uentp);

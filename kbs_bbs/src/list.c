@@ -181,7 +181,7 @@ int fill_userlist()
 #endif
     } else {
         struct user_info* u;
-	u=get_utmpent(utmpent);
+	u=get_utmpent(getSession()->utmpent);
         for (i = 0; i < u->friendsnum; i++) {
             if (u->friends_uid[i])
                 apply_utmpuid((APPLY_UTMP_FUNC) full_utmp, u->friends_uid[i], (char *) &i2);
@@ -827,7 +827,7 @@ int t_friends()
 
     modify_user_mode(FRIEND);
     friendmode = true;
-    if (get_utmpent(utmpent)->friendsnum==0) {
+    if (get_utmpent(getSession()->utmpent)->friendsnum==0) {
         move(1, 0);
         clrtobot();
         prints("你尚未利用 Talk -> Override 设定好友名单，所以...\n");

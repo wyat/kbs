@@ -267,7 +267,7 @@ void check_register_info()
 //    invalid_realmail(getCurrentUser()->userid,curruserdata.realemail,STRLEN - 16);
     invalid_realmail(getCurrentUser()->userid,currentmemo->ud.realemail,STRLEN - 16);
 
-    do_after_login(getCurrentUser(),utmpent,0);
+    do_after_login(getCurrentUser(),getSession()->utmpent,0);
 
     /*    if( sysconf_str( "IDENTFILE" ) != NULL ) {  commented out by netty to save time */
     while (strlen(getCurrentUser()->username) < 2) {

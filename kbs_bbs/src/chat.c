@@ -1104,7 +1104,7 @@ void chat_friends(chatcontext * pthis, const char *arg)
     pthis->apply_buf = genbuf;
     pthis->apply_buf[0] = 0;
     num = 0;
-    u=get_utmpent(utmpent);
+    u=get_utmpent(getSession()->utmpent);
     for (i = 0; i < u->friendsnum; i++) {
         num +=
             apply_utmpuid((APPLY_UTMP_FUNC) print_friend_ent,
