@@ -15,6 +15,7 @@ static unsigned char third_arg_force_ref_1111[] = { 4, BYREF_FORCE, BYREF_FORCE,
 static unsigned char third_arg_force_ref_011[] = { 3, BYREF_NONE, BYREF_FORCE, BYREF_FORCE };
 static unsigned char fourth_arg_force_ref_0001[] = { 4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE };
 
+static PHP_FUNCTION(bbs_getnumofsig);
 static PHP_FUNCTION(bbs_postmail);
 static PHP_FUNCTION(bbs_mailwebmsgs);
 static PHP_FUNCTION(bbs_getwebmsgs);
@@ -103,6 +104,7 @@ static PHP_FUNCTION(bbs_getthreads);
  * define what functions can be used in the PHP embedded script
  */
 static function_entry smth_bbs_functions[] = {
+	    PHP_FE(bbs_getnumofsig, NULL)
 		PHP_FE(bbs_postmail, NULL)
 		PHP_FE(bbs_mailwebmsgs, NULL)
 		PHP_FE(bbs_getwebmsgs, NULL)
@@ -460,6 +462,36 @@ static PHP_FUNCTION(bbs_countuser)
     RETURN_LONG(apply_utmpuid(NULL, idx, 0));
 }
 
+static PHP_FUNCTION(bbs_getnumofsig){
+    FILE *fp;
+    char tmp[256];
+    int count = 0;
+	int sigln;
+    char signame[STRLEN];
+	int numofsig;
+
+    getcwd(old_pwd, 1023);
+    chdir(BBSHOME);
+    old_pwd[1023] = 0;
+	if (ZEND_NUM_ARGS()!=0) {
+		WRONG_PARAM_COUNT;
+	}
+	if (currentuser==NULL) 
+		RETURN_LONG(-1);
+    sethomefile(signame, currentuser->userid, "signatures");
+
+    if ((fp = fopen(signame, "r")) == NULL)
+        RETURN_LONG(0);
+    while (fgets(tmp, sizeof(tmp), fp) != NULL)
+        count++;
+    fclose(fp);
+    sigln = count;
+    numofsig = sigln / 6;
+    if ((sigln % 6) != 0)
+        numofsig += 1;
+	RETURN_LONG(numofsig);
+}
+
 static PHP_FUNCTION(bbs_checkpasswd)
 {
     char *s;
@@ -702,6 +734,7 @@ static PHP_FUNCTION(bbs_printansifile)
         close(fd);
         RETURN_LONG(2);
     }
+
     ptr = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     close(fd);
     if (ptr == NULL)
