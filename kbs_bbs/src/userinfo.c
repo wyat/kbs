@@ -20,7 +20,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-
+/* KCN modified 2001.5.10 */
 #include "bbs.h"
 
 extern time_t   login_start_time;
