@@ -656,6 +656,13 @@ attach define
 #define ATTACHTMPPATH "boards/_attach"
 #endif
 
+/*
+ * max amount of attachments in one article
+ */
+#ifndef MAXATTACHMENTCOUNT
+#define MAXATTACHMENTCOUNT	20
+#endif
+
 #ifndef WWW_PAGE_SIZE //www的每页条目数
 #define WWW_PAGE_SIZE 20
 #endif

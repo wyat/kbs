@@ -37,6 +37,7 @@
  */
 #define DOTIMEOUT 1
 
+#define MAXATTACHMENTCOUNT 20
 /* 
  *    These are moot if DOTIMEOUT is commented; leave them defined anyway. 
  */
