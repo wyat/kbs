@@ -256,9 +256,9 @@ void unlock_sem_check(int lockid);
     struct boardheader const *getboard(int num);
     int set_board(int bid, struct boardheader *board, struct boardheader *oldbh);
     struct BoardStatus *getbstatus(int index);  /* 获得版面的发文状态结构 */
-    int updatelastpost(char *board);
-    int setboardmark(char *board, int i);
-    int setboardorigin(char *board, int i);
+    int updatelastpost(const char *board);
+    int setboardmark(const char *board, int i);
+    int setboardorigin(const char *board, int i);
     int setboardtitle(const char *board, int i);
     int board_setreadonly(const char *board, int readonly);   /* 设置版面只读属性 */
     int get_nextid(char *boardname);    /*生成文章索引号并自动加一 */
@@ -320,7 +320,7 @@ void unlock_sem_check(int lockid);
     int haspostperm(const struct userec *user,const char *bname);  /* 判断在 bname版 是否有post权 */
     int chk_BM_instr(const char BMstr[STRLEN - 1], const char bmname[IDLEN + 2]);       /*查询字符串中是否包含 bmname */
     int chk_currBM(const char BMstr[STRLEN - 1], struct userec *user);  /* 根据输入的版主名单 判断user是否有版主 权限 */
-    int deldeny(struct userec *user, char *board, char *uident, int notice_only);       /* 删除 禁止POST用户 */
+    int deldeny(struct userec *user, char *board, char *uident, int notice_only, session_t* session);       /* 删除 禁止POST用户 */
     int check_read_perm(struct userec *user, const struct boardheader *board);
     int check_see_perm(struct userec *user, const struct boardheader *board);
     int is_outgo_board(const char *board);
@@ -352,7 +352,7 @@ void unlock_sem_check(int lockid);
 	 * 功能：依据key, 对ptr传入的.DIR索引进行二分查找
 	 */
 	int Search_Bin(struct fileheader*ptr, int key, int start, int end);
-    int delete_range(struct write_dir_arg* dirarg,int id1,int id2,int del_mode,int curmode,const struct boardheader* board);
+    int delete_range(struct write_dir_arg* dirarg,int id1,int id2,int del_mode,int curmode,const struct boardheader* board, session_t* session);
 
     /*
      * mmap_search_dir_apply
@@ -397,14 +397,14 @@ void unlock_sem_check(int lockid);
 
     int Origin2(char text[256]);
 /*加入edit mark*/
-    int add_edit_mark(char *fname, int mode, char *title);
+    int add_edit_mark(char *fname, int mode, char *title, session_t* session);
     int get_postfilename(char *filename, char *direct, int use_subdir);
     int mail_file(char *fromid, char *tmpfile, char *userid, char *title, int unlink, struct fileheader *fh);
     int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int unlink);     /*peregrine */
     int update_user_usedspace(int delta, struct userec *user);
     int getmailnum(char *recmaildir);
     int isowner(struct userec *user, struct fileheader *fileinfo);
-    int do_del_post(struct userec *user, struct write_dir_arg* delarg,struct fileheader *fileinfo, char *board, int digestmode, int decpost);
+    int do_del_post(struct userec *user, struct write_dir_arg* delarg,struct fileheader *fileinfo, char *board, int digestmode, int decpost, session_t* session);
     /*
      * 删除文章，digestmode定义阅读模式，decpost表示斑竹删除是否减文章数 
      */
@@ -415,24 +415,24 @@ void unlock_sem_check(int lockid);
     void addsignature(FILE * fp, struct userec *user, int sig); /*增加User的签名挡 */
 
 /*添加  POST 最后一行 的来源*/
-    void add_loginfo(char *filepath, struct userec *user, char *currboard, int Anony);
+    void add_loginfo(char *filepath, struct userec *user, char *currboard, int Anony, session_t* session);
 
 /* 把quote_file复制到filepath (转贴或自动发信)*/
-    void getcross(char *filepath, char *quote_file, struct userec *user, int in_mail, char *board, char *title, int Anony, int mode, int local_article, char *sourceboard);
+    void getcross(char *filepath, char *quote_file, struct userec *user, int in_mail, char *board, char *title, int Anony, int mode, int local_article, char *sourceboard, session_t* session);
 
-    void write_header(FILE * fp, struct userec *user, int in_mail, char *board, char *title, int Anony, int mode);
+    void write_header(FILE * fp, struct userec *user, int in_mail, char *board, char *title, int Anony, int mode, session_t* session);
 
 /*写入.post文件供分析*/
     int write_posts(char *id, char *board, unsigned int groupid);
-    void cancelpost(const char *board, const char *userid, struct fileheader *fh, int owned, int autoappend);
-    int outgo_post(struct fileheader *fh, char *board, char *title);
-    int after_post(struct userec *user, struct fileheader *fh, char *boardname, struct fileheader *re, int poststat);
-    int post_file(struct userec *user, char *fromboard, char *filename, char *nboard, char *posttitle, int Anony, int mode);
-    int post_cross(struct userec *user, char *toboard, char *fromboard, char *title, char *filename, int Anony, int in_mail, char islocal, int mode);   /* (自动生成文件名) 转贴或自动发信 */
+    void cancelpost(const char *board, const char *userid, struct fileheader *fh, int owned, int autoappend, session_t* session);
+    int outgo_post(struct fileheader *fh, char *board, char *title, session_t* session);
+    int after_post(struct userec *user, struct fileheader *fh, char *boardname, struct fileheader *re, int poststat, session_t* session);
+    int post_file(struct userec *user, char *fromboard, char *filename, char *nboard, char *posttitle, int Anony, int mode, session_t* session);
+    int post_cross(struct userec *user, char *toboard, char *fromboard, char *title, char *filename, int Anony, int in_mail, char islocal, int mode, session_t* session);   /* (自动生成文件名) 转贴或自动发信 */
 
     int dele_digest(char *dname, const char *boardname);
     int change_post_flag(struct write_dir_arg* dirarg,int currmode, struct boardheader*board,
-        struct fileheader *fileinfo, int flag,struct fileheader * data,bool dobmlog);
+        struct fileheader *fileinfo, int flag,struct fileheader * data,bool dobmlog, session_t* session);
 
 
 /**
@@ -444,7 +444,7 @@ void unlock_sem_check(int lockid);
  * @return flag character of the article
  * @author flyriver
  */
-    char get_article_flag(struct fileheader *ent, struct userec *user, char *boardname, int is_bm);
+    char get_article_flag(struct fileheader *ent, struct userec *user, char *boardname, int is_bm, session_t* session);
     time_t get_posttime(const struct fileheader *fileinfo);
     void set_posttime(struct fileheader *fileinfo);
     char* checkattach(char *buf, long size,long *len,char** attachptr);
@@ -588,17 +588,17 @@ int pc_logs(struct pc_logs *pn);
     void get_mail_limit(struct userec *user, int *sumlimit, int *numlimit);
 
 /* bbs_sendmail.c */
-    int mail_buf(struct userec*fromuser, char *mail_buf, char *userid, char *title);
+    int mail_buf(struct userec*fromuser, char *mail_buf, char *userid, char *title, session_t* session);
     int chkusermail(struct userec *user);
     int chkreceiver(struct userec *fromuser, struct userec *touser);
     int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5, int noansi,session_t* session);
     int check_query_mail(char qry_mail_dir[STRLEN]);
 /* convcode.c */
-    void conv_init(ARG_VOID);
+    void conv_init(session_t* session);
 
 /* libann.c */
     void ann_add_item(MENU * pm, ITEM * it);
-    int ann_load_directory(MENU * pm);
+    int ann_load_directory(MENU * pm, session_t* session);
     ITEM *ann_alloc_items(size_t num);
     void ann_free_items(ITEM * it, size_t num);
     void ann_set_items(MENU * pm, ITEM * it, size_t num);
@@ -606,14 +606,14 @@ int pc_logs(struct pc_logs *pn);
     int ann_get_path(char *board, char *path, size_t len);
 	int valid_fname(char *str);
     void a_additem(MENU* pm,const char* title,const char* fname,char* host,int port,long attachpos);    /* 产生ITEM object,并初始化 */
-    int a_loadnames(MENU* pm);             /* 装入 .Names */
+    int a_loadnames(MENU* pm, session_t* session);             /* 装入 .Names */
     int a_savenames(MENU* pm);             /*保存当前MENU到 .Names */
     void a_freenames(MENU * pm);
-    int save_import_path(char ** i_path,char ** i_title,time_t* i_path_time );
-    void load_import_path(char ** i_path,char ** i_title, time_t* i_path_time,int * i_path_select);
+    int save_import_path(char ** i_path,char ** i_title,time_t* i_path_time, session_t* session );
+    void load_import_path(char ** i_path,char ** i_title, time_t* i_path_time,int * i_path_select, session_t* session);
     void free_import_path(char ** i_path,char ** i_title,time_t* i_path_time);
-	int linkto(char *path,const char *fname,const char *title);
-	int add_grp(const char group[STRLEN],const char bname[STRLEN],const char title[STRLEN],const char gname[STRLEN]);
+	int linkto(char *path,const char *fname,const char *title, session_t* session);
+	int add_grp(const char group[STRLEN],const char bname[STRLEN],const char title[STRLEN],const char gname[STRLEN], session_t* session);
 
 /* check the user's access for the path
   return < 0 deny access
@@ -642,7 +642,7 @@ int orig_tmpl_save(struct a_template * ptemp, int temp_num, char *board);
     
 /* register */
 #ifdef HAVE_TSINGHUA_INFO_REGISTER
-int auto_register(char* userid,char* email,int msize);
+int auto_register(char* userid,char* email,int msize, session_t* session);
 #endif
 
 /* libc */
@@ -670,8 +670,13 @@ unsigned int byte2long(byte arg[4]);
 void long2byte(unsigned int num, byte* arg);
 #endif
 
-/* var.c*/
+/* lvar.c*/
+#ifndef THREADSAFE
+extern session_t g_session;
+#define getSession() (&g_session)
+#else
 session_t * getSession();
+#endif
 void init_sessiondata(session_t* session);
 #ifdef __cplusplus
 }

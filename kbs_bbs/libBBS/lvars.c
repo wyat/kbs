@@ -17,8 +17,8 @@ int logmsqid = -1;
 
 struct public_data *publicshm;
 
-#ifndef THREAD
-session_t session;
+#ifndef THREADSAFE
+session_t g_session;
 #endif
 void init_sessiondata(session_t * session)
 {
@@ -49,7 +49,3 @@ void init_sessiondata(session_t * session)
     session->utmpent=-1;
 }
 
-session_t* getSession()
-{
-  return &session;
-}

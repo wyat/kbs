@@ -8,7 +8,7 @@ const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const char seccode[SECNUM][5] = {
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C",
 };
-const char    *groups[] = {
+const char  *groups[] = {
     "system.faq",
     "thu.faq",
     "univ.faq",
@@ -41,7 +41,7 @@ const char secname[SECNUM][2][20] = {
     {"电脑技术", "[专项技术]"},
 };
 
-const char    *explain[] = {
+const char  *explain[] = {
     "本站系统",
     "清华大学",
     "校园信息",

@@ -174,7 +174,7 @@ int mgrep_str(char *text, int num,struct pattern_image* patt_img, session_t* ses
         m_short((unsigned char *)text, 0, num-1, patt_img, session);
     else
         monkey1(text, 0, num-1, patt_img, session);
-    return getSession()->num_of_matched;
+    return session->num_of_matched;
 }                               /* end mgrep */
 
 static int countline(text, len)
