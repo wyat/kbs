@@ -801,7 +801,7 @@ readdoent(char* buf,int num,struct fileheader* ent)  /* 在文章列表中 显示 一篇文
 
 	manager = (HAS_PERM(currentuser,PERM_OBOARDS)||(chk_currBM(currBM,currentuser))) ;
 
-    type = brc_unread( ent->filename ) ? cUnreadMark : ' ';
+    type = brc_unread( FILENAME2POSTTIME(ent->filename) ) ? cUnreadMark : ' ';
     if ((ent->accessed[0] & FILE_DIGEST) /*&& HAS_PERM(currentuser,PERM_MARKPOST)*/)
     {  /* 文摘模式 判断 */
         if (type == ' ')
@@ -2939,7 +2939,7 @@ sequent_messages(struct fileheader *fptr,int* continue_flag)
     if(readpost){
         if(idc < sequent_ent)
             return 0;
-        if( !brc_unread( fptr->filename ) )  return 0; /*已读 则 返回*/
+        if( !brc_unread(FILENAME2POSTTIME( fptr->filename) ) )  return 0; /*已读 则 返回*/
         if (*continue_flag != 0) {
             genbuf[ 0 ] = 'y';
         } else {

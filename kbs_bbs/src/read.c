@@ -1164,7 +1164,7 @@ case KEY_UP:case 'u':case'U':
 case 0: case 1: case 2:
             break;
         case 3:
-            if(brc_unread( SR_fptr.filename ))
+            if(brc_unread( FILENAME2POSTTIME(SR_fptr.filename) ))
                 return -1;
             else
                 break;
