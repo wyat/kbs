@@ -1055,6 +1055,7 @@ int read_userdata(const char *userid, struct userdata *ud)
     if ((fd = open(datafile, O_RDONLY, 0644)) < 0) {
         if ((fd = open(datafile, O_WRONLY | O_CREAT, 0644)) < 0)
             return -1;
+	bzero(ud,sizeof(ud));
         strncpy(ud->userid, userid, sizeof(ud->userid) - 1);
         ud->userid[sizeof(ud->userid) - 1] = '\0';
         write(fd, ud, sizeof(struct userdata));

@@ -24,6 +24,11 @@ static PHP_FUNCTION(bbs_setuserscore);
 static PHP_FUNCTION(bbs_adduserscore);
 #endif
 
+static PHP_FUNCTION(bbs_checkuserpasswd);
+static PHP_FUNCTION(bbs_setuserpasswd);
+
+static PHP_FUNCTION(bbs_getuserlevel);
+static PHP_FUNCTION(bbs_get_today_article_num);
 static PHP_FUNCTION(bbs_searchtitle);
 static PHP_FUNCTION(bbs_getnumofsig);
 static PHP_FUNCTION(bbs_postmail);
@@ -81,6 +86,7 @@ static PHP_FUNCTION(bbs_update_uinfo);
 static PHP_FUNCTION(bbs_createnewid);
 static PHP_FUNCTION(bbs_fillidinfo);
 static PHP_FUNCTION(bbs_createregform);
+static PHP_FUNCTION(bbs_createregform_wbbs);
 static PHP_FUNCTION(bbs_findpwd_check);
 static PHP_FUNCTION(bbs_delfile);
 static PHP_FUNCTION(bbs_delmail);
@@ -122,6 +128,10 @@ static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_setuserscore, NULL)
 		PHP_FE(bbs_adduserscore, NULL)
 #endif
+		PHP_FE(bbs_checkuserpasswd, NULL)
+		PHP_FE(bbs_setuserpasswd, NULL)
+		PHP_FE(bbs_getuserlevel, NULL)
+		PHP_FE(bbs_get_today_article_num, NULL)
 		PHP_FE(bbs_searchtitle, NULL)
 	    PHP_FE(bbs_getnumofsig, NULL)
 		PHP_FE(bbs_postmail, NULL)
@@ -183,6 +193,7 @@ static function_entry smth_bbs_functions[] = {
         PHP_FE(bbs_update_uinfo, NULL)
         PHP_FE(bbs_createnewid,NULL)
 	PHP_FE(bbs_createregform,NULL)
+	PHP_FE(bbs_createregform_wbbs,NULL)
 	PHP_FE(bbs_findpwd_check,NULL)
         PHP_FE(bbs_fillidinfo,NULL)
         PHP_FE(bbs_delfile,NULL)
@@ -276,6 +287,41 @@ static void assign_user(zval * array, struct userec *user, int num)
 	add_assoc_long(array,"money", user->money);
 	add_assoc_long(array,"score", user->score);
 	#endif
+
+	#ifdef HAVE_BIRTHDAY
+	add_assoc_long(array,"gender",ud.gender);
+	add_assoc_long(array,"birthyear",ud.birthyear);
+    add_assoc_long(array,"birthmonth",ud.birthmonth);
+    add_assoc_long(array,"birthday", ud.birthday);
+	#endif
+
+    add_assoc_string(array,"reg_email",ud.reg_email,1);
+    add_assoc_long(array,"mobilderegistered", ud.mobileregistered);
+    add_assoc_string(array, "mobilenumber", ud.mobilenumber,1);
+
+#ifdef HAVE_WBBS
+    add_assoc_string(array,"OICQ",ud.OICQ,1);
+    add_assoc_string(array,"ICQ",ud.ICQ,1);
+    add_assoc_string(array,"MSN", ud.MSN,1);
+    add_assoc_string(array,"homepage",ud.homepage,1);
+    add_assoc_long(array,"userface_img", ud.userface_img);
+	add_assoc_string(array,"userface_url", ud.userface_url,1);
+	add_assoc_long(array,"userface_width", ud.userface_width);
+	add_assoc_long(array,"userface_height", ud.userface_height);
+	add_assoc_long(array,"group",ud.group);
+    add_assoc_string(array,"country", ud.country,1);
+    add_assoc_string(array,"province", ud.province,1);
+    add_assoc_string(array,"city",ud.city,1);
+    add_assoc_long(array,"shengxiao",ud.shengxiao);
+    add_assoc_long(array,"bloodtype", ud.bloodtype);
+    add_assoc_long(array,"religion",ud.religion);
+    add_assoc_long(array,"profession",ud.profession);
+    add_assoc_long(array,"married",ud.married);
+    add_assoc_long(array,"education", ud.education);
+    add_assoc_string(array,"graduateschool",ud.graduateschool,1);
+    add_assoc_long(array,"character", ud.character);
+#endif
+
 }
 static int foundInArray(unsigned int content, unsigned int array[], unsigned int len){
 	int i;
@@ -515,6 +561,66 @@ static PHP_FUNCTION(bbs_getnumofsig){
 	RETURN_LONG(numofsig);
 }
 
+static PHP_FUNCTION(bbs_setuserpasswd){
+    char *s;
+    int s_len;
+    char *pw;
+    int pw_len;
+    long ret;
+    int unum;
+    struct userec *user;
+
+    getcwd(old_pwd, 1023);
+    chdir(BBSHOME);
+    old_pwd[1023] = 0;
+    if (zend_parse_parameters(2 TSRMLS_CC, "ss", &s, &s_len, &pw, &pw_len) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    if (s_len > IDLEN)
+        s[IDLEN] = 0;
+    if (pw_len > PASSLEN)
+        pw[PASSLEN] = 0;
+	if (pw_len < 2) {
+		RETURN_LONG(-1);
+	}
+    if ( !(unum = getuser(s, &user))) {
+        RETURN_LONG(-2);
+    }
+	setpasswd(pw, user);
+    RETURN_LONG(0);
+}
+
+static PHP_FUNCTION(bbs_checkuserpasswd){
+    char *s;
+    int s_len;
+    char *pw;
+    int pw_len;
+    long ret;
+    int unum;
+    struct userec *user;
+
+    getcwd(old_pwd, 1023);
+    chdir(BBSHOME);
+    old_pwd[1023] = 0;
+    if (zend_parse_parameters(2 TSRMLS_CC, "ss", &s, &s_len, &pw, &pw_len) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    if (s_len > IDLEN)
+        s[IDLEN] = 0;
+    if (pw_len > PASSLEN)
+        pw[PASSLEN] = 0;
+	if (pw_len < 2) {
+		RETURN_LONG(-1);
+	}
+    if ( !(unum = getuser(s, &user))) {
+        RETURN_LONG(-2);
+    }
+	   if ( !checkpasswd2(pw, user)) {
+        RETURN_LONG(-3);
+    }
+    RETURN_LONG(0);
+}
+
 static PHP_FUNCTION(bbs_checkpasswd)
 {
     char *s;
@@ -584,6 +690,21 @@ static PHP_FUNCTION(bbs_wwwlogin)
     }
     setcurrentuinfo(pu, utmpent);
     RETURN_LONG(ret);
+}
+static PHP_FUNCTION(bbs_getuserlevel){
+    struct userec* u;
+	char* user;
+	int uLen;
+	char title[10];
+    if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &user, &uLen) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (getuser(user, &u)==0) {
+		RETURN_LONG(-1);
+	}
+	uleveltochar(title,u);
+	title[9]=0;
+	RETURN_STRINGL(title,strlen(title),1);
 }
 #ifdef HAVE_USERMONEY
 static PHP_FUNCTION(bbs_getusermoney){
@@ -961,8 +1082,8 @@ static PHP_FUNCTION(bbs_searchtitle)
     if (ZEND_NUM_ARGS() != 9 || zend_parse_parameters(9 TSRMLS_CC, "sssssllll", &board, &bLen,&title,&tLen, &title2, &tLen2, &title3, &tLen3,&author, &aLen, &date,&mmode,&attach,&origin) != SUCCESS) {
             WRONG_PARAM_COUNT;
     }
-    if (date < 0)
-        date = 0;
+    if (date <= 0)
+        date = 9999;
     if (date > 9999)
         date = 9999;
     if ((bp = getbcache(board)) == NULL) {
@@ -1616,8 +1737,28 @@ static PHP_FUNCTION(bbs_mailwebmsgs){
 	RETURN_TRUE;
 }
 
+static unsigned int binarySearchInFileHeader(struct fileheader *start,int total, unsigned int key){
+	unsigned int low, high ,mid, found;
+	int comp;
+	low = 0;
+	high = total - 1;
+	found=-1;
+	while (low <= high) {
+		mid = (high + low) / 2;
+		comp = (key) - (start[mid].id);
+		if (comp == 0) {
+			found=mid;
+			break;
+		} else if (comp < 0)
+			high = mid - 1;
+		else
+			low = mid + 1;
+	}
+	return found;
+}
+
 /**
- * 反序获取从start开始的num个版面主题
+ * 获取从start开始的num个版面主题
  * prototype:
  * array bbs_getthreads(char *board, int start, int num);
  *
@@ -1649,6 +1790,7 @@ static PHP_FUNCTION(bbs_getthreads)
 	struct flock ldata;
 	struct fileheader *ptr1;
 	char* ptr;
+	unsigned int long found;
 
 
     /*
@@ -1713,23 +1855,8 @@ static PHP_FUNCTION(bbs_getthreads)
 
 	for (i=total-1;i>=0;i--) {
 		if (foundInArray(ptr1[i].groupid,IDList,threadsFounded)==-1)	{
-			unsigned int low, high ,mid, found;
-			int comp;
-			low = 0;
-			high = total - 1;
-			found=-1;
-			while (low <= high) {
-				mid = (high + low) / 2;
-				comp = (ptr1[i].groupid) - (ptr1[mid].id);
-				if (comp == 0) {
-					found=mid;
-					break;
-				} else if (comp < 0)
-					high = mid - 1;
-				else
-					low = mid + 1;
-			}
-			if (found==-1) continue;
+
+			if ((found=binarySearchInFileHeader(ptr1,total,ptr1[i].groupid))==-1) continue;
 			IDList[threadsFounded]=ptr1[i].groupid;
 			threadsFounded++;
 			if ((threadsFounded-1)>=start){
@@ -1796,6 +1923,7 @@ static PHP_FUNCTION(bbs_get_thread_articles)
 	struct flock ldata;
 	struct fileheader *ptr1;
 	char* ptr;
+	unsigned int found;
 
 
     /*
@@ -1857,33 +1985,31 @@ static PHP_FUNCTION(bbs_get_thread_articles)
 
 	articlesFounded=0;
 
-
-	for (i=total-1;i>=0;i--) {
-		if (ptr1[i].groupid==groupid)	{
-			articlesFounded++;
-			if ((articlesFounded-1)>=start){
-				MAKE_STD_ZVAL(element);
-				array_init(element);
-				flags[0] = get_article_flag(ptr1+i, currentuser, board, is_bm);
-				if (is_bm && (ptr1[i].accessed[0] & FILE_IMPORTED))
-					flags[1] = 'y';
-				else
-					flags[1] = 'n';
-				if (ptr1[i].accessed[1] & FILE_READ)
-					flags[2] = 'y';
-				else
-					flags[2] = 'n';
-				if (ptr1[i].attachment)
-					flags[3] = '@';
-				else
-					flags[3] = ' ';
-				bbs_make_article_array(element, ptr1+i, flags, sizeof(flags));
-				zend_hash_index_update(Z_ARRVAL_P(return_value), articlesFounded-1-start, (void *) &element, sizeof(zval *), NULL);
-				if (articlesFounded>=num+start){
-					break;
-				}
-				if (ptr1[i].id==groupid) {
-					break;
+	if ( (found=binarySearchInFileHeader(ptr1,total,ptr1[i].groupid))!=-1) {
+		for (i=total-1;i>=found;i--) {
+			if (ptr1[i].groupid==groupid)	{
+				articlesFounded++;
+				if ((articlesFounded-1)>=start){
+					MAKE_STD_ZVAL(element);
+					array_init(element);
+					flags[0] = get_article_flag(ptr1+i, currentuser, board, is_bm);
+					if (is_bm && (ptr1[i].accessed[0] & FILE_IMPORTED))
+						flags[1] = 'y';
+					else
+						flags[1] = 'n';
+					if (ptr1[i].accessed[1] & FILE_READ)
+						flags[2] = 'y';
+					else
+						flags[2] = 'n';
+					if (ptr1[i].attachment)
+						flags[3] = '@';
+					else
+						flags[3] = ' ';
+					bbs_make_article_array(element, ptr1+i, flags, sizeof(flags));
+					zend_hash_index_update(Z_ARRVAL_P(return_value), articlesFounded-1-start, (void *) &element, sizeof(zval *), NULL);
+					if (articlesFounded>=num+start){
+						break;
+					}
 				}
 			}
 		}
@@ -1892,6 +2018,99 @@ static PHP_FUNCTION(bbs_get_thread_articles)
     ldata.l_type = F_UNLCK;
     fcntl(fd, F_SETLKW, &ldata);        /* 退出互斥区域*/
     close(fd);
+}
+
+static PHP_FUNCTION(bbs_get_today_article_num){
+    char *board;
+    int blen;
+    int total;
+    struct boardheader *bp;
+	char dirpath[STRLEN];
+    int i;
+    zval *element;
+    int is_bm;
+    char flags[4];              /* flags[0]: flag character
+                                 * flags[1]: imported flag
+                                 * flags[2]: no reply flag
+                                 * flags[3]: attach flag
+                                 */
+    int ac = ZEND_NUM_ARGS();
+	unsigned int articleNums;
+	int fd;
+	struct stat buf;
+	struct flock ldata;
+	struct fileheader *ptr1;
+	char* ptr;
+	time_t now;
+	struct tm nowtm;
+
+    /*
+     * getting arguments 
+     */
+    if (ac != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &board, &blen) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+    /*
+     * checking arguments 
+     */
+    if (currentuser == NULL) {
+        RETURN_LONG(-2);
+    }
+    if ((bp = getbcache(board)) == NULL) {
+        RETURN_LONG(-3);
+    }
+    is_bm = is_BM(bp, currentuser);
+    setbdir(DIR_MODE_NORMAL, dirpath, board);
+
+    if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
+        RETURN_LONG(-4);   
+    ldata.l_type = F_RDLCK;
+    ldata.l_whence = 0;
+    ldata.l_len = 0;
+    ldata.l_start = 0;
+    fcntl(fd, F_SETLKW, &ldata);
+	fstat(fd, &buf);
+    total = buf.st_size / sizeof(struct fileheader);
+
+    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+        if (i == 2)
+            end_mmapfile((void *) ptr, buf.st_size, -1);
+        ldata.l_type = F_UNLCK;
+        fcntl(fd, F_SETLKW, &ldata);
+        close(fd);
+        RETURN_LONG(-5);
+    }
+    ptr1 = (struct fileheader *) ptr;
+    /*
+     * fetching articles 
+     */
+    if (array_init(return_value) == FAILURE) {
+        RETURN_LONG(-6);
+    }
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+
+	articleNums=0;
+
+	now=time(NULL);
+	gmtime_r(&now,&nowtm);
+	nowtm.tm_sec=0;
+	nowtm.tm_min=0;
+	nowtm.tm_hour=0;
+	now=mktime(&nowtm);
+
+	for (i=total-1;i>=0;i--) {
+		if (get_posttime(ptr1+i)<now)
+			break;
+		articleNums++;
+	}
+    end_mmapfile((void *) ptr, buf.st_size, -1);
+    ldata.l_type = F_UNLCK;
+    fcntl(fd, F_SETLKW, &ldata);        /* 退出互斥区域*/
+    close(fd);
+	RETURN_LONG(articleNums);
 }
 
 /**
@@ -1926,6 +2145,7 @@ static PHP_FUNCTION(bbs_get_thread_article_num)
 	struct flock ldata;
 	struct fileheader *ptr1;
 	char* ptr;
+	unsigned int found;
 
 
     /*
@@ -1981,13 +2201,11 @@ static PHP_FUNCTION(bbs_get_thread_article_num)
 
 	articleNums=0;
 
-
-	for (i=total-1;i>=0;i--) {
-		if (ptr1[i].id==groupid) {
-			break;
+	if ( (found=binarySearchInFileHeader(ptr1,total,groupid))!=-1) {
+		for (i=found+1;i<total;i++) {
+			if (ptr1[i].groupid==groupid)
+				articleNums++;
 		}
-		if (ptr1[i].groupid==groupid)
-			articleNums++;
 	}
     end_mmapfile((void *) ptr, buf.st_size, -1);
     ldata.l_type = F_UNLCK;
@@ -3637,6 +3855,238 @@ static PHP_FUNCTION(bbs_fillidinfo)
     RETURN_LONG(0);
 }
 
+
+/**
+ * Function: Create a registry form
+ *  rototype:
+ * int bbs_createregform_wbbs(string userid ,string realname,string dept,string address,int gender,int year,int month,int day,
+    string email,string phone,string mobile_phone,string OICQ, string ICQ, string MSN, string homepage, int userface_img,
+	string userface_url,int userface_width, int userface_height, int group, string country ,string province, string city,
+	int shengxiao, int bloodtype, int religion , int profession, int married, int education, string graduate_school,
+	int character,	bool bAuto)
+ *
+ *  bAuto : true -- 自动生成注册单,false -- 手工.
+ *  @return the result
+ *  	0 -- success,
+ *      1 -- 注册单尚未处理
+ *      2 -- 参数错误
+ *      3 -- 用户不存在
+ *      4 -- 用户已经通过注册  5 -- 不到时间
+ *  	10 -- system error
+ *  @author binxun 2003.5
+ */
+static PHP_FUNCTION(bbs_createregform_wbbs)
+{
+    char*   userid,
+	    *   realname,
+        *   dept,
+        *   address,
+		*	email,
+		*	phone,
+		*   mobile_phone,
+		* OICQ, 
+		* ICQ, 
+		* MSN, 
+		* homepage,
+		* userface_url,
+		* country,
+		* province,
+		* city,
+		* graduate_school;
+    int     userid_len,
+	        realname_len,
+	        dept_len,
+			address_len,
+			email_len,
+			phone_len,
+			mobile_phone_len,
+			OICQ_len,
+			ICQ_len,
+			MSN_len,
+			homepage_len,
+			userface_url_len,
+			country_len,
+			province_len,
+			city_len,
+			graduate_school_len,
+			gender,
+	        year,
+	        month,
+			day,
+			userface_img,
+			userface_width,
+			userface_height, 
+			group,
+			shengxiao,
+			bloodtype,
+			religion ,
+			profession, 
+			married, 
+			education,
+			character;
+    zend_bool   bAuto;
+	struct  userdata ud;
+	struct  userec* uc;
+	FILE*   fn;
+	char    genbuf[STRLEN+1];
+	char*   ptr;
+	int     usernum;
+	long    now;
+
+    int ac = ZEND_NUM_ARGS();
+
+
+	if (ac != 32 || zend_parse_parameters(32 TSRMLS_CC, "ssssllllssssssslslllsssllllllslb", &userid,&userid_len,&realname,&realname_len,&dept,&dept_len,
+	    &address,&address_len,&gender,&year,&month,&day,&email,&email_len,&phone,&phone_len,&mobile_phone,&mobile_phone_len,
+		&OICQ, &OICQ_len, &ICQ, &ICQ_len, &MSN, &MSN_len, &homepage, &homepage_len, &userface_img,
+		&userface_url, &userface_url_len, &userface_width, &userface_height, &group, &country, &country_len,
+		&province, &province_len, &city, &city_len, &shengxiao, &bloodtype, &religion, &profession,
+		&married, &education, &graduate_school, &graduate_school_len, &character,&bAuto) == FAILURE)
+    {
+		WRONG_PARAM_COUNT;
+	}
+
+	if(userid_len > IDLEN)RETURN_LONG(2);
+
+    usernum = getusernum(userid);
+	if(0 == usernum)RETURN_LONG(3);
+
+	if ( (userface_width<0) || (userface_width>120) ){
+		RETURN_LONG(-1);
+	}
+	if ( (userface_height<0) || (userface_height>120) ){
+		RETURN_LONG(-2);
+	}
+	if (userface_url_len!=0) {
+		userface_img=-1;
+	}
+
+	if(!bAuto)
+	{
+        //检查用户是否已经通过注册或者还不到时间(先放到这里,最好放到php里面)
+	    if(getuser(userid,&uc) == 0)RETURN_LONG(3);
+		if(HAS_PERM(uc,PERM_LOGINOK))RETURN_LONG(4);
+		/* remed by roy 2003.7.17 
+		if(time(NULL) - uc->firstlogin < REGISTER_WAIT_TIME)RETURN_LONG(5);
+		*/
+	    //检查是否单子已经填过了
+		if ((fn = fopen("new_register", "r")) != NULL) {
+			while (fgets(genbuf, STRLEN, fn) != NULL) {
+				if ((ptr = strchr(genbuf, '\n')) != NULL)
+					*ptr = '\0';
+				if (strncmp(genbuf, "userid: ", 8) == 0 && strcmp(genbuf + 8, userid) == 0) {
+					fclose(fn);
+					RETURN_LONG(1);
+				}
+			}
+			fclose(fn);
+		}
+    }
+	read_userdata(userid, &ud);
+    strncpy(ud.realname, realname, NAMELEN);
+    strncpy(ud.address, address, STRLEN);
+	strncpy(ud.reg_email,email,STRLEN);
+	strncpy(ud.OICQ,OICQ,STRLEN);
+	strncpy(ud.ICQ,ICQ,STRLEN);
+	strncpy(ud.MSN,MSN,STRLEN);
+	strncpy(ud.homepage,homepage,STRLEN);
+	strncpy(ud.userface_url,userface_url,STRLEN);
+	strncpy(ud.country,country,STRLEN);
+	strncpy(ud.province,province,STRLEN);
+	strncpy(ud.city,city,STRLEN);
+	strncpy(ud.graduateschool,graduate_school,STRLEN);
+	ud.OICQ[STRLEN-1]=0;
+	ud.ICQ[STRLEN-1]=0;
+	ud.MSN[STRLEN-1]=0;
+	ud.homepage[STRLEN-1]=0;
+	ud.userface_url[STRLEN-1]=0;
+	ud.country[STRLEN-1]=0;
+	ud.province[STRLEN-1]=0;
+	ud.city[STRLEN-1]=0;
+	ud.graduateschool[STRLEN-1]=0;
+    ud.realname[NAMELEN-1] = '\0';
+	ud.address[STRLEN-1] = '\0';
+	ud.reg_email[STRLEN-1] = '\0';
+
+    if(strcmp(mobile_phone,"")){
+	    ud.mobileregistered = true;
+		strncpy(ud.mobilenumber,mobile_phone,MOBILE_NUMBER_LEN);
+		ud.mobilenumber[MOBILE_NUMBER_LEN-1] = '\0';
+	}
+    else{
+    	ud.mobileregistered = false;
+    	}
+    
+#ifdef HAVE_BIRTHDAY
+    ud.birthyear=(year > 1900 && year < 2050)?(year-1900):0;
+	ud.birthmonth=(month >=1 && month <=12)?month:0;
+	ud.birthday=(day>=1 && day <=31)?day:0;
+	if(gender==1)ud.gender='M';
+	else
+	    ud.gender='F';
+#endif
+	ud.userface_img=userface_img;
+	ud.userface_width=userface_width;
+	ud.userface_height=userface_height;
+	ud.group=group;
+	ud.shengxiao=shengxiao;
+	ud.bloodtype=bloodtype;
+	ud.religion=religion;
+	ud.profession=profession;
+	ud.married=married;
+	ud.education=education;
+	ud.character=character;
+	write_userdata(userid, &ud);
+
+#ifdef NEW_COMERS
+	{
+	FILE *fout;
+	char buf2[STRLEN],buf[STRLEN];
+	sprintf(buf, "tmp/newcomer.%s",uc->userid);
+		if ((fout = fopen(buf, "w")) != NULL)
+		{
+			fprintf(fout, "大家好,\n\n");
+			fprintf(fout, "我是 %s (%s), 来自 %s\n", uc->userid,
+					uc->username, fromhost);
+			fprintf(fout, "今天%s初来此站报到, 请大家多多指教。\n",
+#ifdef HAVE_BIRTHDAY
+					(ud.gender == 'M') ? "小弟" : "小女子");
+#else
+                                        "小弟");
+#endif
+			fprintf(fout, "\n\n我是www注册用户~~~\n\n");
+			fclose(fout);
+			sprintf(buf2, "新手上路: %s", uc->username);
+			post_file(uc, "", buf, "newcomers", buf2, 0, 2);
+			unlink(buf);
+		}
+	}
+#endif
+
+	sprintf(genbuf,"%d.%d.%d",year,month,day);
+	if(bAuto)
+        fn = fopen("pre_register", "a");
+	else
+	    fn = fopen("new_register", "a");
+
+    if (fn) {
+        now = time(NULL);
+        flock(fileno(fn),LOCK_EX);
+        fprintf(fn, "usernum: %d, %s", usernum, ctime(&now));
+        fprintf(fn, "userid: %s\n", userid);
+        fprintf(fn, "realname: %s\n", realname);
+        fprintf(fn, "career: %s\n", dept);
+        fprintf(fn, "addr: %s\n", address);
+        fprintf(fn, "phone: %s\n", phone);
+        fprintf(fn, "birth: %s\n", genbuf);
+        fprintf(fn, "----\n");
+        flock(fileno(fn),LOCK_UN);
+        fclose(fn);
+        RETURN_LONG(0);
+    }
+	else
+        RETURN_LONG(10);
+}
 /**
  * Function: Create a registry form
  *  rototype:
@@ -3743,6 +4193,31 @@ static PHP_FUNCTION(bbs_createregform)
 	    ud.gender='F';
 #endif
 	write_userdata(userid, &ud);
+
+#ifdef NEW_COMERS
+	{
+	FILE *fout;
+	char buf2[STRLEN],buf[STRLEN];
+	sprintf(buf, "tmp/newcomer.%s",uc->userid);
+		if ((fout = fopen(buf, "w")) != NULL)
+		{
+			fprintf(fout, "大家好,\n\n");
+			fprintf(fout, "我是 %s (%s), 来自 %s\n", uc->userid,
+					uc->username, fromhost);
+			fprintf(fout, "今天%s初来此站报到, 请大家多多指教。\n",
+#ifdef HAVE_BIRTHDAY
+					(ud.gender == 'M') ? "小弟" : "小女子");
+#else
+                                        "小弟");
+#endif
+			fprintf(fout, "\n\n我是www注册用户~~~\n\n");
+			fclose(fout);
+			sprintf(buf2, "新手上路: %s", uc->username);
+			post_file(uc, "", buf, "newcomers", buf2, 0, 2);
+			unlink(buf);
+		}
+	}
+#endif
 
 	sprintf(genbuf,"%d.%d.%d",year,month,day);
 	if(bAuto)

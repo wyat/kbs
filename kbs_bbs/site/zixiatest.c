@@ -693,30 +693,44 @@ int auto_register(char* userid,char* email,int msize)
 
 /* user score, add by roy 2003.7.23 */
 #ifdef HAVE_USERMONEY
-   unsigned int get_score(struct userec *user){
-	   return user->score;
+int get_score(struct userec *user){
+	return user->score;
 }
-   unsigned int set_score(struct userec *user, unsigned int score){
-	   unsigned int old_score=user->score;
-	   user->score=score;
-	   return old_score;
+int set_score(struct userec *user, int score){
+	unsigned int old_score=user->score;
+	if (score<0) {
+		   return -1;
+	}
+	user->score=score;
+	return old_score;
 }
-   unsigned int add_score(struct userec *user, unsigned int score_addition){
-	   unsigned int old_score=user->score;
-	   user->score+=score_addition;
-	   return old_score;
+int add_score(struct userec *user, int score_addition){
+	unsigned int new_score;
+	new_score=user->score+score_addition;
+	if (new_score<0){
+		return -1;
+	};
+	user->score=new_score;
+	return user->score;
 }
-   unsigned int get_money(struct userec *user){
+int get_money(struct userec *user){
 	return user->money;
 }
-   unsigned int set_money(struct userec *user, unsigned int money){
-	   unsigned int old_money=user->money;
-	   user->money=money;
-	   return old_money;
+int set_money(struct userec *user, int money){
+	unsigned int old_money=user->money;
+	if (money<0) {
+			return -1;
+	}
+	user->money=money;
+	return old_money;
 }
-  unsigned int add_money(struct userec *user, unsigned int money_addition){
-	  unsigned int old_money;
-	  user->money+=money_addition;
-	  return old_money;
+int add_money(struct userec *user, int money_addition){
+	unsigned int new_money;
+	new_money=user->money+money_addition;
+	if (new_money<0) {
+			return -1;
+	}
+	user->money=money_addition;
+	return user->money;
 }
 #endif

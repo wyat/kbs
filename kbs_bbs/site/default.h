@@ -53,6 +53,10 @@
 #undef HAVE_REVERSE_DNS
 #endif
 
+#if HAVE_WBBS != 1
+#undef HAVE_WBBS /* wbbs 支持 */
+#endif
+
 #ifndef CHINESE_CHARACTER /*汉字整字处理,缺省使能*/
 #define CHINESE_CHARACTER
 #else
