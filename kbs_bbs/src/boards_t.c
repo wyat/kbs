@@ -31,7 +31,6 @@ extern int     brdnum;
 extern int yank_flag;
 extern char    *boardprefix;
 extern int     favbrd_list[FAVBOARDNUM+1];
-extern int     brc_list[ BRC_MAXNUM ], brc_num;
 
 void
 EGroup( cmd )
@@ -680,9 +679,10 @@ case 'n': case 'j': case KEY_DOWN:
                 /* if (-1 != load_boards())
                    qsort( nbrd, brdnum, sizeof( nbrd[0] ), cmpboard ); */
 
-                if( zapbuf[ ptr->pos ] > 0 && brc_num > 0 ) {
+				/* 他想把zap版面的时间定义为上次阅读的时间，但是没有使用
+                if( zapbuf[ ptr->pos ] > 0 ) 
                     zapbuf[ ptr->pos ] = brc_list[0];
-                }
+		    	*/
                 ptr->total = page = -1;
                 modify_user_mode( newflag ? READNEW : READBRD );
                 break;

@@ -1036,7 +1036,7 @@ char *direct ;
 #else
     ch = ansimore(genbuf,YEA) ; /* 显示文章内容 */
 #endif
-    brc_addlist( fileinfo->filename ) ;
+    brc_add_read( fileinfo->filename ) ;
 #ifndef NOREPLY
     move(t_lines-1, 0);
     clrtoeol();  /* 清屏到行尾 */
@@ -1192,7 +1192,7 @@ int ent ;
 struct fileheader *fileinfo ;
 char *direct ;
 {
-    brc_addlist( fileinfo->filename ) ;
+    brc_add_read( fileinfo->filename ) ;
     return GOTO_NEXT;
 }
 
@@ -1877,7 +1877,7 @@ int mode;
         clear() ;
         return 1 ;
     }
-    /* brc_addlist( postfile.filename ) ;*/
+    /* brc_add_read( postfile.filename ) ;*/
 	updatelastpost(currboard);
     if(!mode)       /* 用户post还是自动发信*/
         sprintf(buf,"cross_posted '%s' on '%s'", postfile.title, currboard) ;
@@ -2184,7 +2184,7 @@ post_article()                         /*用户 POST 文章 */
         return FULLUPDATE ;
     }
 	updatelastpost(currboard);
-    brc_addlist( post_file.filename ) ;
+    brc_add_read( post_file.filename ) ;
 
     bbslog("1user","posted '%s' on '%s'", post_file.title, currboard) ;
     /*      postreport(post_file.title, 1, currboard);*/ /*added by alex, 96.9.12*/
@@ -2987,7 +2987,7 @@ sequent_messages(struct fileheader *fptr,int* continue_flag)
 #endif
         clear() ;}
     setbdir( digestmode,genbuf, currboard );
-    brc_addlist( fptr->filename ) ;
+    brc_add_read( fptr->filename ) ;
     /* return 0;  modified by dong , for clear_new_flag(), 1999.1.20
     if (strcmp(CurArticleFileName, fptr->filename) == 0)
         return QUIT;
