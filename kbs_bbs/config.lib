@@ -106,8 +106,8 @@ if test "$PTHREAD_DIR" != "no"; then
     SAVE_LIBS=$LIBS
     LIBS="$LIBS -L$PTHREAD_DIR/lib"
     AC_CHECK_LIB([pthread], [pthread_create], [
-      PTHREAD_LIBS="-L$LIBESMTP_DIR/lib -lpthread"
-      LIBS="$LIBS $PTHREAD_LIBS"
+      PTHREAD_LIBS="-L$LIBPTHREAD_DIR/lib -lpthread"
+      LIBS="$SAVE_LIBS $PTHREAD_LIBS"
     ],[
       LIBS=$SAVE_LIBS
     ])
