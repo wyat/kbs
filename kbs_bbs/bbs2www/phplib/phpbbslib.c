@@ -825,6 +825,7 @@ static PHP_FUNCTION(bbs_printoriginfile)
 	char buf[512],path[512];
     buffered_output_t *out;
 	int i;
+	int skip;
 
     getcwd(old_pwd, 1023);
     chdir(BBSHOME);
@@ -842,14 +843,20 @@ static PHP_FUNCTION(bbs_printoriginfile)
 	}
 	override_default_output(out, buffered_output);
 	override_default_flush(out, flush_buffer);
-    for (i = 0; i < 4; i++)
-        if (skip_attach_fgets(buf, sizeof(buf), fp)==0) break;
-    
+	
+	i=0;    
+	skip=0;
     while (skip_attach_fgets(buf, sizeof(buf), fp) != 0) {
         char tmp[256];
+		i++;
         if (Origin2(buf))
             break;
-
+		if ((i==1) && (strncmp(buf,"·¢ÐÅÈË",6)==0)) {
+			skip=1;
+		}
+		if ((skip) && (i<=4) ){
+			continue;
+		}
         if (!strcasestr(buf, "</textarea>"))
             out->output(buf,strlen(buf),out);
     }

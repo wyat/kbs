@@ -793,9 +793,9 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
 #endif
     write_file2(fp, fp2);
     fclose(fp2);
-#ifndef RAW_ARTICLE
     if (!anony)
         addsignature(fp, user, sig);
+#ifndef RAW_ARTICLE
     add_loginfo2(fp, board, user, anony);       /*添加最后一行 */
 #endif
 

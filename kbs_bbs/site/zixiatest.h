@@ -37,7 +37,6 @@
  */
 #define DOTIMEOUT 1
 
-#define MAXATTACHMENTCOUNT 20
 /* 
  *    These are moot if DOTIMEOUT is commented; leave them defined anyway. 
  */
@@ -51,18 +50,20 @@
 #define SECNUM 10
 #define BBS_PAGE_SIZE 20
 
+#define RAW_ARTICLE 1
+
 #define DEFAULTBOARD    	"zixia.net"//test
 #define FILTER_BOARD        "Filter"
 #define SYSMAIL_BOARD       "sysmail"
-#define MAXUSERS  		1000 //150,000
-#define MAXBOARD  		100//400
-#define MAXCLUB                 32
-#define MAXACTIVE 		150  //3000
+#define MAXUSERS  		400 //150,000
+#define MAXBOARD  		40//400
+#define MAXCLUB                 12
+#define MAXACTIVE 		99  //3000
 /* remeber: if MAXACTIVE>46656 need change get_telnet_sessionid,
     make the number of session char from 3 to 4
     */
-#define MAX_GUEST_NUM		30
-#define WWW_MAX_LOGIN		100 /* 最大www用户数量 */
+#define MAX_GUEST_NUM		50
+#define WWW_MAX_LOGIN		50 /* 最大www用户数量 */
 
 #define POP3PORT		3110	//110
 #define POP3SPORT		995
@@ -84,12 +85,12 @@
 #define SEC_DELETED_OLDHOME	0 	/*  3600*24*30，注册新用户如果存在这个用户的目录，保留时间*/
 
 #define	REGISTER_WAIT_TIME	(30) // (72*60*60)
-#define	REGISTER_WAIT_TIME_NAME	"30秒钟" //72 小时
+#define	REGISTER_WAIT_TIME_NAME	"30秒" //72 小时
 
 #define MAIL_BBSDOMAIN      "bbs.zixia.net"
 #define MAIL_MAILSERVER     "127.0.0.1:25"
 
-#define NAME_BBS_ENGLISH	"http://news.zixia.net:8080" //smth.org
+#define NAME_BBS_ENGLISH	"bbs.zixia.net" //smth.org
 #define	NAME_BBS_CHINESE	"大话西游" //水木清华
 #define NAME_BBS_NICK		"斧头帮" // BBS 站
 #define BBS_FULL_NAME		"BBS 大话西游站"
