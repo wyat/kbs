@@ -1,9 +1,10 @@
 # Process this file with autoconf to produce a configure script.
 #AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
-AC_INIT(smthbbs, 1.1, SYSOP@smth.org)
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
+AC_INIT(smthbbs, 1.2.2, SYSOP@smth.org)
 
 AC_CANONICAL_TARGET
+AM_INIT_AUTOMAKE([foreign dist-bzip2])
+
 case "${host}" in
   i*86-*-freebsd*)
         OSTYPE="FREEBSD"
@@ -36,15 +37,18 @@ AC_PREFIX_DEFAULT(/home/bbs)
 
 m4_include(config.icc)
 
-
+BBSSUBDIRS=
 AC_ARG_ENABLE(innbbsd,
 [  --enable-innbbsd
                 enable innbbsd  support(need innbbsd package)],
 [
 	if test "$enableval" = "yes" ; then
-	        if test -d innbbsd; then
-        	        AC_CONFIG_SUBDIRS(innbbsd)
-	        else
+            if test -d innbbsd; then
+                    BBS_LIB_ICONV
+                    AC_CONFIG_FILES(innbbsd/Makefile
+                                    innbbsd/linkinnd.sh)
+                    BBSSUBDIRS="$BBSSUBDIRS innbbsd"
+            else
         	        AC_MSG_ERROR([can't find innbbsd package,please get it first!])
 	        fi
 	fi
@@ -56,7 +60,8 @@ AC_ARG_ENABLE(ssh,
 [
 	if test "$enableval" = "yes" ; then
 		if test -d sshbbsd; then
-			AC_CONFIG_SUBDIRS(sshbbsd)
+            AC_CONFIG_SUBDIRS(sshbbsd)
+            BBSSUBDIRS="$BBSSUBDIRS sshbbsd"
 		else
 			AC_MSG_ERROR([can't find sshbbsd package,please get it first!])
 		fi
@@ -73,17 +78,24 @@ AC_ARG_ENABLE(www,
 [
 	if test "$enableval" = "yes" ; then
 		if test -d bbs2www; then
-			AC_CONFIG_SUBDIRS(bbs2www)
+            AC_CONFIG_FILES([bbs2www/Makefile
+                             bbs2www/lib/Makefile
+                             bbs2www/phplib/Makefile
+                             bbs2www/phplib/config.m4
+                             bbs2www/src/Makefile])
+            BBSSUBDIRS="$BBSSUBDIRS bbs2www"
 		else
 			AC_MSG_ERROR([can't find bbs2www package,please get it first!])
 		fi
 		CONFIG_HAVE_WWW=1
-        else
-		CONFIG_HAVE_WWW=0
-	fi
+    else
+        CONFIG_HAVE_WWW=0
+    fi
 ])
 AC_SUBST(CONFIG_HAVE_WWW)
+AC_SUBST(BBSSUBDIRS)
 
+m4_include(bbs2www.in)
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -116,11 +128,20 @@ AC_FUNC_ALLOCA
 AC_FUNC_FORK
 AC_FUNC_GETLOADAVG
 AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
+if test "$cross_compiling" != "yes" ; then
+  AC_FUNC_MALLOC
+  AC_FUNC_MEMCMP
+else
+  dnl A quick and dirty workaround.
+  AC_DEFINE(HAVE_MALLOC,1,[ ])
+  AC_DEFINE(HAVE_MEMCMP,1,[ ])
+fi
 AC_FUNC_MKTIME
 AC_FUNC_MMAP
-AC_FUNC_SETPGRP
+dnl In cross compiling we can not check setpgrp().
+if test "$cross_compiling" != "yes" ; then
+  AC_FUNC_SETPGRP
+fi
 AC_FUNC_SETVBUF_REVERSED
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
@@ -158,7 +179,7 @@ AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
+AC_PROG_YACC
 m4_include(config.lib)
 
 # Checks for libraries.

@@ -7,7 +7,7 @@ int main()
 {
     int i, no = 0;
     char brd[100], buf[256];
-    bcache_t *bc;
+    boardheader_t *bc;
 
     init_all();
     bc = getbcacheaddr();

@@ -598,7 +598,7 @@ int post_mail(char *userid, char *title, char *file, char *id, char *nickname, c
     fprintf(fp, "寄信人: %s (%s)\n", id, nickname);
     fprintf(fp, "标  题: %s\n", title);
     fprintf(fp, "发信站: %s (%s)\n", BBSNAME, wwwCTime(time(0)));
-    fprintf(fp, "来  源: %s\n\n", SHOW_USERIP(currentuser, ip));
+    fprintf(fp, "来  源: %s\n\n", ip);
     if (fp2) {
         while (fgets(buf3, 256, fp2) != NULL) {
             fprintf2(fp, buf3);
@@ -670,7 +670,7 @@ void add_loginfo2(FILE * fp, char *board, struct userec *user, int anony)
      * 由Bigman增加:2000.8.10 Announce版匿名发文问题 
      */
     if (!strcmp(board, "Announce"))
-        fprintf(fp, "\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, BBS_FULL_NAME);
+        fprintf(fp, "\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, NAME_BBS_ENGLISH, NAME_BBS_CHINESE " BBS站");
     else
         fprintf(fp, "\n\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, NAME_BBS_ENGLISH, (anony) ? NAME_ANONYMOUS_FROM : SHOW_USERIP(currentuser, user->lasthost));
 
@@ -748,6 +748,7 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     fclose(fp2);
     if (!anony)
         addsignature(fp, user, sig);
+    user->signature = sig;
 #ifndef RAW_ARTICLE
     add_loginfo2(fp, board, user, anony);       /*添加最后一行 */
 #endif
@@ -907,7 +908,7 @@ int sig_append(FILE * fp, char *id, int sig)
 
 int has_BM_perm(struct userec *user, char *board)
 {
-    bcache_t *x;
+    boardheader_t *x;
     char buf[256], *bm;
 
     x = getbcache(board);
@@ -1091,7 +1092,7 @@ time_t get_idle_time(struct user_info * uentp)
 }
 
 
-bcache_t *getbcacheaddr()
+boardheader_t *getbcacheaddr()
 {
     return bcache;
 }

@@ -259,8 +259,8 @@ static int read_key(struct _select_def *conf, int command)
   另一个问题，在这里，conf->pos没法设定成filecount,因为此时还没有getdata
 */
                 savePos(arg->mode,arg->direct,conf->pos,arg->board);
-		arg->board=currboard;
-                read_getdata(conf,1,conf->item_per_page);
+                arg->board=currboard;
+                read_getdata(conf,-1,conf->item_per_page);
                 lastpos=getPos(arg->newmode,arg->direct,currboard);
                 if ((lastpos!=0)&&(lastpos<arg->filecount))
                     conf->pos = lastpos;
@@ -410,7 +410,7 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
 	    newbbslog(BBSLOG_DEBUG,"%s pos %d count %d",arg->board->filename,pos,count+dingcount);
             return SHOW_SELCHANGE;
 	}
-	if (pos<=count) {
+	if ((pos!=-1)&&(pos<=count)) {
           if (lseek(arg->fd, arg->ssize * (pos - 1), SEEK_SET) != -1) {
             if ((n = read(arg->fd, arg->data, arg->ssize * len)) != -1) {
                 entry=(n / arg->ssize);
@@ -419,7 +419,7 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
 	}
         
         /* 获得置顶的数据*/
-        if (dingcount) {
+        if (dingcount&&pos!=-1) {
             if (entry!=len) { //需要读入.DING
                 int dingfd;
                 n=0;
@@ -662,7 +662,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
         read_conf.on_size= read_onsize;
         read_conf.key_table = (struct key_translate *)ktab;
 
-        read_getdata(&read_conf,1,read_conf.item_per_page);
+        read_getdata(&read_conf,-1,read_conf.item_per_page);
         if (TDEFINE(TDEF_SPLITSCREEN))
             read_conf.on_selchange= read_showcontent;
         if ((lastpos!=0)&&(lastpos<arg.filecount))

@@ -169,8 +169,6 @@ char *horoscope(int month, int day);
 
 char *ModeType(int mode);
 
-char *cexp(int exp);
-
 char *cperf(int perf);
 
 int countexp(struct userec *x);
@@ -197,7 +195,7 @@ int fprintf2(FILE * fp, char *s);
 
 int get_file_ent(char *board, char *file, struct fileheader *x);
 
-bcache_t *getbcacheaddr();
+boardheader_t *getbcacheaddr();
 
 char *crypt1(char *buf, char *salt);
 

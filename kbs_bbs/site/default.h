@@ -70,22 +70,17 @@
 #undef HAVE_REVERSE_DNS
 #endif
 
+#if HAVE_WFORUM == 0
+#undef HAVE_WFORUM
+#endif
+
 #ifdef HAVE_WFORUM
-#if RAW_ARTICLE == 0
-#undef RAW_ARTICLE
-#endif
-//#ifndef RAW_ARTICLE
-//#define RAW_ARTICLE 1
-//#endif
-
-#ifdef RAW_ARTICLE
-#if RAW_ARTICLE == 0
-#undef RAW_ARTICLE
-#endif
-#endif
-
 #define HAVE_USERMONEY 1
 #define HAVE_BIRTHDAY 1
+#endif
+
+#if RAW_ARTICLE == 0
+#undef RAW_ARTICLE
 #endif
 
 #ifndef CHINESE_CHARACTER /*汉字整字处理,缺省使能*/
@@ -690,6 +685,10 @@ typedef struct fileheader fileheader_t;
 //修改密码之类的页面使用https
 #ifndef SECURE_HTTPS
 #define SECURE_HTTPS
+#else
+#if SECURE_HTTPS == 0
+#undef SECURE_HTTPS
+#endif
 #endif
 
 /**
@@ -792,6 +791,10 @@ attach define
 
 #ifndef QUOTELEV
 #define QUOTELEV 0
+#endif
+
+#ifndef BONLINE_LOGDIR /* 各类 log 在 BBSHOME 下的存放目录 */
+#define BONLINE_LOGDIR "bonlinelog"
 #endif
 
 #endif

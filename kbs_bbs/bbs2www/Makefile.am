@@ -1,8 +1,8 @@
-EXTRA_DIST = README INSTALL include/bbslib.h include/types.h \
-             @HTML_FILES@
+EXTRA_DIST = README INSTALL include/bbslib.h include/types.h xml/* \
+             sites/devel/* sites/fb2k-v2/* \
+             @HTML_FILES@ xml/*
 SUBDIRS = lib phplib src
 CLEANFILES=@EXTRA_CLEAN@
-AM_MAKEFLAGS=@MAKEFLAG@
 
 install-data-local:
 	cp -r html/* @HTMPATH@

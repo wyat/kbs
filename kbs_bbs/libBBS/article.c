@@ -317,7 +317,7 @@ int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct filehead
             if ((int) user->numposts > 0 && !junkboard(board)) {
                     user->numposts--;   /*自己删除的文章，减少post数 */
             }
-        } else if (!strstr(fh.owner, ".") && BMDEL_DECREASE && decpost /*版主删除,减少POST数 */ ) {
+        } else if (!strstr(fh.owner, ".") && BMDEL_DECREASE /*版主删除,减少POST数 */ ) {
                 struct userec *lookupuser;
                 int id = getuser(fh.owner, &lookupuser);
 
@@ -386,7 +386,7 @@ void cancelpost(const char *board,const char *userid,struct fileheader *fh, int 
                 if ((ptr = strrchr(buf, ')')) == NULL)
                     break;
                 *ptr = '\0';
-                if ((ptr = strrchr(buf, '(')) == NULL)
+                if ((ptr = strchr(buf, '(')) == NULL)
                     break;
                 strncpy(from, ptr + 1, sizeof(from) - 1);
                 from[sizeof(from) - 1] = '\0';
@@ -1530,9 +1530,9 @@ int add_edit_mark(char *fname, int mode, char *title)
         if (Origin2(buf) && (!added)) {
             now = time(0);
             if(mode & 1)
-                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %15.15s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
             else
-                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %15.15s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
             step = 3;
             added = 1;
         }
@@ -1543,14 +1543,15 @@ int add_edit_mark(char *fname, int mode, char *title)
     {
         now = time(0);
         if(mode & 1)
-            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %15.15s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
         else
-            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %15.15s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
     }
     fclose(fp);
     fclose(out);
 
-    f_mv(outname, fname);
+    f_cp(outname, fname, O_TRUNC);
+	unlink(outname);
 
     return 1;
 }
@@ -1558,6 +1559,7 @@ int add_edit_mark(char *fname, int mode, char *title)
 char* checkattach(char *buf, long size,long *len,char** attachptr)
 {
     char *ptr;
+	unsigned long att_size;
     if (size<ATTACHMENT_SIZE+sizeof(long)+2)
         return NULL;
     if (memcmp(buf, ATTACHMENT_PAD,ATTACHMENT_SIZE))
@@ -1573,9 +1575,10 @@ char* checkattach(char *buf, long size,long *len,char** attachptr)
     size--;
     if (size<sizeof(long))
         return NULL;
-    *len = ntohl(*(unsigned long*)buf);
+	memcpy(&att_size, buf, sizeof(unsigned long));
+    *len = ntohl(att_size);
     if (*len>size) *len=size;
-    *attachptr=buf+sizeof(long);
+    *attachptr=buf+sizeof(unsigned long);
     return ptr;
 }
 

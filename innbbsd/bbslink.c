@@ -1,5 +1,6 @@
 # include "innbbsconf.h"
 # include "bbslib.h"
+# include "bbs.h"
 # include <stdarg.h>
 
 #include <sys/mman.h>
@@ -27,12 +28,6 @@
 #ifndef MAXBUFLEN
 #define MAXBUFLEN 256
 #endif
-
-//修改mail格式 added by Czz 020419
-#ifndef MY_MAIL_ADDR
-#define	MY_MAIL_ADDR	"feeling-NOsmthSPAM-org"
-#endif
-//added end
 
 typedef struct Over_t {
     time_t mtime;
@@ -128,8 +123,6 @@ static char *LOCAL = "LOCAL";
 static int FD, FD_SIZE;
 static char *FD_BUF = NULL, *FD_BUF_FILTER = NULL;
 static char *FD_END;
-
-char *fileglue();
 
 bbslink_un_lock(file)
 char *file;
@@ -431,8 +424,7 @@ char *board, *filename, *userid, *nickname, *subject;
 #endif
 #endif
             //修改mail格式 modified by Czz 020419
-//      strncpy(FROM_BUF, fileglue("%s.bbs@%s (%s)", userid, MYADDR, nickname), sizeof FROM_BUF);
-            strncpy(FROM_BUF, fileglue("%s@%s (%s)", userid, MY_MAIL_ADDR, nickname), sizeof FROM_BUF);
+            strncpy(FROM_BUF, fileglue("%s@%s-SPAM.no (%s)", userid, MAIL_BBSDOMAIN, nickname), sizeof FROM_BUF);
             //modified end
             FROM = FROM_BUF;
             sover.from = FROM;
@@ -534,7 +526,7 @@ soverview_t *sover;
 
         if (end)
             *end = '\0';
-        strncpy(times, baseN(atol(filename + 2), 48, 6), sizeof times);
+        strncpy(times, baseN(atol(filename + ((filename[1] == '/')?4:2)), 48, 6), sizeof times);
         if (end)
             *end = '.';
         hash = hash_value(fileglue("%s.%s", filename, board));
@@ -931,8 +923,7 @@ char *board, *filename, *userid, *nickname, *subject;
     }
     mtime = -1;
     //修改mail格式 modified by Czz 020419
-//  strncpy(FROM_BUF, fileglue("%s.bbs@%s (%s)", userid, MYADDR, nickname), sizeof FROM_BUF);
-    strncpy(FROM_BUF, fileglue("%s@%s (%s)", userid, MY_MAIL_ADDR, nickname), sizeof FROM_BUF);
+    strncpy(FROM_BUF, fileglue("%s@%s-SPAM.no (%s)", userid, MAIL_BBSDOMAIN, nickname), sizeof FROM_BUF);
     //modified end
     FROM = FROM_BUF;
     sover.from = FROM;
@@ -1620,6 +1611,10 @@ char **argv;
     }
 
     BBSLINK_STAT = (stat_t *) malloc(sizeof(stat_t) * (NLCOUNT + 1));
+    if (BBSLINK_STAT == NULL) {
+        fprintf(stderr, "ft, unable to malloc BBSLINK_STAT.\n");
+        return -1;
+    }
     for (nlcount = 0; nlcount < NLCOUNT; nlcount++) {
         BBSLINK_STAT[nlcount].localsendout = 0;
         BBSLINK_STAT[nlcount].remotesendout = 0;
@@ -1640,6 +1635,10 @@ char **argv;
     if (Verbose) {
         printf("MYADDR: %s\n", MYADDR);
         printf("MYSITE: %s\n", MYSITE);
+    }
+    if (nl == NULL) {
+        fprintf(stderr, "can't find %s in nodelist.bbs\n", MYBBSID);
+        return -1;
     }
     left = strchr(nl->protocol, '(');
     right = strrchr(nl->protocol, ')');
@@ -1827,8 +1826,15 @@ char **argv;
             NODELIST[nlcount].feedfp = NULL;
         }
     }
-    if (BBSLINK_STAT);
     free(BBSLINK_STAT);
+
+    /*
+     * 这两个释放内存看起来是被漏掉了虽然不是必须的。但是不能释放的太早因为全局变量 BODY 一直要用
+     * 这块内存区域 sigh。在这里释放看起来是没什么问题的。- atppp
+     */
+    if (FD_BUF) free(FD_BUF);
+    if (FD_BUF_FILTER) free(FD_BUF_FILTER);
+
     return 0;
 }
 

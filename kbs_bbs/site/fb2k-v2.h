@@ -23,7 +23,12 @@
 #define BUILD_PHP_EXTENSION 1   /*将php lib编成php extension */
 /*#define USE_SEM_LOCK 1*/
 
+#ifdef HAVE_MYSQL_SMTH
 #define PERSONAL_CORP
+#else
+#undef PERSONAL_CORP
+#endif
+
 #define HAVE_WFORUM	1
 #define RAW_ARTICLE 0
 #define FB2000			1
@@ -316,8 +321,8 @@ typedef struct fileheader fileheader_t;
 
 // WWW部分
 
-//修改密码之类的页面使用https
-#define SECURE_HTTPS
+//修改密码之类的页面不使用https
+#define SECURE_HTTPS 0
 
 /**
  * Mailbox properties.

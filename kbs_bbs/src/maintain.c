@@ -1378,6 +1378,7 @@ if (ret==2) {
             /*move(8, 20);*/
 	     move(8,30); /* ÔÙÍùºóÅ²Å²µØ  binxun . 2003.5.30 */
             strncpy(ip, uinfo.lasthost, 17);
+            prints("%s",ip);
             find_ip(ip, 2, result);
             prints("\033[33m%s\033[m", result);
 

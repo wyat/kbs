@@ -386,6 +386,7 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
 {
     int i, w, in_esc = 0, db = 0, lastspace = 0, autoline = 1;
     char *p = p0;
+	unsigned long att_size;
 
     if (size <= 0) {
         if ((oldty==LINE_ATTACHLINK)&&(size==0)) {
@@ -500,7 +501,8 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
             return 0;
         }
         p++;
-        *s = ntohl(*(unsigned long *) p) + p - p0 + sizeof(unsigned long);
+		memcpy(&att_size, p, sizeof(unsigned long));
+        *s = ntohl(att_size) + p - p0 + sizeof(unsigned long);
 	if (oldty==LINE_ATTACHMENT) { /*上次是附件，下一行是附件连接行*/
           *ty=LINE_ATTACHLINK;
           *s--;

@@ -1,0 +1,67 @@
+* smthbbs 1.2.2 stable release. 2005-01-15
+
+  smthbbs-1.2.2 是 smthbbs-1.2 的最新稳定版本，修正了 smthbbs-1.2.1 发布后
+  发现的一些 bug，同时也增强了一些功能，但数据结构则保持不变。建议用户使用
+  smthbbs-1.2.2 稳定版本。
+
+  以下是 smthbbs-1.2.2 相对于 smthbbs-1.2.1 的更新：
+  1. 去掉 bbs2www/ 和 innbbsd/ 目录的 configure 脚本。
+  2. 修正主目录 configure 脚本检测 libesmtp 的错误。
+  3. 增强主目录 configure 脚本 --with-www 参数的错误检测及提示。
+  4. contrib/ 目录增加了 build-cygwin.sh 文件，可在 x86 Linux 下用交叉编译
+     器生成在 cygwin 下运行的 exe 程序及 dll 服务。
+  5. 修正 Solaris 8 SPARC 下发文掉线的错误。
+  6. 修正 Solaris 8 SPARC 下开新版掉线的错误。
+  7. 修改 Solaris 8 SPARC 下无法显示附件的错误。
+  8. 新增 FreeBSD 5.x 支持，在 configure 时必须加上 --without-libesmtp 参数。
+  9. 新增 gcc-3.4.x 的编译支持。
+  10. site/devel.h 中去掉了 #define USE_SEM_LOCK 1。因为代码中 sem lock 功
+     能并不成熟，不建议用户使用该功能。
+
+主页：
+
+http://dev.smth.org
+
+下载地址：
+
+ftp://dev.smth.org/src/smthbbs-1.2.2.tar.gz
+
+CVS:
+
+1. smthbbs-1.2.2 的代码
+   export CVSROOT=:pserver:bbsdev@cvs.smth.org:/home/cvs
+   cvs login (然后输入密码 bbsdev)
+   cvs -z9 co -r v1_2_2 -d smthbbs-1.2.2 smth_bbs
+   cd smthbbs-1.2.2
+   cvs -z9 co -r v1_2_2 sshbbsd
+   cvs -z9 co -r v1_2_2 innbbsd
+   cvs -z9 co -r v1_2_2 bbshome
+
+2. smthbbs-1.2 stable 系列
+   只需将上面的 v1_2_2 替换成 v1_2。
+
+
+* smthbbs 1.2.1 stable release. 2004-08-08 (Happy birthday to SMTH!)
+
+  smthbbs-1.2.1 是 smthbbs-1.2 的后续稳定版本，修正了 smthbbs-1.2 发布后
+  发现的很多 bug，同时也增强了一些功能，但数据结构则保持不变。建议用户使用
+  smthbbs-1.2.1 稳定版本。
+
+  以下是 smthbbs-1.2.1 相对于 smthbbs-1.2 的更新：
+  1. 站点定制文件增加了 fb2k-v2，现在 configure 时用 --enable-site=fb2k-v2
+     不会再出现找不到文件的错误。
+  2. libesmtp 不再是必须安装的软件，现在 configure 的时候能自动检测 libesmtp
+     是否适用，另外还可以用 --without-libesmtp 显式地禁用 libesmtp。
+  3. 新增了 FB2K 移植到 smthbbs-1.2.1 的工具，感谢哈工大紫丁香的支持。
+    (注: smthbbs-1.2 发布包里面的 FB2K -> smthbbs-1.2 是不正确的，请不要使用)
+  4. contrib/ 目录增加了 build-RH9.sh 文件。 
+  5. smthbbs-1.2.1 已经可以在 Solaris 8/9 for X86/SPARC 上正常编译和运行。
+  6. configure 增加交叉编译支持。
+  7. 去掉了精华区搜索代码。需要该代码的用户可从以前的代码包中取得。
+
+  注1: smthbbs 的 cvs 服务器上 v1_2 分支对应 smthbbs-1.2 系列，喜欢用 cvs
+       的用户可以用 cvs 加 -r v1_2 参数获取最新的 smthbbs-1.2 稳定版本。
+
+  注2: smthbbs 的 cvs 服务器上主分支为 smthbbs-2.0 的开发版本，该版本在稳定
+       之后将成为 smthbbs-2.0 稳定版本。目前已经使用 smthbbs-2.0 开发版本的
+       用户，千万不要“降级”到 smthbbs-1.2.1 稳定版本。

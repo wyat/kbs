@@ -75,7 +75,7 @@
         	html_nologin();
         	return;
         }
-        bbs_set_onboard($brcnum,1);
+        bbs_set_onboard($brdnum,1);
 
 	if($loginok == 1)
 		$usernum = $currentuser["index"];

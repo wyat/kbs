@@ -6,7 +6,7 @@
 
 typedef struct user_info uinfo_t;
 
-typedef struct boardheader bcache_t;
+typedef struct boardheader boardheader_t;
 typedef struct friends friends_t;
 
 #include <time.h>

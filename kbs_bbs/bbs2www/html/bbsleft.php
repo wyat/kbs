@@ -4,7 +4,7 @@
 	require("funcs.php");
 	
         $img_subdir = "/images/menuspring/";
-
+        
 	function display_board_list($section_names,$section_nums)
 	{
 ?>
@@ -653,8 +653,9 @@
 	</td>
 </tr>
 </table>
-<p align="center"><a href="http://www.dawning.com.cn/" target="_blank"><img src="/images/dawning.gif" width="120" height="53" border="0" alt="Êï¹â¹«Ë¾"></a></p>
+<script type="text/javascript" src="/bbsleftad.js"> </script>
 <?php
+		
 		html_normal_quit();
 		}
 ?>
