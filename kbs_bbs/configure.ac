@@ -1,9 +1,10 @@
 # Process this file with autoconf to produce a configure script.
 #AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
-AC_INIT(smthbbs, 1.2.2rc, SYSOP@smth.org)
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
+AC_INIT(smthbbs, 1.2.2, SYSOP@smth.org)
 
 AC_CANONICAL_TARGET
+AM_INIT_AUTOMAKE([foreign dist-bzip2])
+
 case "${host}" in
   i*86-*-freebsd*)
         OSTYPE="FREEBSD"
@@ -178,7 +179,6 @@ AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
 AC_PROG_YACC
 m4_include(config.lib)
 
