@@ -27,9 +27,9 @@
 2.2. 我启动 bbsd 时出现“can't lock pid file:var/bbsd.2500.pid”，怎么回事？
 [答复]
   这个问题在比较老的 smthbbs 版本里面会出现，是个 bug，但在最新的 smthbbs
-  snapshot 版本里面已经被修正了。
+  版本里面已经被修正了。
   解决办法如下：
-    a) 下载并安装最新的 smthbbs snapshot，我们建议您这么做；
+    a) 下载并安装最新的 smthbbs，我们建议您这么做；
     b) 如果您确实想用老的 smthbbs 版本，那么可以参照以下步骤：
          cd $(BBSHOME)
          mkdir var
@@ -51,14 +51,17 @@
 (注：在最新版的 smthbbs 代码中已经没有这个限制了)
   c) 如果 libesmtp 是用操作系统自带的软件包安装的，请检查一下您是否安装了相关
      的开发包 (一般会有 libesmtp-devel 或 libesmtp-dev 之类的名字)。
+  d) 对于 smthbbs-1.2.1 以后的版本，不再强制您的系统里面安装了 libesmtp，所以
+     不会再有这个问题。当然，如果您的系统不安装 libesmtp，则必须安装有 sendmail
+     程序。
 
 2.4. 我用的是 smthbbs-1.0.1，configure 通过，但 make 时出错，提示：
   “bbs_sendmail.c:5:22: libesmtp.h: No such file or directory”
   后面还有很多出错信息，看样子都是跟 libesmtp 有关。
 [答复]
   smthbbs-1.0.1 及更早版本的 configure 脚本有 bug，检查 libesmtp 时没有给出
-  足够的出错信息，这个问题在最新的 smthbbs snapshot 版本已经解决。建议您下载
-  并安装最新的 smthbbs snapshot，或者参考问题 2.3 的答复。
+  足够的出错信息，这个问题在最新的 smthbbs 版本已经解决。建议您下载并安装最
+  新的 smthbbs，或者参考问题 2.3 的答复。
 
 2.5. 我执行了 ./bbsd -p 23，但 telnet 127.0.0.1 时却告诉我：
    “telnet: connect to address 127.0.0.1: Connection refused”。
@@ -121,7 +124,7 @@ tmp.html bbsguestXXX.html
 3.2. 刚安装完毕，建立新版的时候断线，怎么回事？
 [答复]
   这个是1.0.1版以前的bug，解决办法：
-    a) 下载并安装最新的 smthbbs snapshot，我们建议您这么做；
+    a) 下载并安装最新的 smthbbs，我们建议您这么做；
     b) 如果您确实想用老的 smthbbs 版本，那么可以参照以下步骤：
 将bcache.c里面的
             ftruncate(boardfd, MAXBOARD * sizeof(struct boardheader));
