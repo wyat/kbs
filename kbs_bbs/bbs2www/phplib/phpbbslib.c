@@ -823,7 +823,9 @@ static char* get_output_buffer(){
 }
 
 static int get_output_buffer_len(){
-	return output_buffer_len;
+	int len=output_buffer_len;
+	output_buffer_len=0;
+	return len;
 }
 
 static int new_buffered_output(char *buf, size_t buflen, void *arg)
@@ -923,7 +925,7 @@ static PHP_FUNCTION(bbs_printansifile)
 	free_output(out);
     signal(SIGBUS, SIG_IGN);
     signal(SIGSEGV, SIG_IGN);
-	RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),0);
+	RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
 }
 
 
