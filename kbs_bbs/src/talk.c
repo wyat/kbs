@@ -307,8 +307,7 @@ int t_query(char* q_id)
     prints("\n上次在  [%s] 从 [%s] 到本站一游", Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') ? "(不详)" : SHOW_USERIP(lookupuser, lookupuser->lasthost)));
 #else
 #ifdef FB2000
-    prints("\n上次在  [\033[1;32m%s\033[m] 从 [\033[1;32m%s\033[m] 到本站一游。\n离线时间[\033[1;32m%s\033[m] ", 
-			Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') ? "(不详)" : lookupuser->lasthost), exittime);
+    prints("\n上次在  [\033[1;32m%s\033[m] 从 [\033[1;32m%s\033[m] 到本站一游。\n离线时间[\033[1;32m%s\033[m] ", Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') /*|| DEFINE(currentuser,DEF_HIDEIP) */ ? "(不详)" : ( (!strcmp(lookupuser->userid , currentuser->userid) || HAS_PERM(currentuser, PERM_OBOARDS) ) ? lookupuser->lasthost: SHOW_USERIP(lookupuser, lookupuser->lasthost)) ), exittime);
 #else
     prints("\n上次在  [%s] 从 [%s] 到本站一游。\n离线时间[%s] ", Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') /*|| DEFINE(currentuser,DEF_HIDEIP) */ ? "(不详)" : ( (!strcmp(lookupuser->userid , currentuser->userid) || HAS_PERM(currentuser, PERM_SYSOP) ) ? lookupuser->lasthost: SHOW_USERIP(lookupuser, lookupuser->lasthost)) ),    /*Haohmaru.99.12.18. hide ip */
            exittime);
