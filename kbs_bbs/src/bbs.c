@@ -3257,7 +3257,6 @@ Read()
     i_read( READING, buf,readtitle,readdoent,&read_comms[0],sizeof(struct fileheader)) ;/*进入本版*/
     board_usage(currboard,time(0)-usetime);/*board使用时间记录*/
 
-    brc_update(currentuser->userid,currboard);
     return 0 ;
 }
 
@@ -3380,7 +3379,7 @@ Goodbye()    /*离站 选单*/
     long	Time=10;/*Haohmaru*/
 
     /* Add by SmallPig */
-    brc_update(currentuser->userid,currboard);
+    brc_update(currentuser->userid);
     strcpy(quote_file,"");
 
 /*---	显示备忘录的关掉该死的活动看板	2001-07-01	---*/
