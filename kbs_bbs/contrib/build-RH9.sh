@@ -17,6 +17,8 @@ if [ -f Makefile ]; then
 	make distclean
 fi
 
+if [ -d CVS ]; then
+
 cvs up -d
 
 aclocal; autoheader; automake -a; autoconf
@@ -52,6 +54,8 @@ if [ -d innbbsd ]; then
 	INNCONFIG=--enable-innbbsd
 else
 	INNCONFIG=--disable-innbbsd
+fi
+
 fi
 
 ./configure --prefix=$BBSHOME --enable-site=$BBSSITE \
