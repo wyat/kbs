@@ -18,11 +18,11 @@ bbslink_SOURCES = bbslink.c pmain.c inntobbs.c echobbslib.c connectsock.c file.c
 noinst_HEADERS = bbslib.h clibrary.h daemon.h dbz.h externs.h \
 		his.h innbbsconf.h innbbsd.h inntobbs.h lang.h nntp.h \
 		nocem.h version.h
-AM_CFLAGS = -DGETRUSAGE -DUSE_NCM_PATCH -DPGP5 -DFirebirdBBS -DDBZDEBUG -DFILTER -DBIG2GB -DGB2BIG -I../src
+AM_CFLAGS = -DGETRUSAGE -DUSE_NCM_PATCH -DPGP5 -DFirebirdBBS -DDBZDEBUG -DFILTER -DBIG2GB -DGB2BIG -I../src @LIBICONV_CFLAGS@
 innbbsd_CFLAGS = -DWITH_ECHOMAIL -DWITH_RECORD_O $(AM_CFLAGS)
 bbslink_CFLAGS = -DWITH_ECHOMAIL $(AM_CFLAGS)
 dbzserver_CFLAGS = -DDBZSERVER $(AM_CFLAGS)
-LDADD=-L../libBBS -lBBS -L../libsystem -lsystem
+LDADD=-L../libBBS -lBBS -L../libsystem -lsystem @LIBICONV_FLAGS@
 
 install-data-local:
 	sh linkinnd.sh
