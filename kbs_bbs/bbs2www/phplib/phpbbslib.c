@@ -230,8 +230,8 @@ static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_getuserscore, NULL)
 		PHP_FE(bbs_setuserscore, NULL)
 		PHP_FE(bbs_adduserscore, NULL)
-		PHP_FE(bbs_saveuserdata, NULL)
 #endif
+		PHP_FE(bbs_saveuserdata, NULL)
 		PHP_FE(bbs_getuserparam, NULL)
 		PHP_FE(bbs_setuserparam, NULL)
 
@@ -5333,8 +5333,6 @@ static PHP_FUNCTION(bbs_fillidinfo)
     RETURN_LONG(0);
 }
 
-#ifdef HAVE_WFORUM
-
 static PHP_FUNCTION(bbs_saveuserdata)
 {
     char*   userid,
@@ -5479,7 +5477,6 @@ static PHP_FUNCTION(bbs_saveuserdata)
 
 }
 
-#endif
 
 #ifdef HAVE_WFORUM
 /**
