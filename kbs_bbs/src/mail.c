@@ -623,7 +623,7 @@ int do_send(char *userid, char *title, char *q_file)
             /*
              * backup mail to sent folder 
              */
-            mail_file_sent(userid, filepath, getCurrentUser()->userid, save_title, 0);
+            mail_file_sent(userid, filepath, getCurrentUser()->userid, save_title, 0, getSession());
         }
         if (askyn("È·¶¨¼Ä³ö£¿", true) == false)
             return -2;
@@ -1971,7 +1971,7 @@ static int do_gsend(char *userid[], char *title, int num)
             mail_file(getCurrentUser()->userid, tmpfile, uid, save_title, 0, NULL);
         }
     }
-    mail_file_sent(".group", tmpfile, getCurrentUser()->userid, save_title, 0);
+    mail_file_sent(".group", tmpfile, getCurrentUser()->userid, save_title, 0, getSession());
     unlink(tmpfile);
     if (G_SENDMODE == 2)
         fclose(mp);

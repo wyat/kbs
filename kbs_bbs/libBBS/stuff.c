@@ -580,10 +580,10 @@ char *setbdir(int digestmode, char *buf,const  char *boardname)
         strcpy(dir, ".ORIGIN");
         break;
     case DIR_MODE_AUTHOR:
-        sprintf(dir, ".AUTHOR.%s", getSession()->currentuser->userid);
+        sprintf(dir, ".AUTHOR.%s", getCurrentUser()->userid);
         break;
     case DIR_MODE_TITLE:
-        sprintf(dir, ".TITLE.%s", getSession()->currentuser->userid);
+        sprintf(dir, ".TITLE.%s", getCurrentUser()->userid);
         break;
     case DIR_MODE_ZHIDING:
 	strcpy(dir, DING_DIR);
@@ -592,10 +592,10 @@ char *setbdir(int digestmode, char *buf,const  char *boardname)
         strcpy(dir, DOT_DIR);
         break;
     case DIR_MODE_SUPERFITER:
-        sprintf(dir, ".Search.%s", getSession()->currentuser->userid);
+        sprintf(dir, ".Search.%s", getCurrentUser()->userid);
         break;
     default:
-        sprintf(dir, ".Search.%s", getSession()->currentuser->userid);
+        sprintf(dir, ".Search.%s", getCurrentUser()->userid);
 	newbbslog(BBSLOG_DEBUG,"uknown dir mode %d",digestmode); 
         break;
     }
@@ -1886,7 +1886,7 @@ int gettmpfilename(char *retchar, char *fmt, ...){
         mkdir(retchar, 0755);
         chmod(retchar, 0755);
 	}
-	strcat(retchar, getSession()->currentuser->userid);
+	strcat(retchar, getCurrentUser()->userid);
     if (!dashd(retchar)) {
         mkdir(retchar, 0755);
         chmod(retchar, 0755);

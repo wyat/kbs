@@ -145,7 +145,7 @@ int update_user_usedspace(int delta, struct userec *user)
     return 0;
 }
 
-int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int unlink)
+int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int unlink, session_t* session)
 {
     struct fileheader newmessage;
     struct stat st;
@@ -181,7 +181,7 @@ int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int u
     else
         f_cp(tmpfile, filepath, 0);
     if (stat(filepath, &st) != -1)
-        getSession()->currentuser->usedspace += st.st_size;
+        session->currentuser->usedspace += st.st_size;
     setmailfile(buf, userid, ".SENT");
     newmessage.accessed[0] |= FILE_READ;
     if (append_record(buf, &newmessage, sizeof(newmessage)) == -1)

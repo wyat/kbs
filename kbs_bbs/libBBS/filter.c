@@ -70,7 +70,7 @@ static int check_badwordimg(int checkreload)
     return 0;
 }
 
-static void default_setting()
+static void default_setting(session_t* session)
 {
     WHOLELINE = 0;
     NOUPPER = 1;
@@ -81,7 +81,7 @@ static void default_setting()
     FNAME = 1;
     ONLYCOUNT = 0;
 
-    getSession()->num_of_matched = 0;
+    session->num_of_matched = 0;
 }
 
 int check_badword(char *checkfile, session_t* session)
@@ -92,8 +92,8 @@ int check_badword(char *checkfile, session_t* session)
     int retrycount=0;
 
 retry:
-    default_setting();
-    getSession()->CurrentFileName = checkfile;
+    default_setting(session);
+    session->CurrentFileName = checkfile;
     BBS_TRY {
         if (safe_mmapfile(checkfile, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, &size, NULL) == 0)
 	{
@@ -126,8 +126,8 @@ int check_badword_str(char *string,int str_len, session_t* session)
     int retv;
     int retrycount=0;
 
-    default_setting();
-    getSession()->CurrentFileName = "";
+    default_setting(session);
+    session->CurrentFileName = "";
 retry:
     BBS_TRY {
         if (check_badwordimg(0)!=0) {
@@ -156,8 +156,8 @@ int check_filter(char *patternfile, char *checkfile,int defaultval, session_t* s
     void* pattern_buf;
     size_t pattern_imagesize;
 
-    default_setting();
-    getSession()->CurrentFileName = checkfile;
+    default_setting(session);
+    session->CurrentFileName = checkfile;
     fp = open(patternfile, O_RDONLY);
     prepf(fp,&pattern_buf,&pattern_imagesize);
     BBS_TRY {

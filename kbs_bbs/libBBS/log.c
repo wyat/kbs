@@ -59,7 +59,7 @@ static void getheader(char *header, const char *from, int prio,session_t* sessio
     time(&tt);
     pt = localtime(&tt);
 
-    sprintf(header, "[%02u/%02u %02u:%02u:%02u %5d %d.%s] %s ", pt->tm_mon + 1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec, getpid(), prio, from, session->currentuser == NULL ? "(unknown user)" : session->currentuser->userid);
+    sprintf(header, "[%02u/%02u %02u:%02u:%02u %5d %d.%s] %s ", pt->tm_mon + 1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec, getpid(), prio, from, (session==NULL||session->currentuser == NULL) ? "(unknown user)" : session->currentuser->userid);
 }
 
 /* 写入log, 如果buf==NULL那么flush。否则根据大小决定是否缓存 */
@@ -283,7 +283,7 @@ void newbbslog(int type, const char *fmt, ...)
     msg->mtype = type;
     msg->pid = getpid();
     msg->msgtime = time(0);
-    if (getSession()->currentuser)
+    if (getSession()&&getSession()->currentuser)
         strncpy(msg->userid, getSession()->currentuser->userid, IDLEN);
     else
         strncpy(msg->userid, "[null]", IDLEN);
