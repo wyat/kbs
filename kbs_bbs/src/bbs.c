@@ -71,7 +71,10 @@ extern int B_to_b;
 extern struct screenline *big_picture;
 extern struct userec *user_data;
 int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
-
+extern int b_vote(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+extern int b_vote_maintain(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+extern int b_jury_edit(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+extern int mainreadhelp(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 
 int check_readonly(char *checked)
 {                               /* Leeward 98.03.28 */
@@ -820,7 +823,7 @@ reget:
         r_lastmsg();            /* Leeward 98.07.30 support msgX */
         break;
     case Ctrl('Y'):
-        zsend_post(ent, fileinfo, read_getcurrdirect(conf));
+        read_zsend(conf, fileinfo, NULL);
         break;
     case Ctrl('D'):
         zsend_attach(ent, fileinfo, read_getcurrdirect(conf));
@@ -886,7 +889,7 @@ reget:
             goto reget;
         } else return READ_NEXT;
     case Ctrl('N'):
-        list_select_add_key(Ctrl('N'));
+        list_select_add_key(conf,Ctrl('N'));
         break;
     case Ctrl('S'):
     case 'p':                  /*Add by SmallPig */

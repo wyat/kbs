@@ -789,8 +789,8 @@ int read_new_mail(struct fileheader *fptr, int idc, char *direct)
         move(t_lines - 1, 0);
         prints("(R)回信, (D)删除, (G)继续 ? [G]: ");
         switch (igetkey()) {
-        case Ctrl('Y'):
-            zsend_post(idc, fptr, direct);
+        case Ctrl('Y'):  
+//new_i_read todo            zsend_post(NULL, fptr, NULL);
             break;
         case 'R':
         case 'r':
@@ -994,7 +994,7 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         prints("(R)回信, (D)删除, (G)继续? [G]: ");
         switch (igetkey()) {
         case Ctrl('Y'):
-            zsend_post(ent, fileinfo, arg->direct);
+            read_zsend(conf, fileinfo, NULL);
 	    break;
         case 'R':
         case 'r':

@@ -6,6 +6,7 @@
 #include "read.h"
 
 extern char MsgDesUid[14];
+static int read_search_articles(struct _select_def* conf, char *query, bool up, int aflag);
 
 /*用于apply_record的回调函数*/
 static int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
@@ -136,7 +137,7 @@ static int read_key(struct _select_def *conf, int command)
                         list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 }
-            } else  if (arg->readmoe==READ_THREAD) { /* 处理同主题阅读*/
+            } else  if (arg->readmode==READ_THREAD) { /* 处理同主题阅读*/
                 int findthread=apply_thread(conf,
                     currfh,
                     fileheader_thread_read,

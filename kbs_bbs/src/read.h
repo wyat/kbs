@@ -86,6 +86,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
 int auth_search(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg);
 int title_search(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 int thread_search(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int post_search(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 
 #define SR_FIRSTNEW     0
 #define SR_FIRST            1
