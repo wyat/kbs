@@ -1,0 +1,23 @@
+* smthbbs 1.2.1 stable release. 2004-07-31
+
+  smthbbs-1.2.1 是 smthbbs-1.2 的后续稳定版本，修正了 smthbbs-1.2 发布后
+  发现的很多 bug，同时也增强了一些功能，但数据结构则保持不变。建议用户使用
+  smthbbs-1.2.1 稳定版本。
+
+  以下是 smthbbs-1.2.1 相对于 smthbbs-1.2 的更新：
+  1. 站点定制文件增加了 fb2k-v2，现在 configure 时用 --enable-site=fb2k-v2
+     不会再出现找不到文件的错误。
+  2. libesmtp 不再是必须安装的软件，现在 configure 的时候能自动检测 libesmtp
+     是否适用，另外还可以用 --without-libesmtp 显式地禁用 libesmtp。
+  3. 新增了 FB2K 移植到 smthbbs-1.2.1 的工具，感谢哈工大紫丁香的支持。
+    (注: smthbbs-1.2 发布包里面的 FB2K -> smthbbs-1.2 是不正确的，请不要使用)
+  4. contrib/ 目录增加了 build-RH9.sh 文件。 
+  5. smthbbs-1.2.1 已经可以在 Solaris 8/9 for X86/SPARC 上正常编译和运行。
+  6. configure 增加交叉编译支持。
+
+  注1: smthbbs 的 cvs 服务器上 v1_2 分支对应 smthbbs-1.2 系列，喜欢用 cvs
+       的用户可以用 cvs 加 -r v1_2 参数获取最新的 smthbbs-1.2 稳定版本。
+
+  注2: smthbbs 的 cvs 服务器上主分支为 smthbbs-2.0 的开发版本，该版本在稳定
+       之后将成为 smthbbs-2.0 稳定版本。目前已经使用 smthbbs-2.0 开发版本的
+       用户，千万不要“降级”到 smthbbs-1.2.1 稳定版本。
