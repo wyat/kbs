@@ -509,7 +509,7 @@ static int fav_onselect(struct _select_def *conf)
 #endif
             memcpy(currBM, ptr->BM, BM_LEN - 1);
             if (DEFINE(currentuser, DEF_FIRSTNEW)) {
-                setbdir(digestmode, buf, currboard->filename);
+                setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
                 tmp = unread_position(buf, ptr);
                 page = tmp - t_lines / 2;
                 getkeep(buf, page > 1 ? page : 1, tmp + 1);

@@ -185,7 +185,6 @@ void u_enter()
 
     getfriendstr(currentuser,get_utmpent(utmpent));
     listmode = 0;
-    digestmode = false;
 }
 
 void setflags(mask, value)

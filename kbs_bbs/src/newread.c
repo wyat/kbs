@@ -231,7 +231,7 @@ static int read_title(struct _select_def *conf)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
     clear();
-    (*arg->dotitle) ();
+    (*arg->dotitle) (conf);
     return SHOW_CONTINUE;
 }
 
@@ -297,7 +297,7 @@ static int read_onsize(struct _select_def* conf)
     return SHOW_DIRCHANGE;
 }
 
-int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct key_command *rcmdlist, int ssize)
+int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct _select_def*), READ_FUNC doentry, struct key_command *rcmdlist, int ssize)
 {
     struct _select_def read_conf;
     struct read_arg arg;

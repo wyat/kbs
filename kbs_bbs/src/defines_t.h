@@ -105,7 +105,6 @@ int post_reply(int ent, struct fileheader *fileinfo, char *direct);
 int sequential_read2(int ent);
 void do_quote(char *filepath, char quote_mode, char* q_file,char* q_user);
 void setqtitle(char *stitle);
-int set_delete_mark(int ent, struct fileheader *fileinfo, char *direct);
 int noreply_post_noprompt(int ent, struct fileheader *fileinfo, char *direct);
 void RemoveAppendedSpace(char *ptr);
 int del_post(int ent, struct fileheader *fileinfo, char *direct);
@@ -161,11 +160,6 @@ struct keeploc *getkeep(char *s, int def_topline, int def_cursline);
 int sread(int passonly, int readfirst, int auser, int pnum, struct fileheader *ptitle);
 void fixkeep(char *s, int first, int last);
 
-/*@param buf 显示的字符串
-   @param num 序号
-   @param data 数据
-   @param readdata 上次阅读的数据,用于判断同主题之类
-*/
 typedef char *(*READ_FUNC) (void *, int, void *,void*);
 int i_read(int cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct one_key *rcmdlist, int ssize);
 void u_exit();

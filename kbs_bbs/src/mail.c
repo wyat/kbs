@@ -869,7 +869,7 @@ int m_new()
     return -1;
 }
 
-void mailtitle()
+void mailtitle(struct _select_def* conf)
 {
     /*
      * Leeward 98.01.19 adds below codes for statistics 
@@ -895,7 +895,7 @@ void mailtitle()
     resetcolor();
 }
 
-char *maildoent(char *buf, int num, struct fileheader *ent,struct fileheader* readfh)
+char *maildoent(char *buf, int num, struct fileheader *ent,struct fileheader* readfh,struct _select_def* conf)
 {
     time_t filetime;
     char *date;
@@ -1348,8 +1348,7 @@ int mail_del_range(struct _select_def* conf,struct fileheader *fileinfo,void* ex
     int ent=conf->pos;
     struct read_arg* arg=conf->arg;
 
-    ret = (del_range(conf, fileinfo, NULL));        /*Haohmaru.99.5.14.修改一个bug,
-                                                         * * 否则可能会因为删信件的.tmpfile而错删版面的.tmpfile */
+    ret = del_range(conf, fileinfo, NULL,arg->mode);
     if (!strcmp(arg->direct, ".DELETED"))
         get_mailusedspace(currentuser, 1);
     return ret;

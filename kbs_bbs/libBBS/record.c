@@ -645,9 +645,7 @@ int delete_record(char *filename, int size, int id, RECORD_FUNC_ARG filecheck, v
   id1,id2, 起始编号
   删除模式 [del_mode = 0]标记删除 [1]普通删除 [2]强制删除
 */
-int delete_range(filename, id1, id2, del_mode)
-char *filename;
-int id1, id2, del_mode;
+int delete_range(char *filename,int id1,int id2,int del_mode,int curmode)
 {
 #define DEL_RANGE_BUF 2048
     struct fileheader *savefhdr;
@@ -662,13 +660,13 @@ int id1, id2, del_mode;
     int savedigestmode;
 
     /*
-     * digestmode=4, 5的情形或者允许区段删除,或者不允许,这可以在
+     * curmode=4, 5的情形或者允许区段删除,或者不允许,这可以在
      * 调用函数中或者任何地方给定, 这里的代码是按照不允许删除写的,
      * 但是为了修理任何缘故造成的临时文件故障(比如自动删除机), 还是
      * 尝试了一下打开操作; tmpfile是否对每种模式独立, 这个还是值得
      * 商榷的.  -- ylsdd 
      */
-    if (digestmode == 4 || digestmode == 5) {   /* KCN:暂不允许 */
+    if (curmode == DIR_MODE_DELETED|| curmode == DIR_MODE_JUNK) {   /* KCN:暂不允许 */
         return 0;
     }
 #endif                          /* 
@@ -754,11 +752,6 @@ int id1, id2, del_mode;
     remaincount = count - 1;
     keepcount = 0;
     lseek(fdr, pos_write, SEEK_SET);
-#ifdef BBSMAIN
-    savedigestmode = digestmode;
-    digestmode = 4;
-#endif                          /* 
-                                 */
     while (count <= id2) {
         int readcount;
         lseek(fdr, (count - 1) * sizeof(struct fileheader), SEEK_SET);
@@ -789,7 +782,7 @@ int id1, id2, del_mode;
                     for (j = 0; j < DEL_RANGE_BUF; j++)
                         cancelpost(currboard->filename, currentuser->userid, &delfhdr[j], !strcmp(delfhdr[j].owner, currentuser->userid), 0);
                     delcount = 0;
-                    setbdir(digestmode, genbuf, currboard->filename);
+                    setbdir(DIR_MODE_DELETED, genbuf, currboard->filename);
                     append_record(genbuf, (char *) delfhdr, DEL_RANGE_BUF * sizeof(struct fileheader));
                 }
                 /*
@@ -847,7 +840,7 @@ int id1, id2, del_mode;
 
         for (j = 0; j < delcount; j++)
             cancelpost(currboard->filename, currentuser->userid, &delfhdr[j], !strcmp(delfhdr[j].owner, currentuser->userid), 0);
-        setbdir(digestmode, genbuf, currboard->filename);
+        setbdir(DIR_MODE_DELETED, genbuf, currboard->filename);
         append_record(genbuf, (char *) delfhdr, delcount * sizeof(struct fileheader));
     }
     else if (uinfo.mode==RMAIL&&!strstr(filename, ".DELETED")) {
@@ -862,7 +855,6 @@ int id1, id2, del_mode;
             if (stat(genbuf, &st) !=-1) currentuser->usedspace-=st.st_size;
         }
     }
-	digestmode = savedigestmode;
 #endif                          /* 
                                  */
     free(savefhdr);

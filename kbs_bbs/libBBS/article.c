@@ -70,7 +70,7 @@ char name[STRLEN];
     return 0;
 }
 
-int do_del_post(struct userec *user, int ent, struct fileheader *fileinfo, char *direct, char *board, int digestmode, int decpost)
+int do_del_post(struct userec *user, int ent, struct fileheader *fileinfo, char *direct, char *board, int currmode, int decpost)
 {
     char buf[512];
     char *t;
@@ -107,7 +107,7 @@ int do_del_post(struct userec *user, int ent, struct fileheader *fileinfo, char 
 */
         if (fileinfo->accessed[0] & FILE_MARKED)
             setboardmark(board, 1);
-        if ((true != digestmode)        /* 不可以用 “NA ==” 判断：digestmode 三值 */
+        if ((true != currmode)        /* 不可以用 “NA ==” 判断：digestmode 三值 */
             &&!((fileinfo->accessed[0] & FILE_MARKED)
                 && (fileinfo->accessed[1] & FILE_READ)
                 && (fileinfo->accessed[0] & FILE_FORWARDED))) { /* Leeward 98.06.17 在文摘区删文不减文章数目 */
@@ -1189,7 +1189,7 @@ int change_dir_post_flag(struct userec *currentuser, char *currboard, int ent, s
     return newent ? DIRCHANGED : PARTUPDATE;
 }
 
-int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, char *currboard, int ent, struct fileheader *fileinfo, char *direct, int flag, int prompt)
+int change_post_flag(char *currBM, struct userec *currentuser, int currmode, char *currboard, int ent, struct fileheader *fileinfo, char *direct, int flag, int prompt)
 {
     /*---	---*/
     int newent = 0, ret = 1;
@@ -1226,13 +1226,13 @@ int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, c
     /* add by stiger */
     if ( POSTFILE_BASENAME(fileinfo->filename)[0]=='Z' && (flag==FILE_MARK_FLAG || flag==FILE_DIGEST_FLAG || flag==FILE_DELETE_FLAG || flag==FILE_NOREPLY_FLAG) ) return DONOTHING;
 /* modified by stiger */
-    if ((flag == FILE_DIGEST_FLAG || flag==FILE_DING_FLAG) && (digestmode == 1 || digestmode == 4 || digestmode == 5))
+    if ((flag == FILE_DIGEST_FLAG || flag==FILE_DING_FLAG) && (currmode == 1 || currmode == 4 || currmode == 5))
         return DONOTHING;
-    if (flag == FILE_MARK_FLAG && (digestmode == 1 || digestmode == 4 || digestmode == 5))
+    if (flag == FILE_MARK_FLAG && (currmode == 1 || currmode == 4 || currmode == 5))
         return DONOTHING;
-    if (flag == FILE_IMPORT_FLAG && (digestmode == 4 || digestmode == 5))
+    if (flag == FILE_IMPORT_FLAG && (currmode == 4 || currmode == 5))
         return DONOTHING;
-    if (flag == FILE_DELETE_FLAG && (digestmode == 4 || digestmode == 5))
+    if (flag == FILE_DELETE_FLAG && (currmode == 4 || currmode == 5))
         return DONOTHING;
     if ((flag == FILE_MARK_FLAG || flag == FILE_DELETE_FLAG) && (!strcmp(currboard, "syssecurity")
                                                                  || !strcmp(currboard, FILTER_BOARD)))
@@ -1240,13 +1240,13 @@ int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, c
     /*
      * Haohmaru.98.10.12.主题模式下不允许mark文章 
      */
-    if (flag == FILE_TITLE_FLAG && digestmode != 0)
+    if (flag == FILE_TITLE_FLAG && currmode != 0)
         return DONOTHING;
-    if (flag == FILE_NOREPLY_FLAG && (digestmode == 1 || digestmode==4 || digestmode==5))
+    if (flag == FILE_NOREPLY_FLAG && (currmode == 1 || currmode==4 || currmode==5))
         return DONOTHING;
 
     if(!fileinfo->filename[0]) {
-        setbdir(digestmode, genbuf, currboard);
+        setbdir(currmode, genbuf, currboard);
         fd = open(genbuf, O_RDWR | O_CREAT, 0644);
         if (fd!=-1) {
             get_record_handle(fd, fileinfo, sizeof(struct fileheader), ent);
@@ -1254,7 +1254,7 @@ int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, c
         }
     }
 
-    if ((digestmode != DIR_MODE_NORMAL) && (digestmode != DIR_MODE_DIGEST)) {
+    if ((currmode != DIR_MODE_NORMAL) && (currmode != DIR_MODE_DIGEST)) {
         setbdir(0, genbuf, currboard);
         orgent = search_record(genbuf, &mkpost2, sizeof(struct fileheader), (RECORD_FUNC_ARG) cmpfileinfoname, fileinfo->filename);
         if (!orgent) {
@@ -1453,7 +1453,7 @@ int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, c
             char *ptr, buf[64];
 
             memcpy(&digest, fileinfo, sizeof(digest));
-            if (digestmode)
+            if (currmode)
                 strncpy(digest.title, mkpost2.title, STRLEN);
             POSTFILE_BASENAME(digest.filename)[0] = 'G';
             strcpy(buf, direct);
@@ -1510,7 +1510,7 @@ int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, c
             char *ptr, buf[64];
 
             memcpy(&digest, fileinfo, sizeof(digest));
-            if (digestmode)
+            if (currmode)
                 strncpy(digest.title, mkpost2.title, STRLEN);
             POSTFILE_BASENAME(digest.filename)[0] = 'Z';
             strcpy(buf, direct);
@@ -1567,7 +1567,7 @@ int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, c
     ldata.l_type = F_UNLCK;
     fcntl(fd, F_SETLK, &ldata);
     close(fd);
-    if ((digestmode != DIR_MODE_NORMAL) && (digestmode != DIR_MODE_DIGEST))
+    if ((currmode != DIR_MODE_NORMAL) && (currmode != DIR_MODE_DIGEST))
         change_dir_post_flag(currentuser, currboard, orgent, &mkpost2, flag);
 
     return newent ? DIRCHANGED : PARTUPDATE;

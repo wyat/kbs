@@ -799,10 +799,6 @@ int haspostperm(struct userec *user, char *bname)
 {                               /* 判断在 bname版 是否有post权 */
     register int i;
 
-#ifdef BBSMAIN
-    if (digestmode)
-        return 0;
-#endif
     /*
      * if( strcmp( bname, DEFAULTBOARD ) == 0 )  return 1; change by KCN 2000.09.01 
      */

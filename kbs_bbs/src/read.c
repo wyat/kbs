@@ -67,6 +67,7 @@ static int search_threadid(struct keeploc *locmem, int offset, int groupid, int 
 /*struct fileheader *files = NULL;*/
 int screen_len;
 int last_line;
+static int digestmode;
 
 
 int search_file(char *filename)
@@ -1482,7 +1483,7 @@ int sread(int passonly, int readfirst, int pnum, int auser, struct fileheader *p
                  * Bigman 2000.8.20: 修改同主题删除错误.... Leeward这个增加的不对呀,以后的内容没有读呀 
                  */
             {
-                set_delete_mark(locmem->crs_line, &SR_fptr, currdirect);
+//new_i_read                set_delete_mark(locmem->crs_line, &SR_fptr, currdirect);
             }
             break;
         case SR_BMNOREPLY:

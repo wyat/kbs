@@ -70,7 +70,15 @@ typedef int (*APPLY_THREAD_FUNC)(struct _select_def* conf,struct fileheader* fh,
 
 int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func, bool down,void* arg);
 
-int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct key_command *rcmdlist, int ssize);
+/*@param buf 显示的字符串
+   @param num 序号
+   @param data 数据
+   @param readdata 上次阅读的数据,用于判断同主题之类
+   @param conf _select_conf结构指针
+*/
+typedef char *(*READ_ENT_FUNC) (void *, int, void *,void*,struct _select_def*);
+
+int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct _select_def*), READ_ENT_FUNC doentry, struct key_command *rcmdlist, int ssize);
 
 /* some function for fileheader */
 int auth_search(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg);
