@@ -1559,6 +1559,7 @@ int add_edit_mark(char *fname, int mode, char *title)
 char* checkattach(char *buf, long size,long *len,char** attachptr)
 {
     char *ptr;
+	unsigned long att_size;
     if (size<ATTACHMENT_SIZE+sizeof(long)+2)
         return NULL;
     if (memcmp(buf, ATTACHMENT_PAD,ATTACHMENT_SIZE))
@@ -1574,9 +1575,10 @@ char* checkattach(char *buf, long size,long *len,char** attachptr)
     size--;
     if (size<sizeof(long))
         return NULL;
-    *len = ntohl(*(unsigned long*)buf);
+	memcpy(&att_size, buf, sizeof(unsigned long));
+    *len = ntohl(att_size);
     if (*len>size) *len=size;
-    *attachptr=buf+sizeof(long);
+    *attachptr=buf+sizeof(unsigned long);
     return ptr;
 }
 
