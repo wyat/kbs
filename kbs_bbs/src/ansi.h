@@ -6,6 +6,16 @@
 #define STATE_NEW_LINE 0x04
 #define STATE_QUOTE_LINE 0x08
 #define STATE_NONE   0x00
+#define STATE_UBB_START 0x10
+#define STATE_UBB_MIDDLE 0x20
+#define STATE_UBB_END	0x40
+
+enum UBBTYPE {UBB_TYPE_IMG,
+	UBB_TYPE_ITALICIZE,
+	UBB_TYPE_UNDERLINE,
+	UBB_TYPE_BOLD,
+	UBB_TYPE_FLY
+};
 
 #define STATE_SET(s, b) (s |= b)
 #define STATE_CLR(s, b) (s &= ~b)
