@@ -680,7 +680,7 @@ int searchtrace()
         return -1;
     }
 
-    sprintf(tmp_command, "grep -w %s trace | grep posted > etc/searchresult", tmp_id);
+    sprintf(tmp_command, "grep -w %s bbs.log| grep posted > etc/searchresult", tmp_id);
     system(tmp_command);
     mail_file("etc/searchresult", currentuser.userid, "系统查询结果");
     unlink("etc/searchresult");
