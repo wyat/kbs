@@ -239,7 +239,8 @@ void brc_update(char *userid) {
 			int j;
 			if (fd==-1) {
 				if ((fd=open(dirfile,O_RDWR))==-1) {
-					read(fd,&brc_header,sizeof(brc_header));
+					bbslog("3user","can't open to readwrite",dirfile);
+					return;
 				};
 			}
 			lseek(fd,brc_cache_entry[i].bid*BRC_ITEMSIZE,SEEK_SET);
@@ -326,7 +327,7 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼ş£¬È¡³ö±£´
 	            brc_size = 0;
 	    }
 
-	    if ((brc_size)&&(first>MAXBOARD))) { 
+	    if ((brc_size)&&(first>MAXBOARD)) { 
 	    	/* ÀÏ°æµÄboardrc,ÒòÎªÓ¦¸ÃÖ»ĞèÒª×ª»¯Ò»´Î£¬²»¿¼ÂÇĞ§ÂÊÀ²*/
 	    	char brc_buffer[BRC_OLD_MAXSIZE];
 		if( lseek(fd,0,SEEK_SET)  != -1 ) {
