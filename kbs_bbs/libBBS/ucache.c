@@ -351,7 +351,7 @@ int resolve_ucache()
     fd=ucache_lock();
     iscreate = 0;
     if (uidshm == NULL) {
-        uidshm = (struct UCACHE *) attach_shm1("UCACHE_SHMKEY", 3696, sizeof(*uidshm), &iscreate, 1, NULL);
+        uidshm = (struct UCACHE *) attach_shm("UCACHE_SHMKEY", 3696, sizeof(*uidshm), &iscreate);
         /*attach to user shm,readonly */
         if (iscreate) {         /* shouldn't load passwd file in this place */
             bbslog("4system", "passwd daemon havn't startup");
@@ -1022,7 +1022,7 @@ int do_after_logout(struct userec* user,struct user_info* userinfo,int unum,int 
 /**
   * 读入文件中保存的user title
   */
-static void load_user_title()
+void load_user_title()
 {
     FILE* titlefile;
     bzero(uidshm->user_title,sizeof(uidshm->user_title));
@@ -1132,9 +1132,13 @@ int resolve_guest_table()
 {
     int iscreate = 0;
 
+    sleep(20);
+	bbslog("3error","loading guest shm:%d",errno);
     if (wwwguest_shm == NULL) {
         wwwguest_shm = (struct WWW_GUEST_TABLE *)
             attach_shm("WWWGUEST_SHMKEY", 4500, sizeof(*wwwguest_shm), &iscreate);      /*attach user tmp cache */
+		if (wwwguest_shm==NULL)
+			bbslog("3error","can't load guest shm:%d",errno);
         if (iscreate) {
             struct public_data *pub;
             int fd = www_guest_lock();

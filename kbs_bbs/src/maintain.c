@@ -472,7 +472,10 @@ int m_editbrd()
     else
         prints("%s", "俱乐部:   无\n");
     strcpy(oldtitle, fh.title);
-    prints("限制 %s 权力: %s", (fh.level & PERM_POSTMASK) ? "POST" : "READ", (fh.level & ~PERM_POSTMASK) == 0 ? "不设限" : "有设限");
+    prints("限制 %s 权力: %s      需要的用户职务: %s(%d)", 
+        (fh.level & PERM_POSTMASK) ? "POST" : "READ", 
+        (fh.level & ~PERM_POSTMASK) == 0 ? "不设限" : "有设限",
+        fh.title_level? get_user_title(fh.title_level):"无",fh.title_level);
     getdata(10, 0, "是否更改以上资讯? (Yes or No) [N]: ", genbuf, 4, DOECHO, NULL, true);
     if (*genbuf == 'y' || *genbuf == 'Y') {
         move(9, 0);
@@ -595,6 +598,10 @@ int m_editbrd()
         
         line++;
         
+        getdata(line++, 0, "所需职务: ", genbuf, 60, DOECHO, NULL, true); 
+        if (*genbuf != 0)
+            newfh.title_level=atoi(genbuf);
+
         getdata(line++, 0, "是否更改存取权限 (Y/N)? [N]: ", genbuf, 4, DOECHO, NULL, true);
         if (*genbuf == 'Y' || *genbuf == 'y') {
             char ans[5];

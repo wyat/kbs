@@ -592,7 +592,7 @@ void a_edits()
         "forcloak",
         "forlongid", "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", 
         #ifdef HAVE_CUSTOM_USER_TITLE
-        USER_TITLE_FILE,
+        "../" USER_TITLE_FILE,
         #endif
         NULL
     };
@@ -625,7 +625,7 @@ void a_edits()
     move(0, 0);
     prints("±àĞŞÏµÍ³µµ°¸\n\n");
     for (num = 0; e_file[num] != NULL && explain_file[num] != NULL; num++) {
-        prints("[[32m%2d[m] %s%s", num + 1, explain_file[num], (num + 1 >= 1 && num + 1 <= 28 && (num + 1) % 2) ? "      " : "\n");
+        prints("[[32m%2d[m] %s%s", num + 1, explain_file[num], ((num + 1) % 2) ? "      " : "\n");
         /*
          * Leeward 98.03.29 µ÷ÕûÏÔÊ¾²¼¾Ö£¬ÒÔ±ã¼ÓÈë¡°ÏµÍ³×Ô¶¯¹ıÂËµÄ´ÊÓï¡±Ò»Ïî
          */
@@ -693,7 +693,7 @@ void a_edits()
 	}
 #endif
 #ifdef HAVE_CUSTOM_USER_TITLE
-       if (!strcmp(e_file[ch],USER_TITLE_FILE)) {
+       if (!strcmp(e_file[ch],"../" USER_TITLE_FILE)) {
           load_user_title();
        }
 #endif

@@ -213,13 +213,13 @@ int uinfo_query(struct userec *u, int real, int unum)
 		i++;
 #endif
 
-#ifdef HAVE_CUSTOM_USER_TITLE
-        sprintf(genbuf, "当前职务%s[%d](填数字序号): ", get_user_title(u->title),u->title);
-        getdata(i++, 0, genbuf, buf, STRLEN, DOECHO, NULL, true);
-        if (buf[0])
-            u->title=atoi(buf);
-#endif
         if (real) {
+#ifdef HAVE_CUSTOM_USER_TITLE
+            sprintf(genbuf, "当前职务%s[%d](填数字序号): ", get_user_title(u->title),u->title);
+            getdata(i++, 0, genbuf, buf, STRLEN, DOECHO, NULL, true);
+            if (buf[0])
+                newinfo.title=atoi(buf);
+#endif
             sprintf(genbuf, "真实Email[%s]: ", ud.realemail);
             getdata(i++, 0, genbuf, buf, STRLEN, DOECHO, NULL, true);
             if (buf[0])
