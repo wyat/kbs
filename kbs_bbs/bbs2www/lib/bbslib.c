@@ -801,7 +801,7 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     		while (NULL!=(dirp=readdir(attach_tmp_dir))) {
                     int fd;
                     char* ptr;
-                    off_t begin,size;
+                    long begin,size,save_size;
                     if (dirp->d_name[0]=='.') continue;
                     snprintf(filepath,MAXPATH, "%s/%s",attach_dir,dirp->d_name);
                     if (-1==(fd=open(filepath,O_RDONLY)))
@@ -812,12 +812,13 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
                     }
                     fwrite(ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1,1,fp);
                     fwrite(dirp->d_name,strlen(dirp->d_name)+1,1,fp);
+                    save_size=htonl(size);
                     BBS_TRY {
                         if (safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & size) == 0) {
                             size=0;
-                            fwrite(&size,sizeof(size),1,fp);
+                            fwrite(&save_size,sizeof(save_size),1,fp);
                         } else {
-                            fwrite(&size,sizeof(size),1,fp);
+                            fwrite(&save_size,sizeof(save_size),1,fp);
                             begin=ftell(fp);
                             fwrite(ptr,size,1,fp);
                         }
