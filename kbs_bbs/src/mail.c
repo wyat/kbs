@@ -1481,7 +1481,7 @@ int m_read()
 
     setmailfile(curmaildir, currentuser->userid, DOT_DIR);
     in_mail = true;
-    i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+    new_i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
     in_mail = false;
 	setmailcheck(currentuser->userid);
     return FULLUPDATE /* 0 */ ;
@@ -2349,7 +2349,7 @@ static int maillist_onselect(struct _select_def *conf)
         sel = conf->pos - arg->cmdnum - 1;
         setmailfile(curmaildir,currentuser->userid, mail_sysbox[sel]);
         in_mail = true;
-        i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+        new_i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
         in_mail = false;
         /*
          * ÏµÍ³ÓÊÏä
@@ -2364,7 +2364,7 @@ static int maillist_onselect(struct _select_def *conf)
         sprintf(buf, ".%s", user_mail_list.mail_list[sel] + 30);
         setmailfile(curmaildir, currentuser->userid, buf);
         in_mail = true;
-        i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+        new_i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
         in_mail = false;
     }
     modify_user_mode(MAIL);

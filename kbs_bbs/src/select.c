@@ -10,7 +10,7 @@ static int check_valid(struct _select_def *conf)
     if (conf->item_count <= 0)
         return SHOW_QUIT;
     if (conf->page_pos > conf->item_count) {
-        conf->page_pos -= conf->item_per_page;
+        conf->page_pos = (conf->item_count / conf->item_per_page)* conf->item_per_page +1;
         ret = SHOW_DIRCHANGE;
     }
     if (conf->pos > conf->item_count)
@@ -72,8 +72,6 @@ static int refresh_select(struct _select_def *conf)
 {
     int i;
 
-    /*TODO:
-    //目前应该清除的区域尚未定义，所以先清全部*/
     move(conf->title_pos.y, conf->title_pos.x);
     /*clrtobot();*/
     if (conf->show_title) {
@@ -111,7 +109,6 @@ static int select_change(struct _select_def *conf, int new_pos)
             return ret;
     }
     if (conf->flag & LF_MULTIPAGE) {
-        /*TODO multi page*/
         if (new_pos<conf->page_pos || new_pos>=conf->page_pos+conf->item_per_page)
         { /*需要换页了*/
             conf->page_pos=((new_pos-1)/conf->item_per_page)*conf->item_per_page+1;
@@ -158,6 +155,9 @@ static int do_select_internal(struct _select_def *conf, int key)
     int ret = SHOW_CONTINUE;
 
     if (!(conf->flag & LF_INITED)) { /*初始化工作*/
+        if (conf->get_data)
+            if ((*conf->get_data)(conf,conf->pos,conf->item_per_page)==SHOW_QUIT)
+                return SHOW_QUIT;;
         if ((ret=check_valid(conf)) == SHOW_QUIT)
             return SHOW_QUIT;
         if (conf->init)
@@ -206,6 +206,7 @@ static int do_select_internal(struct _select_def *conf, int key)
     			key=p->command;
     			break;
     		}
+    		p++;
     	}
     }
     switch (key) {
