@@ -225,7 +225,6 @@ unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int 
 void record_exit_time();
 
 /* announce.c */
-int add_grp(char group[STRLEN], char bname[STRLEN], char title[STRLEN], char gname[STRLEN]);
 int edit_grp(char bname[STRLEN], char title[STRLEN], char newtitle[100]);
 
 /* boards_t.c */

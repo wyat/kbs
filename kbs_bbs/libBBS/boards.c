@@ -795,7 +795,7 @@ int deny_me(char *user, char *board)
 
 
 
-int haspostperm(struct userec *user, char *bname)
+int haspostperm(const struct userec *user,const char *bname)
 {                               /* 判断在 bname版 是否有post权 */
     register int i;
 

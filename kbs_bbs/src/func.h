@@ -111,7 +111,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     int dashf(char *fname);
     int dashd(char *fname);
     int seek_in_file(char filename[STRLEN], char seekstr[STRLEN]);
-    char *setbdir(int digestmode, char *buf, char *boardname);
+    char *setbdir(int digestmode, char *buf, const char *boardname);
     int my_system(const char *cmdstring);
     char *modestring(int mode, int towho, int complete, char *chatid);
     int countexp(struct userec *udata);
@@ -165,7 +165,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     unsigned int store_mailbox_prop(char *userid);
     unsigned int get_mailbox_prop(char *userid);
     unsigned int update_mailbox_prop(char *userid, unsigned int prop);
-	int gen_title(char *boardname );
+	int gen_title(const char *boardname );
 	size_t read_user_memo( char *userid, struct usermemo ** ppum );
 
 #define time(x) bbstime(x)
@@ -257,7 +257,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     int junkboard(char *currboard);     /* 判断是否为 junkboards */
     int checkreadonly(char *board);     /* 判断是不是只读版面 */
     int deny_me(char *user, char *board);       /* 判断用户 是否被禁止在当前版发文章 */
-    int haspostperm(struct userec *user, char *bname);  /* 判断在 bname版 是否有post权 */
+    int haspostperm(const struct userec *user,const char *bname);  /* 判断在 bname版 是否有post权 */
     int chk_BM_instr(const char BMstr[STRLEN - 1], const char bmname[IDLEN + 2]);       /*查询字符串中是否包含 bmname */
     int chk_currBM(const char BMstr[STRLEN - 1], struct userec *user);  /* 根据输入的版主名单 判断user是否有版主 权限 */
     int deldeny(struct userec *user, char *board, char *uident, int notice_only);       /* 删除 禁止POST用户 */
@@ -508,7 +508,7 @@ int pc_read_comment();
 	void load_import_path(char ** i_path,char ** i_title, int * i_path_time,int * i_path_select);
 	void free_import_path(char ** i_path,char ** i_title,int * i_path_time);
 	int linkto(char *path, char *fname, char *title);
-	int add_grp(char group[STRLEN], char bname[STRLEN], char title[STRLEN], char gname[STRLEN]);
+	int add_grp(const char group[STRLEN],const char bname[STRLEN],const char title[STRLEN],const char gname[STRLEN]);
 
 /* check the user's access for the path
   return < 0 deny access
@@ -548,6 +548,9 @@ void *memmem(register const void *s, size_t slen, register const void *p,
 
 /* calltime.c */
 time_t calc_calltime(int mode);
+
+/* output.c */
+buffered_output_t* alloc_output(size_t buflen);
 
 #ifdef SMS_SUPPORT
 int smsid2uid(char* smsid);

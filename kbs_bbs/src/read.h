@@ -3,6 +3,8 @@
 
 typedef int (*READ_KEY_FUNC)(struct _select_def*,void*,void*);
 typedef char *(*READ_ENT_FUNC) (void *, int, void *,void*,struct _select_def*);
+int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg);
+int find_nextnew(struct _select_def* conf,int begin);
 
 struct key_command {                /* Used to pass commands to the readmenu */
     int key;

@@ -19,7 +19,7 @@ int find_nextnew(struct _select_def* conf,int begin)
     if (i<=0)
         return 0;
     BBS_TRY {
-        if (safe_mmapfile_handle(read_arg->fd, PROT_READ|PROT_WRITE, MAP_SHARED, (void **) &pFh, &size) ) {
+        if (safe_mmapfile_handle(arg->fd, PROT_READ|PROT_WRITE, MAP_SHARED, (void **) &pFh, &size) ) {
             nowFh=pFh+begin-1;
             found=false;
             for (i=begin-1;i<size/sizeof(struct fileheader);i++,nowFh++) {
@@ -41,7 +41,7 @@ int find_nextnew(struct _select_def* conf,int begin)
 }
 
 /*用于apply_record的回调函数*/
-static int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
+int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
 {
     struct read_arg *read_arg = (struct read_arg *) conf->arg;
     int mode=(int)extraarg;

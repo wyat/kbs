@@ -764,6 +764,7 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     int ch;
     int ent=conf->pos;
     struct read_arg* arg=conf->arg;
+    int ret=FULLUPDATE;
 
     /* czz 2003.3.4 forbid reading cancelled post in board */
     if ((fileinfo->owner[0] == '-') 
@@ -868,15 +869,18 @@ reget:
             break;
         }
         do_reply(conf,fileinfo);
+        ret=DIRCHANGED;
         break;
     case Ctrl('R'):
         post_reply(conf, fileinfo, extraarg);      /* 回文章 */
         break;
     case 'g':
         set_article_flag(conf , fileinfo, (void*)FILE_DIGEST_FLAG);       /* Leeward 99.03.02 */
+        ret=DIRCHANGED;
         break;
     case 'M':
         set_article_flag(conf , fileinfo, (void*)FILE_MARK_FLAG);       /* Leeward 99.03.02 */
+        ret=DIRCHANGED;
         break;
     case Ctrl('U'):
         if (arg->readmode!=READ_AUTHOR) {
@@ -967,7 +971,7 @@ reget:
         break;
     }
 #endif
-    return FULLUPDATE;
+    return ret;
 }
 
 int skip_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
@@ -4561,7 +4565,7 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
     switch (func_arg->action) {
         case BM_DELETE:
             if (!(fh->accessed[0] & FILE_MARKED)) {
-                del_post(conf,fh,(void*)ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG|ARG_BMFUNC_FLAG);
+                del_post(conf,fh,(void*)(ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG|ARG_BMFUNC_FLAG));
             }
             break;
         case BM_MARK:
@@ -4611,7 +4615,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
     int ent;
     struct read_arg* arg=(struct read_arg*)conf->arg;
     char linebuffer[LINELEN*3];
-    char annpath[MAX_PATH];
+    char annpath[MAXPATH];
 
     func_arg.delpostnum=(bool)extraarg;
     if (!chk_currBM(currBM, currentuser)) {
@@ -4666,7 +4670,6 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
     snprintf(buf, 256, "是否从此主题第一篇开始%s (Y)第一篇 (N)目前这篇 (C)取消 (Y/N/C)? [Y]: ", SR_BMitems[BMch - 1]);
     getdata(t_lines - 3, 0, buf, ch, 3, DOECHO, NULL, true);
     switch (ch[0]) {
-    default:
     case 'y':
     case 'Y':
         fromfirst=true;
@@ -4690,7 +4693,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         switch (ch[0]){
         case 'n':
         case 'N':
-            BMFunc_arg.saveorigin=false;
+            func_arg.saveorigin=false;
             break;
         case 'c':
         case 'C':
@@ -4698,7 +4701,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
             saveline(t_lines - 3, 1, linebuffer);
             return DONOTHING;
         default:
-            BMFunc_arg.saveorigin=true;
+            func_arg.saveorigin=true;
         }
     } else if (BMch==BM_IMPORT) {
         if (set_import_path(annpath)!=0) {
@@ -4731,14 +4734,14 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         if(strlen(buf) >= STRLEN )buf[STRLEN-1] = 0;
         strcpy(title,buf);
         //post file to the board
-        if(post_file(currentuser,"",filepath,currboard->filename,title,0,2) < 0) {//fail
+        if(post_file(currentuser,"",annpath,currboard->filename,title,0,2) < 0) {//fail
             sprintf(buf,"发表文章到版面出错!请按任意键退出 << ");
-            a_prompt(-1,buf,filepath); //filepath no use
+            a_prompt(-1,buf,annpath); //annpath no use
             saveline(t_lines - 2, 1, NULL);
             saveline(t_lines - 3, 1, linebuffer);
         }
         unlink(annpath);
-        sprintf(filepath,"tmp/se.%s",currentuser->userid);
+        sprintf(annpath,"tmp/se.%s",currentuser->userid);
         unlink(annpath);
         return DIRCHANGED;
     }
