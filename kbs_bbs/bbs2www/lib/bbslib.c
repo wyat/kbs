@@ -797,6 +797,7 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     if (attach_dir!=NULL) {
         snprintf(filepath,MAXPATH, "%s/.index",attach_dir);
         if ((fp2=fopen(filepath,"r"))!=NULL) {
+            fputs("\n",fp);
             while (!feof(fp2)) {
                 char* name;
 		long size,begin,save_size;

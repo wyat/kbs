@@ -866,6 +866,7 @@ static void bbs_make_article_array(zval * array, struct fileheader *fh, char *fl
     add_assoc_string(array, "TITLE", fh->title, 1);
     add_assoc_long(array, "LEVEL", fh->level);
     add_assoc_stringl(array, "FLAGS", flags, flags_len, 1);
+    add_assoc_long(array, "ATTACHPOS", fh->attachment);
 }
 
 /**

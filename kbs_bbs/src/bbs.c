@@ -188,10 +188,14 @@ int UndeleteArticle(int ent, struct fileheader *fileinfo, char *direct)
     strcpy(UFile.owner, fileinfo->owner);
     strcpy(UFile.title, UTitle);
     strcpy(UFile.filename, fileinfo->filename);
-	if (UFile.filename[1] == '/')
-    	UFile.filename[2] = 'M';
-	else
-		UFile.filename[0] = 'M';
+    UFile.attachment=fileinfo->attachment;
+    UFile.accessed[0]=fileinfo->accessed[0];
+    UFile.accessed[1]=fileinfo->accessed[1]&(~FILE_DEL);
+
+    if (UFile.filename[1] == '/')
+        UFile.filename[2] = 'M';
+    else
+        UFile.filename[0] = 'M';
     UFile.id = fileinfo->id;
     UFile.groupid = fileinfo->groupid;
     UFile.reid = fileinfo->reid;

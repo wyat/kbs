@@ -703,10 +703,14 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg)
             if (buf[0] == '\n')
                 break;
 
-
+// TODO: need complete
         while (fgets(buf, 256, inf) != NULL) {
             if (strcmp(buf, "--\n") == 0)
                 break;
+            if (!memcmp(buf,ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1)) {
+                
+                break;
+            }
             if (buf[250] != '\0')
                 strcpy(buf + 250, "\n");
             fprintf(outf, "%s", buf);
@@ -765,39 +769,45 @@ int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *
     char buf[256];
 
     sprintf(board, "tmp/bm.%s", currentuser->userid);
+    ans[0]='N';
     if (dashf(board)) {
         if (!nomsg) {
             sprintf(buf, "要附加在旧暂存档之后吗?(Y/N/C) [Y]: ");
             a_prompt(-1, buf, ans);
         }
-        /*
-         * if( ans[0] == 'N' || ans[0] == 'n' ||nomsg) { 
-         */
-        /*
-         * Leeward 97.11.18: fix bugs 
-         */
         if ((ans[0] == 'N' || ans[0] == 'n') && (!nomsg)) {
-            /*
-             * sprintf( genbuf, "/bin/cp -r boards/%s/%s  tmp/bm.%s", key , fileinfo->filename , currentuser->userid );
-             */
-            sprintf(genbuf, "boards/%s/%s", key, fileinfo->filename);
-            sprintf(board, "tmp/bm.%s", currentuser->userid);
-            f_cp(genbuf, board, 0);
+            ans[0]='N';
         } else if (((ans[0] == 'C' || ans[0] == 'c')) && (!nomsg))
             return 1;
         else {
+// TODO: need complete
+            ans[0]='Y';
+            long attachpos=0;
+            if (fileinfo->attachment) {
+                FILE* fp;
+                sprintf(genbuf,"tmp/bm.%s.attachpos",currentuser->userid);
+                if ((fp=fopen(genbuf,"r"))!=NULL) {
+                    fscanf(fp,"%ld",&attachpos);
+                    fclose(fp);
+                }
+            }
+            
             sprintf(genbuf, "/bin/cat boards/%s/%s >> tmp/bm.%s", key, fileinfo->filename, currentuser->userid);
             system(genbuf);
-            /*
-             * sprintf( genbuf, "/bin/cp -r boards/%s/%s  tmp/bm.%s", key , fileinfo->filename , currentuser->userid );
-             */
         }
-    } else {
-        /*
-         * sprintf( genbuf, "/bin/cp -r boards/%s/%s  tmp/bm.%s", key , fileinfo->filename , currentuser->userid );
-         */
+    } 
+    if (ans[0]=='N')
+    {
         sprintf(buf, "boards/%s/%s", key, fileinfo->filename);
         sprintf(board, "tmp/bm.%s", currentuser->userid);
+        if (fileinfo->attachment) {
+            FILE* fp;
+            sprintf(genbuf,"tmp/bm.%s.attachpos",currentuser->userid);
+            if ((fp=fopen(genbuf,"w"))!=NULL) {
+                fprintf(fp,"%ld",fileinfo->attachment);
+                fclose(fp);
+            }
+        }
         f_cp(buf, board, 0);
     }
     sprintf(buf, "将 boards/%s/%s 存入暂存档", key, fileinfo->filename);
@@ -981,6 +991,7 @@ int mode;
     FILE *pn;
     char ans[STRLEN];
     char buf[255];
+    long attachpos=0;
 
     pm->page = 9999;
     switch (mode) {
@@ -1031,6 +1042,11 @@ int mode;
             /*
              * sprintf( genbuf, "mv -f %s %s",board, fpath );
              */
+            sprintf(fpath2, "tmp/bm.%s.attachpos", currentuser->userid);
+            if ((pn = fopen(fpath2, "r")) != NULL) {
+                fscanf(pn,"%ld",&attachpos);
+                fclose(pn);
+            }
             f_mv(board, fpath);
             break;
         }
@@ -1072,7 +1088,7 @@ int mode;
         } else {
             //retry
             a_loadnames(pm);
-            a_additem(pm, buf, fname, NULL, 0, 0);
+            a_additem(pm, buf, fname, NULL, 0, attachpos);
             if (a_savenames(pm) != 0) {
                 sprintf(buf, " 整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
                 a_prompt(-1, buf, ans);
