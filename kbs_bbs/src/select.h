@@ -28,9 +28,12 @@
 #define KEY_ACTIVE 		0x1001
 #define KEY_DEACTIVE 	0x1002
 #define KEY_SELECT		0x1003
-#define KEY_INIT		0x1004
+#define KEY_INIT		        0x1004
 #define KEY_TALK		0x1005
 #define KEY_TIMEOUT		0x1006
+#define KEY_INVALID         0xFFFF
+
+#define KEY_BUF_LEN         4 /*一个内部的key序列长度*/
 
 typedef struct tagPOINT {
 
@@ -62,6 +65,9 @@ struct _select_def {
      * 内部使用的变量 
      */
     int tmpnum; /*用于定义了LF_NUMSEL的数字保存*/
+    int keybuf[KEY_BUF_LEN]; /*定义一个KEY_BUF_LEN个key的序列，
+                                              供复杂命令加入后续的key序列*/
+    int keybuflen;
     
     int (*init) (struct _select_def * conf);    /*初始化 */
     int (*page_init) (struct _select_def * conf);       /*翻页初始化，此时pos位置已经被改变了 */
@@ -82,6 +88,8 @@ struct _select_def {
 };
 int list_select(struct _select_def *conf, int key);
 int list_select_loop(struct _select_def *conf);
+int list_select_add_key(struct _select_def* conf,int key); /* 加入一个键到输入缓冲区*/
+int list_select_remove_key(struct _select_def* conf); /*从输入缓冲区里面取出一个键*/
 
 /* 简单的选择框*/
 #define SIF_SINGLE 0x1

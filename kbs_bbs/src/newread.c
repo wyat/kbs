@@ -15,6 +15,8 @@ struct read_arg {
 
   void* data; //readed data
   int fd; //filehandle,open always
+
+  bool reading; //用于表示返回READ_NEXT,READ_PREV的时候直接读写
 };
 
 static int read_key(struct _select_def *conf, int command)
@@ -29,11 +31,26 @@ static int read_key(struct _select_def *conf, int command)
                 clear();
                 return SHOW_REFRESH;
             }
-            else
             if ((mode==DIRCHANGED)||(NEWDIRECT))
                 return SHOW_DIRCHANGE;
             if ((mode == DOQUIT)||(mode == CHANGEMODE))
                 return SHOW_QUIT;
+            if (mode==READ_NEXT) {
+                if (conf->pos<conf->item_count) {
+                    conf->new_pos = conf->pos + 1;
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    return SHOW_SELCHANGE;
+                }
+                return SHOW_REFRESH;
+            } 
+            if (mode==READ_PREV) {
+                if (conf->pos>1) {
+                    conf->new_pos = conf->pos - 1;
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    return SHOW_SELCHANGE;
+                }
+                return SHOW_REFRESH;
+            } 
             break;
         }
     }

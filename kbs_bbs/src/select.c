@@ -375,14 +375,35 @@ checkret:
 	}
     return SHOW_CONTINUE;
 }
+
+int list_select_add_key(struct _select_def* conf,int key)
+{
+    if ((conf->keybuflen<KEY_BUF_LEN)&&(key!=KEY_INVALID)) {
+        conf->keybuf[conf->keybuflen]=key;
+        conf->keybuflen++;
+        return 0;
+    }
+    return -1;
+}
+
+int list_select_remove_key(struct _select_def* conf)
+{
+    if (conf->keybuflen>0) {
+        conf->keybuflen--;
+        return conf->keybuf[conf->keybuflen];
+    }
+    return KEY_INVALID;
+}
+
 int list_select_loop(struct _select_def *conf)
 {
     int ch;
 
     list_select(conf, KEY_INIT);
     while (1) {
-    	int ret;
-        ch = igetkey();
+        int ret;
+        if ((ch=list_select_remove_key(conf))==KEY_INVALID)
+            ch = igetkey();
         ret=list_select(conf, ch);
         if ((ret == SHOW_QUIT)||(ret == SHOW_SELECT))
             return ret;
