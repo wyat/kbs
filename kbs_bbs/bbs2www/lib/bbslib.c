@@ -3016,7 +3016,7 @@ int del_post(int ent, struct fileheader *fileinfo, char *direct, char *board)
 
 }
 
-int generateOriginIndex(char* board)
+int www_generateOriginIndex(char* board)
 /* added by roy 2003.7.17 generate .ORIGIN index file*/
 {
     struct fileheader *ptr1;
