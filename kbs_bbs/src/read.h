@@ -50,7 +50,7 @@ typedef int (*APPLY_THREAD_FUNC)(struct _select_def* conf,struct fileheader* fh,
   @return 应用的主题个数
 */
 
-int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC* func, bool down,void* arg);
+int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func, bool down,void* arg);
 
 int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct key_command *rcmdlist, int ssize);
 

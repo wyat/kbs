@@ -3066,7 +3066,7 @@ int www_generateOriginIndex(char* board)
 			if (total3>MAX_DING)
 				total3=MAX_DING;
 
-			if ((i = safe_mmapfile_handle(fd3, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr3, (size_t*)&buf3.st_size)) == 1) {
+			if ((i = safe_mmapfile_handle(fd3, PROT_READ, MAP_SHARED, (void **) &ptr3, (size_t*)&buf3.st_size)) == 1) {
 				ptr1 = (struct fileheader *) ptr3;
 				ptrtemp = (struct fileheader *) ptr;
 

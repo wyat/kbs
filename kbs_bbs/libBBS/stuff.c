@@ -926,7 +926,7 @@ void sigbus(int signo)
 
 /**
     将文件描述符fd mmap到内存中
-    如果失败，返回0并且*ret_ptr=NULL
+    如果失败，返回0并且*ret_ptr=MAP_FAILED  (-1)
     @param fd 需要mmap的文件描述符
     @param prot mmap的权限设置
       PROT_EXEC  Pages may be executed.
@@ -960,7 +960,7 @@ int safe_mmapfile_handle(int fd, int prot, int flag, void **ret_ptr, size_t * si
 {
     struct stat st;
 
-    *ret_ptr=NULL;
+    *ret_ptr=MAP_FAILED;
     if (fd < 0)
         return 0;
     if (fstat(fd, &st) < 0) {
@@ -976,8 +976,9 @@ int safe_mmapfile_handle(int fd, int prot, int flag, void **ret_ptr, size_t * si
         return 0;
     }
     *ret_ptr = mmap(NULL, st.st_size, prot, flag, fd, 0);
-    if (*ret_ptr == NULL)
+    if (*ret_ptr == MAP_FAILED)  {
         return 0;
+    }
     /*
      * signal(SIGSEGV,sigbus);
      */
@@ -1012,7 +1013,7 @@ int safe_mmapfile(char *filename, int openflag, int prot, int flag, void **ret_p
         *ret_fd = fd;
         flock(fd, LOCK_EX);
     }
-    if (*ret_ptr == NULL)
+    if (*ret_ptr == MAP_FAILED)
         return 0;
     *size = st.st_size;
     return 1;

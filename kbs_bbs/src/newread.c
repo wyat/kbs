@@ -233,7 +233,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
 
     clear();
 
-    if ((arg.fd = open(arg.direct, O_RDONLY, 0)) != -1) {
+    if ((arg.fd = open(arg.direct, O_RDWR, 0)) != -1) {
         bzero((char *) &read_conf, sizeof(struct _select_def));
         read_conf.item_per_page = BBS_PAGESIZE;
         read_conf.flag = LF_NUMSEL | LF_VSCROLL | LF_BELL | LF_LOOP | LF_MULTIPAGE;     /*|LF_HILIGHTSEL;*/
@@ -450,7 +450,7 @@ bool isThreadTitle(char* a,char* b)
   return strcmp(a,b)?0:1;
 }
 
-int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC* func, bool down,void* arg)
+int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func, bool down,void* arg)
 {
     struct fileheader *pFh,*nowFh;
     int size;
@@ -460,11 +460,10 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
     struct read_arg *read_arg = (struct read_arg *) conf->arg;
     /*是否需要flock,这个有个关键是如果lock中间有提示用户做什么
       的,就会导致死锁*/
-/*    flock(arg->fd,LOCK_SH);*/
     count=0;
     now = conf->pos;
     BBS_TRY {
-        if (safe_mmapfile_handle(arg->fd, PROT_READ|PROT_WRITE, MAP_SHARED, (void **) &pFh, &size) ) {
+        if (safe_mmapfile_handle(read_arg->fd, PROT_READ|PROT_WRITE, MAP_SHARED, (void **) &pFh, &size) ) {
             bool needmove;
             if(now > read_arg->filecount){
             /*在置顶文章前搜索*/
@@ -480,7 +479,7 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
                 /* 移动指针*/
                 if (needmove) {
                     if (down) {
-                        if (++now > arg->filecount)
+                        if (++now > read_arg->filecount)
                             break;
                         nowFh++;
                     } else {
@@ -514,9 +513,8 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
     BBS_CATCH {
     }
     BBS_END;
-    if (pFh!=NULL)
+    if (pFh!=MAP_FAILED)
         end_mmapfile((void *) pFh, size, -1);
-/*    flock(arg->fd,LOCK_UN); */
     return count;
 }
 
@@ -579,12 +577,12 @@ int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
             break;
         case SR_FIRSTNEW:
             apply_thread(conf,fh,fileheader_thread_read,false,(void*)mode);
-            if (conf->new_post==0) {
+            if (conf->new_pos==0) {
                 apply_thread(conf,fh,fileheader_thread_read,true,(void*)SR_FIRSTNEWDOWNSEARCH);
             }
             break;
     }
-    if (conf->new_post==0) return DONOTHING;
+    if (conf->new_pos==0) return DONOTHING;
     /*TODO: SR_FIRSTNEW还需要紧跟着同主题阅读*/
     return SELCHANGE;
 }
