@@ -115,7 +115,7 @@ void resolve_utmp()
 */
             utmp_unlock(utmpfd);
         } else
-            utmphead = (struct UTMPHEAD *) attach_shm1("UTMPHEAD_SHMKEY", 3698, sizeof(struct UTMPHEAD), &iscreate, 1, NULL);   /*attach user tmp head */
+            utmphead = (struct UTMPHEAD *) attach_shm1("UTMPHEAD_SHMKEY", 3698, sizeof(struct UTMPHEAD), &iscreate, 0, NULL);   /*attach user tmp head */
     }
 }
 
