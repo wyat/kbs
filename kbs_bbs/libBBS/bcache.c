@@ -27,10 +27,7 @@ static void bcache_unlock(int fd)
 #else
 static int bcache_lock()
 {
-    signal(SIGALRM, longlock);
-    alarm(10);
     lock_sem(BCACHE_SEMLOCK);
-    signal(SIGALRM, SIG_IGN);
     return 0;
 }
 
