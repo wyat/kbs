@@ -62,19 +62,22 @@ struct userdata
     char ICQ[STRLEN];
     char MSN[STRLEN];
     char homepage[STRLEN];
-    unsigned int userface_img;
+    int userface_img;
+    char userface_url[STRLEN];
+    unsigned char userface_width;
+    unsigned char userface_height;
     unsigned int group;
     char country[STRLEN];
     char province[STRLEN];
     char city[STRLEN];
-    char shenxiao;
-    char bloodtype;
-    char religion;
-    char profession;
-    char married;
-    char education;
+    unsigned char shengxiao;
+    unsigned char bloodtype;
+    unsigned char religion;
+    unsigned char profession;
+    unsigned char married;
+    unsigned char education;
     char graduateschool[STRLEN];
-    char character;
+    unsigned char character;
 
 };
 

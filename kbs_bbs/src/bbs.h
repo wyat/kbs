@@ -493,7 +493,8 @@ struct _brc_cache_entry {
 
 #ifdef HAVE_WBBS
 
-#define WBBS_CUSTOM_FACEIMAGE  0
+#define WBBS_FACEIMAGE_CUSTOM  -1
+#define WBBS_FACEIMAGE_URL    -2
 
 #define WBBS_SHENXIAO_UNKNOWN	0
 #define WBBS_SHENXIAO_MOUSE	1
