@@ -26,14 +26,18 @@ if test "$WWW_DIR" != "no"; then
       fi
     fi
     if test '!' -d $WWW_DIR; then
-        AC_MSG_ERROR("can't find www in $WWW_DIR")
+        AC_MSG_ERROR(Can't find www in $WWW_DIR)
     fi
     WWWBASE=$WWW_DIR
     CGIPATH=$WWWBASE/cgi-bin/bbs
     if test -d $WWWBASE/html; then
     	HTMPATH=$WWWBASE/html
-    else
+    elif test -d $WWWBASE/data; then
+    	HTMPATH=$WWWBASE/data
+    elif test -d $WWWBASE/htdocs; then
     	HTMPATH=$WWWBASE/htdocs
+    else
+        AC_MSG_ERROR(Can't find directory named 'html' or 'data' or 'htdocs' in $WWW_DIR)
     fi
     PHPBBSLIBPATH=$WWWBASE/libexec/bbs
 fi
