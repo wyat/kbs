@@ -464,7 +464,7 @@ void *attach_shm1(char *shmstr, int defaultkey, int shmsize, int *iscreate, int 
     } return shmptr;
 }
 
-void* remove_shm(char *shmstr, int defaultkey, int shmsize)
+void remove_shm(char *shmstr, int defaultkey, int shmsize)
 {
     void *shmptr;
     int shmkey, shmid;

@@ -285,6 +285,7 @@ void flush_user_title();
 
 int flush_ucache()
 {
+    int ret;
     ret= substitute_record(PASSFILE, uidshm->passwd, MAXUSERS * sizeof(struct userec), 1);
 #ifdef HAVE_CUSTOM_USER_TITLE
     flush_user_title();
@@ -354,7 +355,7 @@ int load_ucache()
     return 0;
 }
 
-void resolve_ucache()
+int resolve_ucache()
 {
     int iscreate;
     int fd;
@@ -368,11 +369,12 @@ void resolve_ucache()
             bbslog("4system", "passwd daemon havn't startup");
             remove_shm("UCACHE_SHMKEY",3696,sizeof(*uidshm));
             ucache_unlock(fd);
-            exit(-1);
+            return -1;
         }
         
     }
     ucache_unlock(fd);
+	return 0;
 }
 
 void detach_ucache()

@@ -22,7 +22,7 @@ extern "C" {
     int getnewuserid2(char *userid);
     unsigned int ucache_hash(const char *userid);       /* hash function export for utmp usage */
 
-    void resolve_ucache();
+    int resolve_ucache();
     void detach_ucache();
 
     int getuserid(char *userid, int uid);
