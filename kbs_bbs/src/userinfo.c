@@ -251,6 +251,12 @@ int     real, unum;
                 if(strcmp(u->userid, newinfo.userid ))
                     sprintf(secu,"%s 的 ID 被 %s 改为 %s",u->userid,currentuser.userid,newinfo.userid);/*Haohmaru.99.5.6*/
                 securityreport(secu);
+            } else {
+                currentuser=newinfo; 
+                if ( strcmp(newinfo.username,uinfo.username)) {
+                    strcpy(uinfo.username,newinfo.username);
+                    UPDATE_UTMP_STR(username,uinfo);
+                }
             }
             if( strcmp( u->userid, newinfo.userid ) ) {
                 char src[ STRLEN ], dst[ STRLEN ];
