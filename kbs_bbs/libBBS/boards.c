@@ -243,7 +243,7 @@ void brc_update(char *userid) {
 					return;
 				};
 			}
-			lseek(fd,brc_cache_entry[i].bid*BRC_ITEMSIZE,SEEK_SET);
+			lseek(fd,(brc_cache_entry[i].bid-1)*BRC_ITEMSIZE,SEEK_SET);
 			write(fd,&brc_cache_entry[i].list,BRC_ITEMSIZE);
 
 		}
@@ -374,7 +374,10 @@ int brc_unread( int ftime)
     int         n;
 
     for( n = 0; n < BRC_MAXNUM; n++ ) {
-    	 if (brc_cache_entry[brc_currcache].list[n]==0) return 1;
+    	if (brc_cache_entry[brc_currcache].list[n]==0) {
+		 if (n==0) return 1;
+		 return 0;
+        }
         if( ftime > brc_cache_entry[brc_currcache].list[n] ) {
             return 1;
         } else if( ftime == brc_cache_entry[brc_currcache].list[n] ) {
@@ -407,18 +410,29 @@ void brc_add_read(char *filename) {
                         return;
                 }
         }
-        if (n!=BRC_MAXNUM) {
-        	brc_cache_entry[n]=ftime;
-        	n++;
-        	if (n!=BRC_MAXNUM)
-        		brc_cache_entry[n]=0;
-        	brc_cache_entry[brc_currcache].changed = 1;
+        /* 这个地方加入是不对的，因为只可能有2情况，一个是根本没有unread记录，
+         * 或者所有list[n]的时间之前的文章都被认为已读
+         if (n!=BRC_MAXNUM) {
+             brc_cache_entry[brc_currcache].list[n]=ftime;
+             n++;
+             if (n!=BRC_MAXNUM)
+                 brc_cache_entry[brc_currcache].list[n]=0;
+             brc_cache_entry[brc_currcache].changed = 1;
+         }
+         应该用如下
+         */
+        if (n==0) {
+            for (n=0;n<BRC_MAXNUM-1;n++)
+                brc_cache_entry[brc_currcache].list[n]=ftime;
+            brc_cache_entry[brc_currcache].list[n]=0;
+            brc_cache_entry[brc_currcache].changed = 1;
         }
 }
 
 int brc_clear() {
 	brc_cache_entry[brc_currcache].list[0]=time(0);
 	brc_cache_entry[brc_currcache].list[1]=0;
+	brc_cache_entry[brc_currcache].changed=1;
 }
 
 int brc_clear_new_flag(char* filename)
