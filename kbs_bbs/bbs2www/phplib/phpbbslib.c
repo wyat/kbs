@@ -11,10 +11,13 @@
 #include "bbslib.h"
 #include "vote.h"
 
+#define MAX_DING_NUM	10 //max top article numbers
+
 static unsigned char third_arg_force_ref_1111[] = { 4, BYREF_FORCE, BYREF_FORCE, BYREF_FORCE, BYREF_FORCE };
 static unsigned char third_arg_force_ref_011[] = { 3, BYREF_NONE, BYREF_FORCE, BYREF_FORCE };
 static unsigned char fourth_arg_force_ref_0001[] = { 4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE };
 
+static PHP_FUNCTION(bbs_getonline_user_list);
 #ifdef HAVE_USERMONEY
 static PHP_FUNCTION(bbs_getusermoney);
 static PHP_FUNCTION(bbs_setusermoney);
@@ -123,6 +126,7 @@ static PHP_FUNCTION(bbs_getthreads);
  * define what functions can be used in the PHP embedded script
  */
 static function_entry smth_bbs_functions[] = {
+		PHP_FE(bbs_getonline_user_list, NULL)
 #ifdef HAVE_USERMONEY
 		PHP_FE(bbs_getusermoney, NULL)
 		PHP_FE(bbs_setusermoney, NULL)
@@ -751,8 +755,8 @@ static PHP_FUNCTION(bbs_getusermoney){
 }
 
 static PHP_FUNCTION(bbs_setusermoney){
-    struct userec* user;
-	char* u;
+    struct userec* u;
+	char* user;
 	int uLen,money;
     if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &money) != SUCCESS) {
             WRONG_PARAM_COUNT;
@@ -767,8 +771,8 @@ static PHP_FUNCTION(bbs_setusermoney){
 }
 
 static PHP_FUNCTION(bbs_addusermoney){
-    struct userec* user;
-	char* u;
+    struct userec* u;
+	char* user;
 	int uLen,money;
     if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &money) != SUCCESS) {
             WRONG_PARAM_COUNT;
@@ -796,8 +800,8 @@ static PHP_FUNCTION(bbs_getuserscore){
 }
 
 static PHP_FUNCTION(bbs_setuserscore){
-    struct userec* user;
-	char* u;
+    struct userec* u;
+	char* user;
 	int uLen,score;
     if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &score) != SUCCESS) {
             WRONG_PARAM_COUNT;
@@ -811,8 +815,8 @@ static PHP_FUNCTION(bbs_setuserscore){
 	RETURN_LONG(set_score(u,score));
 }
 static PHP_FUNCTION(bbs_adduserscore){
-    struct userec* user;
-	char* u;
+    struct userec* u;
+	char* user;
 	int uLen,score;
     if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &score) != SUCCESS) {
             WRONG_PARAM_COUNT;
@@ -1067,6 +1071,21 @@ static PHP_FUNCTION(bbs_printansifile)
     signal(SIGBUS, SIG_IGN);
     signal(SIGSEGV, SIG_IGN);
 	RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
+}
+
+static void bbs_make_article_array(zval * array, struct fileheader *fh, char *flags, size_t flags_len)
+{
+    add_assoc_string(array, "FILENAME", fh->filename, 1);
+    add_assoc_long(array, "ID", fh->id);
+    add_assoc_long(array, "GROUPID", fh->groupid);
+    add_assoc_long(array, "REID", fh->reid);
+    add_assoc_long(array, "POSTTIME", get_posttime(fh));
+    add_assoc_stringl(array, "INNFLAG", fh->innflag, sizeof(fh->innflag), 1);
+    add_assoc_string(array, "OWNER", fh->owner, 1);
+    add_assoc_string(array, "TITLE", fh->title, 1);
+    add_assoc_long(array, "LEVEL", fh->level);
+    add_assoc_stringl(array, "FLAGS", flags, flags_len, 1);
+    add_assoc_long(array, "ATTACHPOS", fh->attachment);
 }
 
 static PHP_FUNCTION(bbs_searchtitle)
@@ -1581,20 +1600,6 @@ static PHP_FUNCTION(bbs_getboards)
     efree(columns);
 }
 
-static void bbs_make_article_array(zval * array, struct fileheader *fh, char *flags, size_t flags_len)
-{
-    add_assoc_string(array, "FILENAME", fh->filename, 1);
-    add_assoc_long(array, "ID", fh->id);
-    add_assoc_long(array, "GROUPID", fh->groupid);
-    add_assoc_long(array, "REID", fh->reid);
-    add_assoc_long(array, "POSTTIME", get_posttime(fh));
-    add_assoc_stringl(array, "INNFLAG", fh->innflag, sizeof(fh->innflag), 1);
-    add_assoc_string(array, "OWNER", fh->owner, 1);
-    add_assoc_string(array, "TITLE", fh->title, 1);
-    add_assoc_long(array, "LEVEL", fh->level);
-    add_assoc_stringl(array, "FLAGS", flags, flags_len, 1);
-    add_assoc_long(array, "ATTACHPOS", fh->attachment);
-}
 
 /**
  * Fetch a list of articles in a board into an array.
@@ -1646,21 +1651,6 @@ static PHP_FUNCTION(bbs_getarticles)
     }
     is_bm = is_BM(bp, currentuser);
     setbdir(mode, dirpath, board);
-	if (mode==DIR_MODE_ORIGIN){
-		struct stat normalStat,originStat;
-		if (!stat(dirpath,&originStat))	{
-			setbdir(DIR_MODE_NORMAL,dirpath1,board);
-			if (!stat(dirpath1,&normalStat)){
-				if (normalStat.st_mtime>originStat.st_mtime){
-					www_generateOriginIndex(board);
-				}
-			} else {
-				www_generateOriginIndex(board);
-			}
-		} else {
-			www_generateOriginIndex(board);
-		}
-	}
     total = get_num_records(dirpath, sizeof(struct fileheader));
     /* add by stiger */
 	if(mode == DIR_MODE_NORMAL){
@@ -1778,7 +1768,7 @@ static unsigned int binarySearchInFileHeader(struct fileheader *start,int total,
 /**
  * 获取从start开始的num个版面主题
  * prototype:
- * array bbs_getthreads(char *board, int start, int num);
+ * array bbs_getthreads(char *board, int start, int num,int includeTop);
  *
  * @return array of loaded articles on success,
  *         FALSE on failure.
@@ -1790,31 +1780,35 @@ static PHP_FUNCTION(bbs_getthreads)
     int blen;
     int start,num;
     int total;
-    struct boardheader *bp;
+    struct boardheader *bp=NULL;
 	char dirpath[STRLEN];
     int i;
     zval *element;
     int is_bm;
-	unsigned int *IDList;
+	unsigned int *IDList=NULL;
     char flags[4];              /* flags[0]: flag character
                                  * flags[1]: imported flag
                                  * flags[2]: no reply flag
                                  * flags[3]: attach flag
                                  */
-    int ac = ZEND_NUM_ARGS();
 	unsigned int threadsFounded;
 	int fd;
 	struct stat buf;
 	struct flock ldata;
-	struct fileheader *ptr1;
+	struct fileheader *ptr1=NULL;
 	char* ptr;
 	unsigned int long found;
+	unsigned int DingNum;
+    struct fileheader *articles=NULL;
+	int includeTop;
+
+    int ac = ZEND_NUM_ARGS();
 
 
     /*
      * getting arguments 
      */
-    if (ac != 3 || zend_parse_parameters(3 TSRMLS_CC, "sll", &board, &blen, &start, &num) == FAILURE) {
+    if (ac != 4 || zend_parse_parameters(4 TSRMLS_CC, "slll", &board, &blen, &start, &num, &includeTop) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
 
@@ -1834,10 +1828,73 @@ static PHP_FUNCTION(bbs_getthreads)
         RETURN_FALSE;
     }
     is_bm = is_BM(bp, currentuser);
+
+    if (array_init(return_value) == FAILURE) {
+        RETURN_FALSE;
+    }
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+
+	IDList	= emalloc((num+start)*sizeof(long int));
+
+	threadsFounded=0;
+
+	//get top articles
+
+	if (includeTop) {
+
+		setbdir(DIR_MODE_ZHIDING, dirpath, board);
+
+		total = get_num_records(dirpath, sizeof(struct fileheader));
+
+		DingNum=total;
+
+		articles = emalloc(DingNum * sizeof(struct fileheader));
+
+		DingNum = get_records(dirpath, articles, sizeof(struct fileheader), 1, total);
+
+		for (i = DingNum-1; i>=0; i--) {
+			if (foundInArray(articles[i].groupid,IDList,threadsFounded)==-1)	{
+				if ((found=binarySearchInFileHeader(articles,DingNum,articles[i].groupid))==-1) continue;
+				IDList[threadsFounded]=articles[i].groupid;
+				threadsFounded++;
+				if ((threadsFounded-1)>=start){
+					MAKE_STD_ZVAL(element);
+					array_init(element);
+					flags[0] = get_article_flag(articles+found, currentuser, board, is_bm);
+					if (is_bm && (articles[found].accessed[0] & FILE_IMPORTED))
+						flags[1] = 'y';
+					else
+						flags[1] = 'n';
+					if (articles[found].accessed[1] & FILE_READ)
+						flags[2] = 'y';
+					else
+						flags[2] = 'n';
+					if (articles[found].attachment)
+						flags[3] = '@';
+					else
+						flags[3] = ' ';
+					bbs_make_article_array(element, articles+found, flags, sizeof(flags));
+					zend_hash_index_update(Z_ARRVAL_P(return_value), threadsFounded-1-start, (void *) &element, sizeof(zval *), NULL);
+					if ((threadsFounded>=num+start) || (threadsFounded>MAX_DING_NUM)){
+						break;
+					}
+				}
+			
+			}
+		}
+	}
+
+	// get normal articles
+
     setbdir(DIR_MODE_NORMAL, dirpath, board);
 
-    if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
+    if ((fd = open(dirpath, O_RDONLY, 0)) == -1) {
+		efree(articles);
+		efree(IDList);
         RETURN_LONG(-1);   
+	}
     ldata.l_type = F_RDLCK;
     ldata.l_whence = 0;
     ldata.l_len = 0;
@@ -1852,28 +1909,18 @@ static PHP_FUNCTION(bbs_getthreads)
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
+		efree(articles);
+		efree(IDList);
         RETURN_LONG(-2);
     }
     ptr1 = (struct fileheader *) ptr;
     /*
      * fetching articles 
      */
-    if (array_init(return_value) == FAILURE) {
-        RETURN_FALSE;
-    }
-#ifdef HAVE_BRC_CONTROL
-    brc_initial(currentuser->userid, board);
-#endif
-	IDList	= emalloc((num+start)*sizeof(long int));
-
-	bzero(IDList,(num+start)*sizeof(long int));
-
-	threadsFounded=0;
 
 
 	for (i=total-1;i>=0;i--) {
 		if (foundInArray(ptr1[i].groupid,IDList,threadsFounded)==-1)	{
-
 			if ((found=binarySearchInFileHeader(ptr1,total,ptr1[i].groupid))==-1) continue;
 			IDList[threadsFounded]=ptr1[i].groupid;
 			threadsFounded++;
@@ -1906,6 +1953,7 @@ static PHP_FUNCTION(bbs_getthreads)
     fcntl(fd, F_SETLKW, &ldata);        /* 退出互斥区域*/
     close(fd);
     efree(IDList);
+	efree(articles);
 }
 
 /**
@@ -2683,8 +2731,9 @@ static PHP_FUNCTION(bbs_checkpostperm)
 {
     long user_num, boardnum;
     struct userec *user;
+    const struct boardheader *bh;
 
-    getcwd(old_pwd, 1023);
+	getcwd(old_pwd, 1023);
     chdir(BBSHOME);
     old_pwd[1023] = 0;
     if (zend_parse_parameters(2 TSRMLS_CC, "ll", &user_num, &boardnum) != SUCCESS)
@@ -2692,7 +2741,11 @@ static PHP_FUNCTION(bbs_checkpostperm)
     user = getuserbynum(user_num);
     if (user == NULL)
         RETURN_LONG(0);
-    RETURN_LONG(haspostperm(user, getboard(boardnum)));
+	bh=getboard(boardnum);
+	if (bh==0) {
+		RETURN_LONG(0);
+	}
+    RETURN_LONG(haspostperm(user, bh->filename));
 }
 
 
@@ -5829,5 +5882,49 @@ static PHP_FUNCTION(bbs_sysconf_str)
         }
         char_result=sysconf_str(char_conf);//获取配制参数
         RETURN_STRING(char_result,1);
+}
+
+
+/*
+ *  bbs_getonline_user_list
+ *  获取再线用户列表
+ *
+ *  没有参数
+ *  返回在线用户数组
+ *  格式：(invisible,isfriend,userid,username,userfrom,mode,idle(妙))
+ */
+static PHP_FUNCTION(bbs_getonline_user_list)
+{
+
+	int i;
+	uinfo_t **user;
+
+	zval* element;
+	
+	int total;
+
+        if ( 0!=ZEND_NUM_ARGS() )
+		 WRONG_PARAM_COUNT;
+
+	user = get_ulist_addr();
+
+	init_array(return_value);
+
+	apply_ulist_addr((APPLY_UTMP_FUNC) full_utmp, (char *) &total);
+
+	for ( i=0; i < total; i++ ) {
+		MAKE_ZVAL ( element );
+		init_array ( element );
+
+		add_assoc_bool ( element, "invisible", user[i]->invisible );
+		add_assoc_bool ( element, "isfriend", isfriend(user[i]->userid) );
+		add_assoc_string ( element, "userid", user[i]->userid, 1 );
+		add_assoc_string ( element, "username", user[i]->username, 1 );
+		add_assoc_string ( element, "userfrom", user[i]->from, 1 );
+		add_assoc_string ( element, "mode", ModeType(user[i]->mode), 1 );
+		add_assoc_long ( element, "idle", (time(0) - get_idle_time(user[i])) );
+
+		zend_hash_index_update(Z_ARRVAL_P(return_value), i, (void *) &element, sizeof(zval *), NULL);
+	}
 }
 
