@@ -251,7 +251,11 @@ int     real, unum;
                 if(strcmp(u->userid, newinfo.userid ))
                     sprintf(secu,"%s 的 ID 被 %s 改为 %s",u->userid,currentuser.userid,newinfo.userid);/*Haohmaru.99.5.6*/
                 securityreport(secu);
-            }
+            } else { /* Add by KCN ,Update utmp and currentuser */
+		strcpy(uinfo.username,newinfo.username);
+                UPDATE_UTMP_STR(username,uinfo);
+		currentuser=newinfo;
+	    }
             if( strcmp( u->userid, newinfo.userid ) ) {
                 char src[ STRLEN ], dst[ STRLEN ];
 
@@ -268,7 +272,7 @@ int     real, unum;
                 sprintf(src,"tmp/email_%s",u->userid);
                 unlink(src);
                 setuserid( unum, newinfo.userid );
-            }
+            } 
             /* added by netty to automatically send a mail to new user. */
 
             if ((netty_check == 1))
@@ -330,9 +334,6 @@ int     real, unum;
             }
             memcpy( u, &newinfo, sizeof(newinfo) );
             set_safe_record();
-            substitute_record( PASSFILE, &newinfo, sizeof(newinfo), unum );
-            strcpy(uinfo.username,newinfo.username);
-            UPDATE_UTMP_STR(username,uinfo);
             break;/*Haohmaru.98.01.10.faint...Luzi加个for循环也不break!*/
         }
     }clear();
