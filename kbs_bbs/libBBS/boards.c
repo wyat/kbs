@@ -355,7 +355,9 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼ş£¬È¡³ö±£´
     		bptr=getboard(bid);
     		lseek(fd,BRC_HEADER_LEN+i*BRC_ITEMSIZE,SEEK_SET);
     		read(fd,&brc_cache_entry[entry].list,BRC_ITEMSIZE);
-    		if (brc_cache_entry[entry].list[0]&&(brc_cache_entry[entry].list[0]<bptr->createtime) )
+    		if (brc_cache_entry[entry].list[0])
+    			/* ÏÈ²»¼ÓÈë°æÃæµÄ´´½¨Ê±¼äµÄÅĞ¶Ï
+    		&&(brc_cache_entry[entry].list[0]<bptr->createtime) )*/
     		{
     			brc_cache_entry[entry].changed=1;
     			brc_cache_entry[entry].list[0]=0;
@@ -481,40 +483,6 @@ int haspostperm(struct userec* user,char *bname) /* ÅĞ¶ÏÔÚ bname°æ ÊÇ·ñÓĞpostÈ¨ 
             return 1;} /* stephen 2000.10.27 */
     if (!HAS_PERM(user,PERM_POST)) return 0;
     return (HAS_PERM(user,(bcache[i-1].level&~PERM_NOZAP) & ~PERM_POSTMASK));
-}
-
-
-int chk_BM_instr(char BMstr[STRLEN-1],char    bmname[IDLEN+2])
-{
-    char *ptr;
-    char BMstrbuf[STRLEN-1];
-
-    strcpy(BMstrbuf,BMstr);
-    ptr=strtok(BMstrbuf,",: ;|&()\0\n");
-    while(1)
-    {
-        if(ptr==NULL)
-            return NA;
-        if(!strcmp(ptr,bmname/*,strlen(currentuser->userid)*/))
-            return YEA;
-        ptr=strtok(NULL,",: ;|&()\0\n");
-    }
-}
-
-
-int chk_currBM(char BMstr[STRLEN-1],struct userec* user)   
-	/* ¸ù¾İÊäÈëµÄ°æÖ÷Ãûµ¥ ÅĞ¶ÏuserÊÇ·ñÓĞ°æÖ÷ È¨ÏŞ*/
-{
-    char *ptr;
-    char BMstrbuf[STRLEN-1];
-
-    if(HAS_PERM(user,PERM_OBOARDS)||HAS_PERM(user,PERM_SYSOP))
-        return YEA;
-
-    if(!HAS_PERM(user,PERM_BOARDS))
-        return NA;
-
-    return chk_BM_instr(BMstr, user->userid);
 }
 
 int chk_BM_instr(char BMstr[STRLEN-1],char    bmname[IDLEN+2])
