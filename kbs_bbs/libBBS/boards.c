@@ -407,6 +407,12 @@ void brc_add_read(char *filename) {
                         return;
                 }
         }
+        if (n!=BRC_MAXNUM) {
+        	brc_cache_entry[n]=ftime;
+        	n++;
+        	if (n!=BRC_MAXNUM)
+        		brc_cache_entry[n]=0;
+        }
 }
 
 int brc_clear() {
