@@ -1,4 +1,4 @@
-EXTRA_DIST = README INSTALL include/bbslib.h include/types.h \
+EXTRA_DIST = README INSTALL include/bbslib.h include/types.h xml/* sites/devel/* sites/fb2k-v2/* \
              @HTML_FILES@
 SUBDIRS = lib phplib src
 CLEANFILES=@EXTRA_CLEAN@

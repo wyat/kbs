@@ -7,7 +7,7 @@ int main()
 {
     char *board, buf[80], *board1, *title;
     int i, total = 0;
-    bcache_t *bc;
+    boardheader_t *bc;
 
     init_all();
     board = nohtml(getparm("board"));

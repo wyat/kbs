@@ -80,7 +80,7 @@ int setboardmark(char *board, int i)
 {
     int pos;
 
-    pos = getbnum(board);       /* board name --> board No. */
+    pos = getboardnum(board,NULL);       /* board name --> board No. */
     if (pos > 0) {
     	 int j;
     	 j=brdshm->bstatus[pos - 1].updatemark;
@@ -95,7 +95,7 @@ int setboardorigin(char *board, int i)
 {
     int pos;
 
-    pos = getbnum(board);       /* board name --> board No. */
+    pos = getboardnum(board,NULL);       /* board name --> board No. */
     if (pos > 0) {
     	 int j;
     	 j=brdshm->bstatus[pos - 1].updateorigin;
@@ -110,7 +110,7 @@ int setboardtitle(const char *board, int i)
 {
     int pos;
 
-    pos = getbnum(board);       /* board name --> board No. */
+    pos = getboardnum(board,NULL);       /* board name --> board No. */
     if (pos > 0) {
     	 int j;
     	 j=brdshm->bstatus[pos - 1].updatetitle;

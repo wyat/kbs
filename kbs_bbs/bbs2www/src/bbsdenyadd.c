@@ -77,7 +77,7 @@ int show_form(char *board)
     printf("<input type=\"submit\" value=\"х╥хо\"></form>");
 }
 
-int inform(bcache_t * bp, char *user, char *exp, int dt)
+int inform(boardheader_t * bp, char *user, char *exp, int dt)
 {
     FILE *fn;
     char buf[80], title[80];
@@ -186,7 +186,7 @@ int main()
     char exp[80], board[80], *userid;
     int dt;
     struct userec *u = NULL;
-    bcache_t *bp;
+    boardheader_t *bp;
     struct tm *tmtime;
     time_t undenytime;
     char buf[STRLEN];

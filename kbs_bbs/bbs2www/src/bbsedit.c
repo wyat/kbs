@@ -6,7 +6,7 @@
 int get_edit_post(char *userid, char *board, char *file, struct fileheader *x)
 {
     struct userec *user;
-    bcache_t *brd;
+    boardheader_t *brd;
     char fname[STRLEN];
 
     if (getuser(userid, &user) == 0)

@@ -277,7 +277,12 @@ int t_query(char* q_id)
     else
 #endif                          /* 
                                  */
+#ifdef FB2000
+	prints("%s (\033[1;33m%s\033[m) 共上站 \033[1;32m%d\033[m 次，网龄[\033[1;32m%d\033[0;1m]天",
+		lookupuser->userid, lookupuser->username,  lookupuser->numlogins, (time(0)-lookupuser->firstlogin)/86400);
+#else
         prints("%s (%s) 共上站 %d 次，发表过 %d 篇文章", lookupuser->userid, lookupuser->username, lookupuser->numlogins, lookupuser->numposts);
+#endif
     strcpy(planid, lookupuser->userid);
     if ((newline = strchr(genbuf, '\n')) != NULL)
         *newline = '\0';
@@ -299,10 +304,14 @@ int t_query(char* q_id)
             strcpy(exittime, "因在线上或非常断线不详");
     }
 #ifdef NINE_BUILD
-    prints("\n上次在  [%s] 从 [%s] 到本站一游。", Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') ? "(不详)" : SHOW_USERIP(lookupuser, lookupuser->lasthost)));
+    prints("\n上次在  [%s] 从 [%s] 到本站一游", Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') ? "(不详)" : SHOW_USERIP(lookupuser, lookupuser->lasthost)));
+#else
+#ifdef FB2000
+    prints("\n上次在  [\033[1;32m%s\033[m] 从 [\033[1;32m%s\033[m] 到本站一游。\n离线时间[\033[1;32m%s\033[m] ", Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') /*|| DEFINE(currentuser,DEF_HIDEIP) */ ? "(不详)" : ( (!strcmp(lookupuser->userid , currentuser->userid) || HAS_PERM(currentuser, PERM_OBOARDS) ) ? lookupuser->lasthost: SHOW_USERIP(lookupuser, lookupuser->lasthost)) ), exittime);
 #else
     prints("\n上次在  [%s] 从 [%s] 到本站一游。\n离线时间[%s] ", Ctime(lookupuser->lastlogin), ((lookupuser->lasthost[0] == '\0') /*|| DEFINE(currentuser,DEF_HIDEIP) */ ? "(不详)" : ( (!strcmp(lookupuser->userid , currentuser->userid) || HAS_PERM(currentuser, PERM_SYSOP) ) ? lookupuser->lasthost: SHOW_USERIP(lookupuser, lookupuser->lasthost)) ),    /*Haohmaru.99.12.18. hide ip */
            exittime);
+#endif
 #endif
 #ifdef NINE_BUILD
      prints("\n信箱：[\033[5m%2s\033[m]，经验值：[%d](%s) 表现值：[%d](%s) 生命力：[%d]%s\n"
@@ -311,8 +320,15 @@ int t_query(char* q_id)
        (lookupuser->userlevel & PERM_SUICIDE)?" (自杀中)":" ");
 #else
     uleveltochar(permstr, lookupuser);
+#ifdef FB2000
+	prints("信箱：[\033[1;5;32m%2s\033[m] 生命力：[\033[1;32m%d\033[m] 身份: [\033[1;31m%s\033[m]\n",
+			(check_query_mail(qry_mail_dir) == 1) ? "信" : "  ", compute_user_value(lookupuser), permstr);
+	prints("文章数：[\033[1;32m%d\033[m](\033[1;33m%s\033[m) 表现值：[\033[1;32m%d\033[m](\033[1;33m%s\033[m) 经验值：[\033[1;32m%d\033[m](\033[1;33m%s\033[m)\n",
+			lookupuser->numposts, cnumposts(lookupuser->numposts), perf, cperf(perf), exp, cexp(exp));
+#else
     prints("信箱：[\033[5m%2s\033[m] 生命力：[%d] 身份: [%s]%s\n",
            (check_query_mail(qry_mail_dir) == 1) ? "信" : "  ", compute_user_value(lookupuser), permstr, (lookupuser->userlevel & PERM_SUICIDE) ? " (自杀中)" : "。");
+#endif
 #endif
 #if defined(QUERY_REALNAMES)
     if (HAS_PERM(currentuser, PERM_BASIC))

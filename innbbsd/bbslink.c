@@ -1,5 +1,6 @@
 # include "innbbsconf.h"
 # include "bbslib.h"
+# include "site.h"
 # include <stdarg.h>
 
 #include <sys/mman.h>
@@ -27,12 +28,6 @@
 #ifndef MAXBUFLEN
 #define MAXBUFLEN 256
 #endif
-
-//修改mail格式 added by Czz 020419
-#ifndef MY_MAIL_ADDR
-#define	MY_MAIL_ADDR	"feeling-NOsmthSPAM-org"
-#endif
-//added end
 
 typedef struct Over_t {
     time_t mtime;
@@ -431,8 +426,7 @@ char *board, *filename, *userid, *nickname, *subject;
 #endif
 #endif
             //修改mail格式 modified by Czz 020419
-//      strncpy(FROM_BUF, fileglue("%s.bbs@%s (%s)", userid, MYADDR, nickname), sizeof FROM_BUF);
-            strncpy(FROM_BUF, fileglue("%s@%s (%s)", userid, MY_MAIL_ADDR, nickname), sizeof FROM_BUF);
+            strncpy(FROM_BUF, fileglue("%s@%s-SPAM.no (%s)", userid, MAIL_BBSDOMAIN, nickname), sizeof FROM_BUF);
             //modified end
             FROM = FROM_BUF;
             sover.from = FROM;
@@ -534,7 +528,7 @@ soverview_t *sover;
 
         if (end)
             *end = '\0';
-        strncpy(times, baseN(atol(filename + 2), 48, 6), sizeof times);
+        strncpy(times, baseN(atol(filename + ((filename[1] == '/')?4:2)), 48, 6), sizeof times);
         if (end)
             *end = '.';
         hash = hash_value(fileglue("%s.%s", filename, board));
@@ -931,8 +925,7 @@ char *board, *filename, *userid, *nickname, *subject;
     }
     mtime = -1;
     //修改mail格式 modified by Czz 020419
-//  strncpy(FROM_BUF, fileglue("%s.bbs@%s (%s)", userid, MYADDR, nickname), sizeof FROM_BUF);
-    strncpy(FROM_BUF, fileglue("%s@%s (%s)", userid, MY_MAIL_ADDR, nickname), sizeof FROM_BUF);
+    strncpy(FROM_BUF, fileglue("%s@%s-SPAM.no (%s)", userid, MAIL_BBSDOMAIN, nickname), sizeof FROM_BUF);
     //modified end
     FROM = FROM_BUF;
     sover.from = FROM;
@@ -1640,6 +1633,10 @@ char **argv;
     if (Verbose) {
         printf("MYADDR: %s\n", MYADDR);
         printf("MYSITE: %s\n", MYSITE);
+    }
+    if (nl == NULL) {
+        fprintf(stderr, "can't find %s in nodelist.bbs\n", MYBBSID);
+        return -1;
     }
     left = strchr(nl->protocol, '(');
     right = strrchr(nl->protocol, ')');

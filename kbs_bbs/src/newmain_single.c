@@ -558,7 +558,7 @@ void login_query()
             convcode = 1;
             uid[strlen(uid) - 1] = 0;
         }
-        if (strcmp(uid, "new") == 0) {
+        if (strcasecmp(uid, "new") == 0) {
 #ifdef LOGINASNEW
             if (check_ban_IP(fromhost, buf) <= 0) {
                 new_register();
@@ -881,7 +881,7 @@ void user_login()
     igetkey();
     /* 全国十大热门话题 added by Czz 020128 */
 #ifdef CNBBS_TOPIC
-    show_help("0Announce/bbslist/newsday");
+    show_help("0Announce/bbslists/newsday");
 #endif
     /* added end */
     if (dashf("0Announce/systeminfo")) {

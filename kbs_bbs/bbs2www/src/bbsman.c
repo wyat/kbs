@@ -33,7 +33,7 @@ int main()
     int i, total = 0, mode,num;
     char board[80], *ptr;
     char buf[STRLEN];
-    bcache_t *brd;
+    boardheader_t *brd;
 
     init_all();
     if (!loginok)

@@ -3,7 +3,6 @@
  */
 
 #include "bbs.h"
-#include "permissions.h"
 main()
 {
     FILE *rec;

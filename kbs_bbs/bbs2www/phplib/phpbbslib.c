@@ -230,8 +230,8 @@ static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_getuserscore, NULL)
 		PHP_FE(bbs_setuserscore, NULL)
 		PHP_FE(bbs_adduserscore, NULL)
-		PHP_FE(bbs_saveuserdata, NULL)
 #endif
+		PHP_FE(bbs_saveuserdata, NULL)
 		PHP_FE(bbs_getuserparam, NULL)
 		PHP_FE(bbs_setuserparam, NULL)
 
@@ -1424,7 +1424,7 @@ static PHP_FUNCTION(bbs_search_articles)
     char *board,*title, *title2, *title3,*author;
     long bLen,tLen,tLen2,tLen3,aLen;
     long date,mmode,origin,attach;
-    bcache_t bh;
+    boardheader_t bh;
 	char dirpath[STRLEN];
 	int fd;
 	struct stat buf;
@@ -1587,7 +1587,7 @@ static PHP_FUNCTION(bbs_searchtitle)
     char *board,*title, *title2, *title3,*author;
     long bLen,tLen,tLen2,tLen3,aLen;
     long date,mmode,origin,attach;
-    bcache_t bh;
+    boardheader_t bh;
 	char dirpath[STRLEN];
 	int fd;
 	struct stat buf;
@@ -1754,7 +1754,7 @@ static PHP_FUNCTION(bbs_searchtitle)
     long boardLen,filenameLen;
 	char path[512];
     struct fileheader x;
-    bcache_t *brd;
+    boardheader_t *brd;
 
 
     getcwd(old_pwd, 1023);
@@ -1810,7 +1810,7 @@ static PHP_FUNCTION(bbs_printoriginfile)
     buffered_output_t *out;
 	int i;
 	int skip;
-	bcache_t* bp;
+	boardheader_t* bp;
 
     getcwd(old_pwd, 1023);
     chdir(BBSHOME);
@@ -2367,7 +2367,7 @@ static PHP_FUNCTION(bbs_domailforward)
     char *fname, *tit, *target1;
 	char target[128];
     long filename_len,tit_len,target_len;
-    bcache_t bh;
+    boardheader_t bh;
 	long big5,noansi;
     struct boardheader *bp;
 	char title[512];
@@ -2416,7 +2416,7 @@ static PHP_FUNCTION(bbs_doforward)
 {
     char *board,*filename, *tit, *target;
     long board_len,filename_len,tit_len,target_len;
-    bcache_t bh;
+    boardheader_t bh;
 	char fname[STRLEN];
 	long big5,noansi;
     struct boardheader *bp;
@@ -3847,7 +3847,7 @@ static PHP_FUNCTION(bbs_postarticle)
     int r, i, sig;
 	int reid;
     struct fileheader x, *oldx;
-    bcache_t *brd;
+    boardheader_t *brd;
     int local, anony;
     sigjmp_buf bus_jump;
     /*int filtered = 0;*/
@@ -4003,7 +4003,7 @@ static PHP_FUNCTION(bbs_updatearticle)
     char infile[80], outfile[80];
     char buf2[256];
     int i;
-    bcache_t *bp;
+    boardheader_t *bp;
     sigjmp_buf bus_jump;
     /*int filtered = 0;*/
 
@@ -4087,7 +4087,7 @@ static PHP_FUNCTION(bbs_brcaddread)
 	char *board;
 	int blen;
     long fid;
-	bcache_t* bp;
+	boardheader_t* bp;
 
     getcwd(old_pwd, 1023);
     chdir(BBSHOME);
@@ -5333,8 +5333,6 @@ static PHP_FUNCTION(bbs_fillidinfo)
     RETURN_LONG(0);
 }
 
-#ifdef HAVE_WFORUM
-
 static PHP_FUNCTION(bbs_saveuserdata)
 {
     char*   userid,
@@ -5479,7 +5477,6 @@ static PHP_FUNCTION(bbs_saveuserdata)
 
 }
 
-#endif
 
 #ifdef HAVE_WFORUM
 /**
@@ -6011,7 +6008,7 @@ static PHP_FUNCTION(bbs_getonlinefriends)
 static PHP_FUNCTION(bbs_delfile)
 {
 	FILE *fp;
-    bcache_t *brd;
+    boardheader_t *brd;
     struct fileheader f;
     struct userec *u = NULL;
     char dir[80], path[80];
@@ -7878,7 +7875,8 @@ static PHP_FUNCTION(bbs_x_search)
     if (array_init(return_value) == FAILURE)
         RETURN_FALSE;
 
-    strcpy(ip, sysconf_str("QUERY_SERVER"));
+    if ((pp = sysconf_str("QUERY_SERVER")) == NULL) return;
+    strcpy(ip, pp);
     if((sockfd=socket(AF_INET, SOCK_STREAM, 0))==-1) return;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family=AF_INET;    
