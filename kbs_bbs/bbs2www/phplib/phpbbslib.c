@@ -1012,6 +1012,21 @@ static PHP_FUNCTION(bbs_getarticles)
     }
     is_bm = is_BM(bp, currentuser);
     setbdir(mode, dirpath, board);
+	if (mode==DIR_MODE_ORIGIN){
+		struct stat normalStat,originStat;
+		if (!stat(dirpath,&originStat))	{
+			setbdir(DIR_MODE_NORMAL,dirpath1,board);
+			if (!stat(dirpath1,&normalStat)){
+				if (normalStat.st_mtime>originStat.st_mtime){
+					www_generateOriginIndex(board);
+				}
+			} else {
+				www_generateOriginIndex(board);
+			}
+		} else {
+			www_generateOriginIndex(board);
+		}
+	}
     total = get_num_records(dirpath, sizeof(struct fileheader));
     /* add by stiger */
 	if(mode == DIR_MODE_NORMAL){
