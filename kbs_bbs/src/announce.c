@@ -45,6 +45,7 @@ extern void a_prompt();         /* added by netty */
 int t_search_down();
 int t_search_up();
 int a_loadnames(MENU * pm);     /* 装入 .Names */
+#define BLK_SIZ 10240
 
 static char *import_path[ANNPATH_NUM];  /*多丝路 */
 static char *import_title[ANNPATH_NUM];
@@ -684,13 +685,15 @@ MENU *pm;
 }
 
 /* a_SeSave 用来删除存到暂存档时的文件头和尾 Life 1997.4.6 */
-int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg)
+int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *direct, int ent)
 {
 
     char ans[STRLEN];
     FILE *inf, *outf;
     char qfile[STRLEN], filepath[STRLEN];
     char buf[256];
+    bool findattach=false;
+    struct fileheader savefileheader;
 
     sprintf(qfile, "boards/%s/%s", key, fileinfo->filename);
     sprintf(filepath, "tmp/se.%s", currentuser->userid);
@@ -703,12 +706,12 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg)
             if (buf[0] == '\n')
                 break;
 
-// TODO: need complete
         while (fgets(buf, 256, inf) != NULL) {
             if (strcmp(buf, "--\n") == 0)
                 break;
-            if (!memcmp(buf,ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1)) {
-                
+            if (fileinfo->attachment&&
+                !memcmp(buf,ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1)) {
+                findattach=true;
                 break;
             }
             if (buf[250] != '\0')
@@ -718,44 +721,29 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg)
         fprintf(outf, "\n\n");
         fclose(inf);
     }
-    fclose(outf);
 
-    if (dashf(filepath)) {
-        if (!nomsg) {
-            sprintf(buf, "要附加在旧暂存档之後吗?(Y/N/C) [Y]: ");
-            a_prompt(-1, buf, ans);
+    fclose(outf);
+    memcpy(&savefileheader,fileinfo,sizeof(savefileheader));
+    if (fileinfo->attachment) {
+        int fsrc,fdst;
+        char *src = (char *) malloc(BLK_SIZ);
+        if ((fsrc = open(filepath, O_RDONLY)) >= 0) {
+            fseek(fsrc,fileinfo->attachment,SEEK_SET);
+            sprintf(genbuf,"tmp/bm.%s.attach",currentuser->userid);
+            if ((fdst=open(genbuf,O_WRONLY | O_CREAT, 0600)) >= 0) {
+                do {
+                    ret = read(fsrc, src, BLK_SIZ);
+                    if (ret <= 0)
+                        break;
+                } while (write(fdst, src, ret) > 0);
+                close(fdst);
+            }
+            close(fsrc);
         }
-        /*
-         * if( ans[0] == 'N' || ans[0] == 'n' ||nomsg) { 
-         */
-        /*
-         * Leeward 98.04.16: fix bugs 
-         */
-        if ((ans[0] == 'N' || ans[0] == 'n') && (!nomsg)) {
-            /*
-             * sprintf( genbuf, "/bin/cp -r %s  tmp/bm.%s", filepath, currentuser->userid );
-             */
-            sprintf(buf, "tmp/bm.%s", currentuser->userid);
-            f_cp(filepath, buf, 0);
-        } else if (((ans[0] == 'C' || ans[0] == 'c')) && (!nomsg))
-            return 1;
-        else {
-            sprintf(buf, "/bin/cat %s >> tmp/bm.%s", filepath, currentuser->userid);
-            system(buf);
-        }
-    } else {
-        /*
-         * sprintf( genbuf, "/bin/cp -r %s  tmp/bm.%s", filepath , currentuser->userid );
-         */
-        f_cp(filepath, buf, 0);
+        free(src);
+        savefileheader.attachment=0;
     }
-    unlink(filepath);
-    sprintf(buf, "将 %s 存入暂存档", filepath);
-    a_report(buf);
-    if (!nomsg) {
-        sprintf(buf, " 已将该文章存入暂存档, 请按任何键以继续 << ");
-        a_prompt(-1, buf, ans);
-    }
+    a_Save(filepath, key, &savefileheader, nomsg,direct,ent);
     return 1;
 }
 
@@ -763,10 +751,10 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg)
 /* added by netty to handle post saving into (0)Announce */
 int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *direct, int ent)
 {
-
     char board[STRLEN];
     char ans[STRLEN];
     char buf[256];
+    char* filepath;
 
     sprintf(board, "tmp/bm.%s", currentuser->userid);
     ans[0]='N';
@@ -780,35 +768,58 @@ int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *
         } else if (((ans[0] == 'C' || ans[0] == 'c')) && (!nomsg))
             return 1;
         else {
-// TODO: need complete
             ans[0]='Y';
-            long attachpos=0;
-            if (fileinfo->attachment) {
-                FILE* fp;
-                sprintf(genbuf,"tmp/bm.%s.attachpos",currentuser->userid);
-                if ((fp=fopen(genbuf,"r"))!=NULL) {
-                    fscanf(fp,"%ld",&attachpos);
-                    fclose(fp);
-                }
-            }
-            
-            sprintf(genbuf, "/bin/cat boards/%s/%s >> tmp/bm.%s", key, fileinfo->filename, currentuser->userid);
-            system(genbuf);
         }
     } 
-    if (ans[0]=='N')
+    if ((ans[0]=='N')||(ans[0]=='Y'))
     {
-        sprintf(buf, "boards/%s/%s", key, fileinfo->filename);
+        int mode;
+        int fsrc,fdst1,fdst2;
+        if (ans[0]=='Y')
+            mode=O_APPEND;
+        else
+            mode=0;
+        if (path==NULL) {
+            sprintf(buf, "boards/%s/%s", key, fileinfo->filename);
+            filepath=buf;
+        } else filepath=path;
         sprintf(board, "tmp/bm.%s", currentuser->userid);
-        if (fileinfo->attachment) {
-            FILE* fp;
-            sprintf(genbuf,"tmp/bm.%s.attachpos",currentuser->userid);
-            if ((fp=fopen(genbuf,"w"))!=NULL) {
-                fprintf(fp,"%ld",fileinfo->attachment);
-                fclose(fp);
+        if ((fsrc = open(filepath, O_RDONLY)) >= 0) {
+            sprintf(genbuf,"tmp/bm.%s.attach",currentuser->userid);
+            if ((fdst2=open(board,O_WRONLY | O_CREAT | mode, 0600)) >= 0) {
+                int ret;
+                char *src,pool = (char *) malloc(BLK_SIZ);
+                long saved=0,needsave;
+                if ((fdst1=open(genbuf,O_WRONLY | O_CREAT | mode, 0600)) >= 0) {
+                    src = pool;
+                    do {
+                        /* read content and save (fileinfo->attachment) bytes */
+                        ret = read(fsrc, src, BLK_SIZ);
+                        if (ret <= 0)
+                            break;
+                        if (fileinfo->attachment) {
+                            if (saved+ret>fileinfo->attachment) {
+                                needsave=fileinfo->attachment-saved;
+                            } else needsave=ret;
+                        } else needsave=ret;
+                        saved+=needsave;
+                    } while ((write(fdst2, src, needsave) > 0)&&(needsave==ret));
+                    close(fdst2);
+                }
+                if ((needsave!=ret)&&(ret>0))
+                    write(fdst1, src+needsave, ret-needsave);
+                if (fileinfo->attachment)
+                    /* save attachment */
+                    do {
+                        ret = read(fsrc, src, BLK_SIZ);
+                        if (ret <= 0)
+                            break;
+                    } while (write(fdst1, src, ret) > 0);
+                free(pool);
+                close(fdst1);
             }
+            close(fsrc);
         }
-        f_cp(buf, board, 0);
     }
     sprintf(buf, "将 boards/%s/%s 存入暂存档", key, fileinfo->filename);
     change_post_flag(currBM, currentuser, digestmode, currboard, ent, fileinfo, direct, FILE_IMPORT_FLAG, 0);
@@ -1042,12 +1053,29 @@ int mode;
             /*
              * sprintf( genbuf, "mv -f %s %s",board, fpath );
              */
-            sprintf(fpath2, "tmp/bm.%s.attachpos", currentuser->userid);
-            if ((pn = fopen(fpath2, "r")) != NULL) {
-                fscanf(pn,"%ld",&attachpos);
-                fclose(pn);
+            {
+                struct stat st;
+                int fsrc,fdst;
+                f_mv(board, fpath);
+                sprintf(fpath2, "tmp/bm.%s.attach", currentuser->userid);
+                if ((fsrc = open(fpath2, O_RDONLY)) != NULL) {
+                    if ((fdst = open(fpath, O_WRONLY | O_CREAT | mode, 0600)) >= 0) {
+                        fstat(fdst,&st);
+                        char *src = (char *) malloc(BLK_SIZ);
+                        long ret;
+                        do {
+                            ret = read(fsrc, src, BLK_SIZ);
+                            if (ret <= 0)
+                                break;
+                        } while (write(fdst, src, ret) > 0);
+                        close(fdst);
+                        attachpos=st.st_size;
+                        free(src);
+                    }
+                    close(fsrc);
+                }
+                unlink(fpath2);
             }
-            f_mv(board, fpath);
             break;
         }
         if (mode != ADDGROUP)
@@ -1070,7 +1098,7 @@ int mode;
             } else
                 sprintf(buf, "%-38.38s", title);
         }
-        a_additem(pm, buf, fname, NULL, 0, 0);
+        a_additem(pm, buf, fname, NULL, 0, attachpos);
         if (a_savenames(pm) == 0) {
             if (mode == ADDGROUP) {
                 sprintf(fpath2, "%s/%s/.Names", pm->path, fname);

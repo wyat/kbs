@@ -2630,7 +2630,7 @@ int Save_post(int ent, struct fileheader *fileinfo, char *direct)
     if (!HAS_PERM(currentuser, PERM_SYSOP))
         if (!chk_currBM(currBM, currentuser))
             return DONOTHING;
-    return (a_Save("0Announce", currboard, fileinfo, false, direct, ent));
+    return (a_Save(NULL, currboard, fileinfo, false, direct, ent));
 }
 
 /* Semi_save 用来把文章存到暂存档，同时删除文章的头尾 Life 1997.4.6 */
@@ -2639,7 +2639,7 @@ int Semi_save(int ent, struct fileheader *fileinfo, char *direct)
     if (!HAS_PERM(currentuser, PERM_SYSOP))
         if (!chk_currBM(currBM, currentuser))
             return DONOTHING;
-    return (a_SeSave("0Announce", currboard, fileinfo, false));
+    return (a_SeSave("0Announce", currboard, fileinfo, false,direct,ent));
 }
 
 /* Added by netty to handle post saving into (0)Announce */
