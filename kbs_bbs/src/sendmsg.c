@@ -6,7 +6,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#include "screen.h"
 #define MAXMESSAGE 5
 
 int  RMSG=NA;
@@ -263,7 +262,7 @@ void r_msg(int signo)
     char fname[STRLEN], fname2[STRLEN] ;
     int line,tmpansi;
     int y,x,ch,i;
-    char tmp[256];
+    char savebuffer2[256];
     char savebuffer[256];
     int send_pid;
     char *ptr;
@@ -402,8 +401,7 @@ MSGX: /* Leeward 98.07.30 supporting msgX */
             if(good_id==YEA)
             {
                 if (- KEY_UP != msgXch && - KEY_DOWN != msgXch) {
-                    strncpy(tmp, big_picture[line + 1].data, 256/*LINELEN*/) ;
-                    tmp[big_picture[line + 1].len]='\0';
+		    saveline(line + 1, 0, savebuffer2);
                 } /* Leeward 98.07.30 supporting msgX */
                 move(line + 1,0); clrtoeol();
                 sprintf(msgbuf,"»ØÑ¶Ï¢¸ø %s: ",usid);
@@ -488,8 +486,7 @@ MSGX2:
             }else
             { /* Leeward 98.07.30 add below 2 lines to fix bug */
                 if (- KEY_UP != msgXch && - KEY_DOWN != msgXch) {
-                    strncpy(tmp, big_picture[line + 1].data, 256/*LINELEN*/) ;
-                    tmp[big_picture[line + 1].len]='\0';
+		    saveline(line+1, 0, savebuffer2);
                 }
                 sprintf(msgbuf,"[1mÕÒ²»³ö·¢Ñ¶Ï¢µÄÈË[m");
                 /* Leeward 98.07.30 enable reply other messages */
@@ -507,9 +504,7 @@ MSGX2:
             refresh();
             sleep(1);
 
-            move(line + 1,0);
-            clrtoeol();
-            prints("%s",tmp);
+	    saveline(line+1, 1, savebuffer2);
 
             break;
         }

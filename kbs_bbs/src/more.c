@@ -22,7 +22,6 @@
 */
 
 #include "bbs.h"
-#include "screen.h" /* Leeward 98.06.05 */
 
 time_t calltime=0;
 static int stuffmode = 0;
