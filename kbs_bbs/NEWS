@@ -1,3 +1,46 @@
+* smthbbs 1.2.2 stable release. 2005-01-15
+
+  smthbbs-1.2.2 是 smthbbs-1.2 的最新稳定版本，修正了 smthbbs-1.2.1 发布后
+  发现的一些 bug，同时也增强了一些功能，但数据结构则保持不变。建议用户使用
+  smthbbs-1.2.2 稳定版本。
+
+  以下是 smthbbs-1.2.2 相对于 smthbbs-1.2.1 的更新：
+  1. 去掉 bbs2www/ 和 innbbsd/ 目录的 configure 脚本。
+  2. 修正主目录 configure 脚本检测 libesmtp 的错误。
+  3. 增强主目录 configure 脚本 --with-www 参数的错误检测及提示。
+  4. contrib/ 目录增加了 build-cygwin.sh 文件，可在 x86 Linux 下用交叉编译
+     器生成在 cygwin 下运行的 exe 程序及 dll 服务。
+  5. 修正 Solaris 8 SPARC 下发文掉线的错误。
+  6. 修正 Solaris 8 SPARC 下开新版掉线的错误。
+  7. 修改 Solaris 8 SPARC 下无法显示附件的错误。
+  8. 新增 FreeBSD 5.x 支持，在 configure 时必须加上 --without-libesmtp 参数。
+  9. 新增 gcc-3.4.x 的编译支持。
+  10. site/devel.h 中去掉了 #define USE_SEM_LOCK 1。因为代码中 sem lock 功
+     能并不成熟，不建议用户使用该功能。
+
+主页：
+
+http://dev.smth.org
+
+下载地址：
+
+ftp://dev.smth.org/src/smthbbs-1.2.2.tar.gz
+
+CVS:
+
+1. smthbbs-1.2.2 的代码
+   export CVSROOT=:pserver:bbsdev@cvs.smth.org:/home/cvs
+   cvs login (然后输入密码 bbsdev)
+   cvs -z9 co -r v1_2_2 -d smthbbs-1.2.2 smth_bbs
+   cd smthbbs-1.2.2
+   cvs -z9 co -r v1_2_2 sshbbsd
+   cvs -z9 co -r v1_2_2 innbbsd
+   cvs -z9 co -r v1_2_2 bbshome
+
+2. smthbbs-1.2 stable 系列
+   只需将上面的 v1_2_2 替换成 v1_2。
+
+
 * smthbbs 1.2.1 stable release. 2004-08-08 (Happy birthday to SMTH!)
 
   smthbbs-1.2.1 是 smthbbs-1.2 的后续稳定版本，修正了 smthbbs-1.2 发布后
