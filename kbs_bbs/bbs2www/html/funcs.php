@@ -92,15 +92,24 @@ window.location="/nologin.html";
 <?php
 }
 
-function html_init($charset)
+function html_init($charset,$title)
 {
 	@$css_style = $_COOKIE["STYLE"];
 ?>
-<html>
+<?xml version="1.0" encoding="<?php echo $charset; ?>"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <link rel="stylesheet" type="text/css" href="/ansi.css"/>
 <meta http-equiv="Content-Type" content="text/html; charset=<?php echo $charset; ?>"/>
 <?php
+        if ( func_num_args() > 1) {
+?>
+<title><?php echo $title; ?></title>
+<?php
+        }
 	switch ($css_style)
 	{
 	case 1:
