@@ -925,7 +925,7 @@ void user_login()
         getCurrentUser()->firstlogin = login_start_time - 7 * 86400;
     }
     check_register_info();
-    load_mail_list(getCurrentUser(),&getSession()->user_mail_list);
+    load_mail_list(getCurrentUser(),&user_mail_list);
 }
 
 int chk_friend_book()
@@ -986,7 +986,7 @@ void main_bbs(int convit, char *argv)
 	int nummail;
 
 /* Add by KCN for avoid free_mem core dump */
-    topfriend = NULL;
+    getSession()->topfriend = NULL;
     big_picture = NULL;
     user_data = NULL;
     load_sysconf();

@@ -38,6 +38,10 @@ extern int bdoatexit;
 extern int disablelog;
 extern int logmsqid;
 
+/* in sysconf.c */
+extern struct smenuitem *menuitem;
+extern int sysconf_menu;
+
 extern struct public_data *publicshm;
 
 /* some other global

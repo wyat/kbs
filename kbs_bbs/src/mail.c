@@ -29,6 +29,7 @@ int G_SENDMODE = false;
 int cmpinames();                /* added by Leeward 98.04.10 */
 
 extern char quote_user[];
+struct _mail_list user_mail_list;
 
 #define maxrecp 300
 
@@ -2549,7 +2550,7 @@ static int maillist_key(struct _select_def *conf, int command)
         f_touch(buf);
         strncpy(user_mail_list.mail_list[user_mail_list.mail_list_t] + 30, bname, 9);
         user_mail_list.mail_list_t++;
-        save_mail_list(&getSession()->user_mail_list,getSession());
+        save_mail_list(&user_mail_list,getSession());
         x = 0;
 
         y = 3 + (20 - user_mail_list.mail_list_t) / 2;
@@ -2580,7 +2581,7 @@ static int maillist_key(struct _select_def *conf, int command)
             for (j = p; j < user_mail_list.mail_list_t - 1; j++)
                 memcpy(user_mail_list.mail_list[j], user_mail_list.mail_list[j + 1], sizeof(user_mail_list.mail_list[j]));
             user_mail_list.mail_list_t--;
-            save_mail_list(&getSession()->user_mail_list,getSession());
+            save_mail_list(&user_mail_list,getSession());
             y = 3 + (20 - user_mail_list.mail_list_t) / 2;
             arg->numbers--;
             conf->item_count = arg->numbers;
@@ -2610,7 +2611,7 @@ static int maillist_key(struct _select_def *conf, int command)
         getdata(0, 0, "输入信箱中文名: ", bname, 30, DOECHO, NULL, false);
         if (bname[0]) {
             strcpy(user_mail_list.mail_list[i], bname);
-            save_mail_list(&getSession()->user_mail_list,getSession());
+            save_mail_list(&user_mail_list,getSession());
             return SHOW_REFRESH;
         }
         return SHOW_REFRESH;

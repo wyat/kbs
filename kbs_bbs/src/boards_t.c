@@ -6,13 +6,9 @@
 #include "read.h"
 
 extern time_t login_start_time;
-extern int *zapbuf;
-extern int zapbuf_changed;
 static int yank_flag=0;
 
-extern struct favbrd_struct *favbrd_list;
-extern int * favbrd_list_count, favnow;
-#define favbrd_list_t (*favbrd_list_count)
+#define favbrd_list_t (*(getSession()->favbrd_list_count))
 extern int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 static int check_newpost(struct newpostdata *ptr);
 
@@ -779,10 +775,10 @@ static int fav_key(struct _select_def *conf, int command)
 			if(ptr->tag <= 0 || ptr->tag >= favbrd_list_t)
 				return SHOW_CONTINUE;
 			clear();
-			oldlevel = favbrd_list[ptr->tag].level;
+			oldlevel = getSession()->favbrd_list[ptr->tag].level;
             newlevel = setperms(oldlevel, 0, "权限", NUMPERMS, showperminfo, NULL);
 			if( newlevel != oldlevel){
-				favbrd_list[ptr->tag].level = newlevel;
+				getSession()->favbrd_list[ptr->tag].level = newlevel;
 				save_favboard(2, getSession());
 				return SHOW_DIRCHANGE;
 			}else
@@ -801,7 +797,7 @@ static int fav_key(struct _select_def *conf, int command)
 				return SHOW_REFRESH;
 
 
-            if (favbrd_list[favnow].bnum >= MAXBOARDPERDIR) {
+            if (getSession()->favbrd_list[getSession()->favnow].bnum >= MAXBOARDPERDIR) {
                 move(2, 0);
                 clrtoeol();
                 prints("个人热门版数已经达上限(%d)！", FAVBOARDNUM);
@@ -861,7 +857,7 @@ static int fav_key(struct _select_def *conf, int command)
                             sel[k].y = 6+k;
                             sel[k].hotkey = '0'+k;
                             sel[k].type = SIT_SELECT;
-                            sel[k].data = favbrd_list[k].title;
+                            sel[k].data = getSession()->favbrd_list[k].title;
                     }
                     sel[k].x = -1;
                     sel[k].y = -1;
@@ -1021,11 +1017,11 @@ static int fav_key(struct _select_def *conf, int command)
                 if( ! askyn("确认删除吗？", 0) )
 					return SHOW_REFRESH;
 				if(ptr->dir)
-					DelFavBoardDir(ptr->pos,favnow, getSession());
+					DelFavBoardDir(ptr->pos,getSession()->favnow, getSession());
 				else
                 	DelFavBoard(ptr->pos, getSession());
                 save_favboard(arg->favmode, getSession());
-                arg->father=favnow;
+                arg->father=getSession()->favnow;
                 arg->reloaddata=true;
                 return SHOW_DIRCHANGE;
             }
@@ -1045,8 +1041,8 @@ static int fav_key(struct _select_def *conf, int command)
             if (HAS_PERM(getCurrentUser(), PERM_BASIC) && !(ptr->flag & BOARD_NOZAPFLAG)) {
                 ptr->zap = !ptr->zap;
                 ptr->total = -1;
-                zapbuf[ptr->pos] = (ptr->zap ? 0 : login_start_time);
-                zapbuf_changed = 1;
+                getSession()->zapbuf[ptr->pos] = (ptr->zap ? 0 : login_start_time);
+                getSession()->zapbuf_changed = 1;
                 return SHOW_REFRESHSELECT;
             }
         }
@@ -1201,7 +1197,7 @@ int choose_board(int newflag, char *boardprefix,int group,int favmode)
             arg.yank_flag = yank_flag;
         }
         if (favmode) {
-            favnow = favlist[favlevel];
+            getSession()->favnow = favlist[favlevel];
         } else {
             arg.boardprefix=boardprefix;
 	 }

@@ -22,7 +22,7 @@ extern int count_friends, count_users;  /*Add by SmallPig for count users and fr
 extern int t_lines, t_columns;  /* Screen size / width */
 extern struct userec lookupuser;        /* Used when searching for other user info */
 
-
+extern struct _mail_list user_mail_list;
 extern int nettyNN;
 extern char netty_board[];      /* 纪念本站创始人之一  netty */
 extern struct boardheader* currboard;        /* name of currently selected board */

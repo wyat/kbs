@@ -7,8 +7,8 @@
 #define SC_CMDSIZE              256
 #define sysconf_ptr( offset )   (&sysconf_buf[ offset ]);
 
-static struct smenuitem *menuitem;
-static int sysconf_menu;
+struct smenuitem *menuitem;
+int sysconf_menu;
 struct sdefine {
     char *key, *str;
     int val;
