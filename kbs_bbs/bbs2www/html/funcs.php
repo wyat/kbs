@@ -154,6 +154,8 @@ if ($utmpkey!="") {
 }
 
 }
+
+settype($utmpnum,"integer");
 //add end
 
 /* 
