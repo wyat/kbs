@@ -702,7 +702,6 @@ static PHP_FUNCTION(bbs_printansifile)
         close(fd);
         RETURN_LONG(2);
     }
-
     ptr = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     close(fd);
     if (ptr == NULL)
