@@ -8,6 +8,8 @@
 #include "inntobbs.h"
 #include "lang.h"
 
+#include "bbs.h"
+
 typedef struct Header {
     char *name;
     int id;
