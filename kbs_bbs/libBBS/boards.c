@@ -103,7 +103,7 @@ void addFavBoard(int i)
 	int llen;
 	if (getfavnum()<FAVBOARDNUM) {
 	llen = ++(*favbrd_list);
-	favbrd_list[llen] = i-1;
+	favbrd_list[llen] = i;
 	};
 }
 
