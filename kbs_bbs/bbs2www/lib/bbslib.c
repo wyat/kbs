@@ -751,7 +751,6 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     int fd, anonyboard;
     FILE *fp, *fp2;
 
-    sleep(20);
     memset(&post_file, 0, sizeof(post_file));
     anonyboard = anonymousboard(board);  /* ÊÇ·ñÎªÄäÃû°æ */
 
