@@ -97,6 +97,7 @@ int thread_search(struct _select_def* conf, struct fileheader* fh, void* extraar
 #define SR_FIRSTNEWDOWNSEARCH 100
 
 int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int author_read(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 
 int read_sendmsgtoauthor(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 int read_showauthor(struct _select_def* conf, struct fileheader* fh, void* extraarg);

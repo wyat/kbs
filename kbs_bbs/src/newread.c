@@ -765,6 +765,22 @@ int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     return SELCHANGE;
 }
 
+int author_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    int mode=(int)extraarg;
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
+    conf->new_pos=0;
+    read_arg->oldpos=0;
+    switch (mode) {
+        case SR_READX:
+            read_arg->oldpos=conf->pos;
+        case SR_READ:
+            read_arg->readmode=READ_AUTHOR;
+            list_select_add_key(conf, 'r');
+            return DONOTHING;
+    }
+    return SELCHANGE;
+}
 
 int read_sendmsgtoauthor(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 {

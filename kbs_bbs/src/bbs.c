@@ -4702,14 +4702,15 @@ static struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {'p',  (READ_KEY_FUNC)thread_read,(void*)SR_READ},
     {Ctrl('S'), (READ_KEY_FUNC)thread_read,(void*)SR_READ},
     {Ctrl('X'), (READ_KEY_FUNC)thread_read,(void*)SR_READX},
+    
+    {Ctrl('U'), (READ_KEY_FUNC)author_read,(void*)SR_READ},
+    {Ctrl('H'), (READ_KEY_FUNC)author_read,(void*)SR_READX}, 
     /*----------------------------------------*/
 /*
     {'S', sequential_read},
     
-    {Ctrl('U'), SR_author},
-    {Ctrl('H'), SR_authorX}, 
     {'b', SR_BMfunc},
-    {'B', SR_BMfuncX},         
+    {'B', SR_BMfuncX},
 */
     {'\0', NULL},
 };
