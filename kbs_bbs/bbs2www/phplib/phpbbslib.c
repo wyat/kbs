@@ -15,6 +15,15 @@ static unsigned char third_arg_force_ref_1111[] = { 4, BYREF_FORCE, BYREF_FORCE,
 static unsigned char third_arg_force_ref_011[] = { 3, BYREF_NONE, BYREF_FORCE, BYREF_FORCE };
 static unsigned char fourth_arg_force_ref_0001[] = { 4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE };
 
+#ifdef HAVE_USERMONEY
+static PHP_FUNCTION(bbs_getusermoney);
+static PHP_FUNCTION(bbs_setusermoney);
+static PHP_FUNCTION(bbs_addusermoney);
+static PHP_FUNCTION(bbs_getuserscore);
+static PHP_FUNCTION(bbs_setuserscore);
+static PHP_FUNCTION(bbs_adduserscore);
+#endif
+
 static PHP_FUNCTION(bbs_getnumofsig);
 static PHP_FUNCTION(bbs_postmail);
 static PHP_FUNCTION(bbs_mailwebmsgs);
@@ -104,6 +113,14 @@ static PHP_FUNCTION(bbs_getthreads);
  * define what functions can be used in the PHP embedded script
  */
 static function_entry smth_bbs_functions[] = {
+#ifdef HAVE_USERMONEY
+		PHP_FE(bbs_getusermoney, NULL)
+		PHP_FE(bbs_setusermoney, NULL)
+		PHP_FE(bbs_addusermoney, NULL)
+		PHP_FE(bbs_getuserscore, NULL)
+		PHP_FE(bbs_setuserscore, NULL)
+		PHP_FE(bbs_adduserscore, NULL)
+#endif
 	    PHP_FE(bbs_getnumofsig, NULL)
 		PHP_FE(bbs_postmail, NULL)
 		PHP_FE(bbs_mailwebmsgs, NULL)
@@ -253,6 +270,10 @@ static void assign_user(zval * array, struct userec *user, int num)
     add_assoc_long(array, "notedate", user->notedate);
     add_assoc_long(array, "noteline", user->noteline);
     add_assoc_long(array, "notemode", user->notemode);
+	#ifdef HAVE_USERMONEY
+	ass_assoc_long(array,"money", user->money);
+	ass_assoc_long(array,"score", user->score);
+	#endif
 }
 static int foundInArray(unsigned int content, unsigned int array[], unsigned int len){
 	int i;
@@ -562,7 +583,96 @@ static PHP_FUNCTION(bbs_wwwlogin)
     setcurrentuinfo(pu, utmpent);
     RETURN_LONG(ret);
 }
+#ifdef HAVE_USERMONEY
+static PHP_FUNCTION(bbs_getusermoney){
+    struct userec* u;
+	char* user;
+	int uLen;
+    if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &user, &uLen) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (getuser(user, &u)==0) {
+		RETURN_LONG(-1);
+	}
+	RETURN_LONG(get_money(u));
+}
 
+static PHP_FUNCTION(bbs_setusermoney){
+    struct userec* user;
+	char* u;
+	int uLen,money;
+    if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &money) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (getuser(user, &u)==0) {
+		RETURN_LONG(-1);
+	}
+	if (money<0) {
+		RETURN_LONG(-2);
+	}
+	RETURN_LONG(set_money(u,money));
+}
+
+static PHP_FUNCTION(bbs_addusermoney){
+    struct userec* user;
+	char* u;
+	int uLen,money;
+    if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &money) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (getuser(user, &u)==0) {
+		RETURN_LONG(-1);
+	}
+	if (money<0) {
+		RETURN_LONG(-2);
+	}
+	RETURN_LONG(add_money(u,money));
+}
+
+static PHP_FUNCTION(bbs_getuserscore){
+    struct userec* u;
+	char* user;
+	int uLen;
+    if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &user, &uLen) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (getuser(user, &u)==0) {
+		RETURN_LONG(-1);
+	}
+	RETURN_LONG(get_score(u));
+}
+
+static PHP_FUNCTION(bbs_setuserscore){
+    struct userec* user;
+	char* u;
+	int uLen,score;
+    if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &score) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (getuser(user, &u)==0) {
+		RETURN_LONG(-1);
+	}
+	if (score<0) {
+		RETURN_LONG(-2);
+	}
+	RETURN_LONG(set_score(u,score));
+}
+static PHP_FUNCTION(bbs_adduserscore){
+    struct userec* user;
+	char* u;
+	int uLen,score;
+    if (ZEND_NUM_ARGS() != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &user, &uLen, &score) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+    }
+    if (getuser(user, &u)==0) {
+		RETURN_LONG(-1);
+	}
+	if (score<0) {
+		RETURN_LONG(-2);
+	}
+	RETURN_LONG(add_score(u,score));
+}
+#endif
 static PHP_FUNCTION(bbs_getcurrentuinfo)
 {
     zval *user_array;
