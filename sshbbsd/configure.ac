@@ -455,6 +455,7 @@ if test -z "$no_ranlib"; then
 else
   RANLIB=":"
 fi
+AC_PROG_LIBTOOL
 AC_PROGRAMS_CHECK(MAKEDEP, makedepend makedep, makedepend)
 
 AC_PATH_XTRA
