@@ -297,6 +297,8 @@ abort_bbs()
     if(uinfo.mode==POSTING||uinfo.mode==SMAIL||uinfo.mode==EDIT
         ||uinfo.mode==EDITUFILE||uinfo.mode==EDITSFILE||uinfo.mode==EDITANN)
                 keep_fail_post();
+    brc_update(currentuser->userid);
+
     if( started ) {
         record_exit_time();
         stay = time( 0 ) - login_start_time;
