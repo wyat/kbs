@@ -812,12 +812,13 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
                     }
                     fwrite(ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1,1,fp);
                     fwrite(dirp->d_name,strlen(dirp->d_name)+1,1,fp);
-                    save_size=htonl(size);
                     BBS_TRY {
                         if (safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & size) == 0) {
                             size=0;
+                            save_size=htonl(size);
                             fwrite(&save_size,sizeof(save_size),1,fp);
                         } else {
+                            save_size=htonl(size);
                             fwrite(&save_size,sizeof(save_size),1,fp);
                             begin=ftell(fp);
                             fwrite(ptr,size,1,fp);

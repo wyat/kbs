@@ -414,7 +414,7 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
             *s = i + 1;
             break;
         }
-        if (*p == '0') {
+        if (*p == '\0') {
             *l = i;
             *s = i;
             break;
@@ -453,7 +453,7 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
         *l = size;
         *s = size;
     }
-    if (*s > 0 && ((p0[*s - 1] == '\n') || (p0[*s - 1] == '0'))) {
+    if (*s > 0 && ((p0[*s - 1] == '\n') || (p0[*s - 1] == '\0'))) {
         switch (oldty) {
         case 1:
             *ty = 0;
@@ -484,20 +484,23 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
     }
     if (*s == size)
         return 0;
-    if (*ty == 0 && size > sizeof(ATTACHMMENT_PAD)
-        && !memcmp(p0, ATTACHMMENT_PAD, sizeof(ATTACHMMENT_PAD))) {
+    if ( size > sizeof(ATTACHMMENT_PAD)-1
+        && !memcmp(p0, ATTACHMMENT_PAD, sizeof(ATTACHMMENT_PAD)-1)) {
         long attach_len;
 
         *ty = 100;
         p = p0;
-        p += sizeof(ATTACHMMENT_PAD);
-        if ((p = (char *) memchr(p, '\0', size - sizeof(ATTACHMMENT_PAD))) == NULL) {
+        p += sizeof(ATTACHMMENT_PAD)-1;
+        if ((p = (char *) memchr(p, '\0', size - (sizeof(ATTACHMMENT_PAD)-1))) == NULL) {
             return 0;
         }
         p++;
-        *s = ntohl(*(unsigned int *) p) + p - p0;
+        *s = ntohl(*(unsigned long *) p) + p - p0 + sizeof(unsigned long);
         if (*s>size)
             *s=size;
+    } else {
+        if (p0[*s-1]=='\0')
+		*s++;
     }
     if ((oldty == 100) && (*ty != 100)) {
         *l = 0;
@@ -659,15 +662,10 @@ void mem_printline(char *ptr, int len, char *fn, char ty)
         outns(ptr, len);
         outns("\033[m\n", 4);
         return;
-    } else if (ty >= 2) {
-        outns("\033[36m", 5);
-        outns(ptr, len);
-        outns("\033[m\n", 4);
-        return;
     } else if (ty == 100) {
         char attachname[41], *p;
 
-        strsncpy(attachname, ptr + sizeof(ATTACHMMENT_PAD), 40);
+        strncpy(attachname, ptr + sizeof(ATTACHMMENT_PAD)-1, 40);
         p = strrchr(attachname, '.');
         if (p != NULL && (!strcasecmp(p, ".bmp") || !strcasecmp(p, ".jpg")
                           || !strcasecmp(p, ".gif") || !strcasecmp(p, ".jpeg")))
@@ -720,9 +718,14 @@ void mem_printline(char *ptr, int len, char *fn, char ty)
         }
         */
         sprintf(temp_sessionid,"fds");
-        prints("http://%s/" "bbs" "%s/c1?T=%d&F=%s", BBSNAME, temp_sessionid, type, fn + 20);
+        prints("http://%s/" "bbs" "%s/c1?T=%d&F=%s", "SMTH", temp_sessionid, type, fn + 20);
         // TODO: show the link
         prints("\n");
+        return;
+    } else if (ty >= 2) {
+        outns("\033[36m", 5);
+        outns(ptr, len);
+        outns("\033[m\n", 4);
         return;
     }
     outns(ptr, len);
