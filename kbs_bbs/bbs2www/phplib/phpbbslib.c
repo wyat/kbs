@@ -954,7 +954,7 @@ static char* output_buffer=NULL;
 static int output_buffer_len=0;
 static int output_buffer_size=0;
 
-static void output_printf(char* buf) {
+static void output_printf(char* buf,size_t len) {
 	int bufLen;
 	int n;
 	if (output_buffer==NULL) {
@@ -962,9 +962,12 @@ static void output_printf(char* buf) {
 		output_buffer_size=10240;
 	}
 	bufLen=strlen(buf);
-	n=output_buffer_len+bufLen-output_buffer_size;
+	if (bufLen>len) {
+		bufLen=len;
+	}
+	n=1+output_buffer_len+bufLen-output_buffer_size;
 	if (n>=0) {
-		output_buffer_size+=((n/5120)+1)*5120; //n*5k every time
+		output_buffer_size+=((n/51200)+1)*51200; //n*50k every time
 		output_buffer=(char*)erealloc(output_buffer,output_buffer_size);
 	}
 	memcpy(output_buffer+output_buffer_len,buf,bufLen);
@@ -983,26 +986,11 @@ static int get_output_buffer_len(){
 
 static int new_buffered_output(char *buf, size_t buflen, void *arg)
 {
-	buffered_output_t *output = (buffered_output_t *)arg;
-	if (output->buflen <= buflen)
-	{
-		output->flush(output);
-		output_printf(buf);
-		return 0;
-	}
-	if ((output->buflen - (output->outp - output->buf) - 1) <= buflen) 
-		output->flush(output);
-	strncpy(output->outp, buf, buflen); 
-	output->outp += buflen;
-
+	output_printf(buf,buflen);
 	return 0;
 }
 
-static void new_flush_buffer(buffered_output_t *output)
-{
-	*(output->outp) = '\0'; 
-	output_printf(output->buf);
-	output->outp = output->buf;
+static void new_flush_buffer(buffered_output_t *output){
 }
 
 static PHP_FUNCTION(bbs_printansifile)
@@ -2905,9 +2893,13 @@ static PHP_FUNCTION(bbs_updatearticle)
     }
     for (i = 0; i < 4; i++) {
         fgets(buf2, sizeof(buf2), fin);
+		if ((i==0) && (strncmp(buf2,"·¢ÐÅÈË",6)!=0)) {
+			break;
+		}
         fprintf(fout, "%s", buf2);
     }
     fprintf(fout, "%s", unix_string(content));
+#ifndef RAW_ARTICLE
     fprintf(fout, "[36m¡ù ÐÞ¸Ä:¡¤%s ì¶ %s ÐÞ¸Ä±¾ÎÄ¡¤[FROM: %s][m\n", currentuser->userid, wwwCTime(time(0)) + 4, fromhost);
     while (fgets(buf2, sizeof(buf2), fin) != NULL) {
         if (Origin2(buf2)) {
@@ -2915,6 +2907,7 @@ static PHP_FUNCTION(bbs_updatearticle)
             break;
         }
     }
+#endif
     fclose(fin);
     fclose(fout);
 #ifdef FILTER

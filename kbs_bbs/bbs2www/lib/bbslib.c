@@ -2498,7 +2498,7 @@ static void print_raw_ansi(char *buf, size_t buflen, buffered_output_t * output)
         if (buf[i] == 0x1b)
             html_output("*", 1, output);
         else if (buf[i]=='\n') {
-			output->output("<br />\n", 7, output);
+			output->output("<br />", 6, output);
         } else {
             html_output(&buf[i], 1, output);
 		}
@@ -2607,7 +2607,8 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 
 		/* skip attachments */
         if (attachlink&&((attachfilename = checkattach(buf + i, buflen - i, &attach_len, &attachptr)) != NULL)) {
-		    i+=(attachptr-buf-i)+attach_len-1;
+		    i=(attachptr-buf)+attach_len-1;
+			continue;
         }
 		
         if (STATE_ISSET(ansi_state, STATE_NEW_LINE)) {
@@ -2672,77 +2673,21 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 
 		} else if ( buf[i] == ']' )	{ //UBB控制代码结束?
 			if (STATE_ISSET(ansi_state, STATE_UBB_START))	{
+				int num;
+				num=0;
 				UBBCode[UBBCodeLen]=0;
 				isUBBMiddleOutput=1;
-
-				if ( !strcasecmp(UBBCode,"img"))	{
-					UBBCodeType=UBB_TYPE_IMG;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "b")){
-					UBBCodeType=UBB_TYPE_BOLD;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "i")){
-					UBBCodeType=UBB_TYPE_ITALICIZE;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "u")){
-					UBBCodeType=UBB_TYPE_UNDERLINE;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "center")){
-					UBBCodeType=UBB_TYPE_CENTER;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "fly")){
-					UBBCodeType=UBB_TYPE_FLY;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "quote")){
-					UBBCodeType=UBB_TYPE_QUOTE;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "move")){
-					UBBCodeType=UBB_TYPE_MOVE;
-					isUBBMiddleOutput=0;
-				} else if (!strcasecmp(UBBCode, "email")){
-					UBBCodeType=UBB_TYPE_EMAIL;
+				sscanf(UBBCode, "upload=%d",&num);
+				if (num>0) {
+					UBBArg1=num;
+					UBBCodeType=UBB_TYPE_ATTACH;
 					isUBBMiddleOutput=0;
 				} else {
-					int num;
-					num=0;
-					sscanf(UBBCode, "upload=%d",&num);
-					if (num>0) {
-						UBBArg1=num;
-						UBBCodeType=UBB_TYPE_ATTACH;
-						isUBBMiddleOutput=0;
-					} else {
-					sscanf(UBBCode, "em%d",&num);
-					if (num!=0) {
-						char outbuf[512];
-						snprintf(outbuf, 511, "<img src='emot/em%02d.gif'></img>", num);
-						outbuf[511]=0;
-						output->output(outbuf, strlen(outbuf), output);
-						STATE_CLR(ansi_state, STATE_UBB_START);
-						continue;
-					} else {
-					UBBStrArg[0]=0;
-					if (UBBCodeLen<200)
-						sscanf(UBBCode, "URL=%s",UBBStrArg);
-					if (UBBStrArg[0]!=0) {
-						UBBCodeType=UBB_TYPE_HTTPLINK;
-						isUBBMiddleOutput=0;
-					} else {
-					UBBArg1=0;
-					UBBArg2=0;
-					sscanf(UBBCode, "flash=%d,%d",&UBBArg1,&UBBArg2);
-					if ((UBBArg1>0) && (UBBArg1<900) && (UBBArg1>0) && (UBBArg1<900)) {
-						UBBCodeType=UBB_TYPE_FLASH;
-						isUBBMiddleOutput=0;
-					} else {
 					size_t len;
 					STATE_CLR(ansi_state, STATE_UBB_START);
 					len=(&(buf[i+1]))-ubbstart_begin;
 					print_raw_ansi(ubbstart_begin,len,output);
 					continue;
-					}
-					}
-					}
-					}
 				}
 				STATE_CLR(ansi_state, STATE_UBB_START);
 				STATE_SET(ansi_state, STATE_UBB_MIDDLE);
@@ -2753,142 +2698,26 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 				UBBCode[UBBCodeLen]=0;		
 				STATE_CLR(ansi_state, STATE_UBB_END);
 				switch (UBBCodeType){
-				case UBB_TYPE_IMG:
-					if (!strcasecmp(UBBCode,"img")){
-						output->output("<br><img src=\"images/files/img.gif\">图片：<br><IMG SRC=\"", 56, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						output->output(ubbmiddle_begin, len, output);
-						output->output("\" border=0><br />", 17, output);
-						continue;
-					} 
-					break;
 				case UBB_TYPE_ATTACH:
 					if (!strcasecmp(UBBCode,"upload")){
 						if ( (UBBArg1>0) && (UBBArg1<=attachmatched)) {
 							char outbuf[512];
 							switch(attachType[UBBArg1-1]) {
 							case ATTACH_IMG:
-								snprintf(outbuf, 511, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+								snprintf(outbuf, 511, "<br><IMG SRC=\"images/files/img.gif\" border=0>此主题相关图片如下：<br><A HREF=\"%s&ap=%d\" TARGET=_blank><IMG SRC=\"%s&ap=%d\" border=0 alt=按此在新窗口浏览图片 onload=\"javascript:if(this.width>screen.width-333)this.width=screen.width-333\"></A> ", attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
 								break;
 							case ATTACH_FLASH:
-				                		snprintf(outbuf, 511, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+				                snprintf(outbuf, 511, "<br>Flash动画: " "<a href='%s&ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
 								break;
 							case ATTACH_OTHERS:
-								 snprintf(outbuf, 511, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1]);
+								 snprintf(outbuf, 511, "<br>附件: <a href='%s&ap=%d'>%s</a> (%d 字节)<br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1]);
 								 break;
 							}	
 							outbuf[511]=0;
-							output->output(outbuf, strlen(outbuf), output);
+							output->output(outbuf, 511, output);
 							attachShowed[UBBArg1-1]=1;
 							continue;							
 						}	
-					} 
-					break;
-				case UBB_TYPE_BOLD:
-					if (!strcasecmp(UBBCode,"b")){
-						output->output("<b>", 3, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</b>", 4, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_ITALICIZE:
-					if (!strcasecmp(UBBCode,"i")){
-						output->output("<i>", 3, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</i>", 4, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_UNDERLINE:
-					if (!strcasecmp(UBBCode,"u")){
-						output->output("<u>", 3, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</u>", 4, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_CENTER:
-					if (!strcasecmp(UBBCode,"img")){
-						output->output("<center>", 8, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</center>", 9, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_FLY:
-					if (!strcasecmp(UBBCode,"fly")){
-						output->output("<marquee width=90% behavior=alternate scrollamount=3>", 53, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</marquee>", 10, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_QUOTE:
-					if (!strcasecmp(UBBCode,"quote")){
-						output->output("<table style=\"width:100%\" cellpadding=5 cellspacing=1 class=tableborder1><TR><TD class=tablebody2 width=\"100%\">", 111, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</td></tr></table><br>", 22, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_MOVE:
-					if (!strcasecmp(UBBCode,"move")){
-						output->output("<marquee scrollamount=3>", 24, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</marquee>", 10, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_HTTPLINK:
-					if (!strcasecmp(UBBCode,"URL")){
-						char outbuf[256];
-						snprintf(outbuf, 255, "<a href='%s' target='_blank'>", UBBStrArg);
-						outbuf[255]=0;
-						output->output(outbuf,strlen(outbuf),output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</a>", 4, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_EMAIL:
-					if (!strcasecmp(UBBCode,"email")){
-						output->output("<a href=\"mailto:", 16, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("\" target=\"_blank\">", 18, output);
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</a>", 4, output);
-						continue;
-					} 
-					break;
-				case UBB_TYPE_FLASH:
-					if (!strcasecmp(UBBCode,"flash")){
-						char outbuf[512];
-						output->output("<a href=\"", 9, output);
-						len=ubbfinish_begin-ubbmiddle_begin;
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						snprintf(outbuf, 511, "\" TARGET=_blank><IMG SRC=pic/swf.gif border=0 alt=点击开新窗口欣赏该FLASH动画! height=16 width=16>[全屏欣赏]</a><br><OBJECT codeBase=http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=4,0,2,0 classid=clsid:D27CDB6E-AE6D-11cf-96B8-444553540000 width='%d' height='%d'><PARAM NAME=movie VALUE=\"",UBBArg1,UBBArg2);
-						outbuf[511]=0;
-						output->output(outbuf,strlen(outbuf),output);
-
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("\"><PARAM NAME=quality VALUE=high><embed src=\"", 45, output);
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						snprintf(outbuf, 511, "\" quality=high pluginspage=\"http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash\" type=\"application/x-shockwave-flash\" width='%d' height='%d'>",UBBArg1,UBBArg2);
-						outbuf[511]=0;
-						output->output(outbuf,strlen(outbuf),output);
-						print_raw_ansi(ubbmiddle_begin, len, output);
-						output->output("</embed></OBJECT>", 17, output);
-						continue;
 					} 
 					break;
 				}
@@ -2928,7 +2757,7 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
                 STATE_CLR(ansi_state, STATE_FONT_SET);
             }
 		    if (!STATE_ISSET(ansi_state,STATE_UBB_MIDDLE) || isUBBMiddleOutput) {
-				output->output("<br />\n", 7, output);
+				output->output("<br />", 6, output);
 			}
             STATE_CLR(ansi_state, STATE_QUOTE_LINE);
             STATE_SET(ansi_state, STATE_NEW_LINE);
@@ -3032,17 +2861,17 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 			char outbuf[512];
 			switch(attachType[UBBArg1-1]) {
 			case ATTACH_IMG:
-		 		snprintf(outbuf, 511, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[i], attachLen[i], attachlink, attachPos[i]);
+		 		snprintf(outbuf, 511, "<br><IMG SRC=\"images/files/img.gif\" border=0>此主题相关图片如下：<br><A HREF=\"%s&ap=%d\" TARGET=_blank><IMG SRC=\"%s&ap=%d\" border=0 alt=按此在新窗口浏览图片 onload=\"javascript:if(this.width>screen.width-333)this.width=screen.width-333\"></A> ",attachlink, attachPos[i],attachlink, attachPos[i]);
 				break;
 			case ATTACH_FLASH:
-		                snprintf(outbuf, 511, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[i], attachFileName[i], attachLen[i], attachlink, attachPos[i], attachlink, attachPos[i]);
+		        snprintf(outbuf, 511, "<br>Flash动画: " "<a href='%s&ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[i], attachFileName[i], attachLen[i], attachlink, attachPos[i], attachlink, attachPos[i]);
 				break;
 			case ATTACH_OTHERS:
-				 snprintf(outbuf, 511, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[i], attachFileName[i], attachLen[i]);
+				 snprintf(outbuf, 511, "<br>附件: <a href='%s&ap=%d'>%s</a> (%d 字节)<br />", attachlink, attachPos[i], attachFileName[i], attachLen[i]);
 				 break;
 			}	
 			outbuf[511]=0;
-			output->output(outbuf, strlen(outbuf), output);
+			output->output(outbuf, 511, output);
 			attachShowed[i]=1;
 		}
 		free(attachFileName[i]);
