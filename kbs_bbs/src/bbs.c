@@ -2565,7 +2565,7 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     char usrid[STRLEN],direct[MAXPATH];
     int owned;
     struct read_arg* arg=conf->arg;
-    int ent;
+    int ent,ret;
     int flag=(int)extraarg;
     struct write_dir_arg delarg;
 
@@ -2603,16 +2603,20 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         }
     }
 
-    malloc_write_dir_arg(&delarg);
-    if ((arg->mode!=DIR_MODE_NORMAL)&& arg->mode != DIR_MODE_DIGEST) {
-        setbdir(DIR_MODE_NORMAL, direct, currboard->filename);
-        delarg.filename=direct;
-    } else {
-        delarg.fd=arg->fd;
-        delarg.ent=conf->pos;
-    }
-    if (do_del_post(currentuser, &delarg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG) != 0) {
+    if (arg->writearg==NULL) {
+        malloc_write_dir_arg(&delarg);
+        if ((arg->mode!=DIR_MODE_NORMAL)&& arg->mode != DIR_MODE_DIGEST) {
+            setbdir(DIR_MODE_NORMAL, direct, currboard->filename);
+            delarg.filename=direct;
+        } else {
+            delarg.fd=arg->fd;
+            delarg.ent=conf->pos;
+        }
+        ret=do_del_post(currentuser, &delarg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
         free_write_dir_arg(&delarg);
+    } else
+        ret=do_del_post(currentuser, arg->writearg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
+    if (ret != 0) {
         if (!(flag&ARG_NOPROMPT_FLAG)) {
             move(2, 0);
             prints("删除失败\n");
@@ -2621,7 +2625,6 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             return FULLUPDATE;
         }
     }
-    free_write_dir_arg(&delarg);
     if (!(flag&ARG_BMFUNC_FLAG)&&arg->mode) {
         switch (arg->mode) {
         case DIR_MODE_THREAD:
@@ -4555,12 +4558,17 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
     struct BMFunc_arg* func_arg=(struct BMFunc_arg*)extraarg;
+    int ret=APPLY_CONTINUE;
 
     conf->pos=ent;
+    if (arg->writearg) {
+        arg->writearg->ent=ent;
+    }
     switch (func_arg->action) {
         case BM_DELETE:
             if (!(fh->accessed[0] & FILE_MARKED)) {
-                del_post(conf,fh,(void*)(ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG|ARG_BMFUNC_FLAG));
+                if (del_post(conf,fh,(void*)(ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG|ARG_BMFUNC_FLAG))==DIRCHANGED)
+                    ret=APPLY_REAPPLY;
             }
             break;
         case BM_MARK:
@@ -4599,6 +4607,7 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
             fh->accessed[0]=FILE_IMPORTED;
             break;
     }
+    return ret;
 }
 
 static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extraarg)
@@ -4611,6 +4620,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
     struct read_arg* arg=(struct read_arg*)conf->arg;
     char linebuffer[LINELEN*3];
     char annpath[MAXPATH];
+    struct write_dir_arg dirarg;
 
     func_arg.delpostnum=(bool)extraarg;
     if (!chk_currBM(currBM, currentuser)) {
@@ -4665,17 +4675,17 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
     snprintf(buf, 256, "是否从此主题第一篇开始%s (Y)第一篇 (N)目前这篇 (C)取消 (Y/N/C)? [Y]: ", SR_BMitems[BMch - 1]);
     getdata(t_lines - 3, 0, buf, ch, 3, DOECHO, NULL, true);
     switch (ch[0]) {
-    case 'y':
-    case 'Y':
-        fromfirst=true;
-        break;
     case 'c':
     case 'C':
         saveline(t_lines - 2, 1, NULL);
         saveline(t_lines - 3, 1, linebuffer);
         return DONOTHING;
-    default:
+    case 'N':
+    case 'n':
         fromfirst=false;
+        break;
+    default:
+        fromfirst=true;
         break;
     }
     bmlog(currentuser->userid, currboard->filename, 14, 1);
@@ -4709,6 +4719,11 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
 
     func_arg.action=BMch;
     ent=conf->pos;
+    malloc_write_dir_arg(&dirarg);
+    dirarg.fd=arg->fd;
+    dirarg.needlock=false;
+    arg->writearg=&dirarg;
+
     flock(arg->fd,LOCK_EX);
     if (fromfirst) {
         /*走到第一篇*/
@@ -4718,6 +4733,8 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
     }
     apply_thread(conf,fh,BM_thread_func,true,true,(void*)&func_arg);
     flock(arg->fd,LOCK_UN);
+    free_write_dir_arg(&dirarg);
+    arg->writearg=NULL;
     conf->pos=ent; /*恢复原来的ent*/
     if(BM_TOTAL == BMch){ //作合集
         char title[STRLEN];

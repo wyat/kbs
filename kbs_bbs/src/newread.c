@@ -413,6 +413,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
     arg.readmode=READ_NORMAL;
     arg.data=NULL;
     arg.readdata=NULL;
+    arg.writearg=NULL;
     if ((arg.mode==DIR_MODE_NORMAL)||
         ((arg.mode>=DIR_MODE_THREAD)&&(arg.mode<=DIR_MODE_WEB_THREAD))) {
         char ding_direct[PATHLEN];
@@ -740,6 +741,7 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
                         nowFh--;
                     }
                 }
+                needmove=true;
                 
                 /* 判断是不是同一主题,不是直接continue*/
                 if ((read_arg->mode==DIR_MODE_NORMAL)||
@@ -759,7 +761,11 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
                     if (ret==APPLY_QUIT) break;
 
                     /*在返回APPLY_REAPPLY的时候不需要移动指针*/
-                    needmove=(ret!=APPLY_REAPPLY);
+                    if (ret==APPLY_REAPPLY) {
+                        read_arg->filecount--;
+                        needmove=false;
+                    } else 
+                        needmove=true;
                 }
             }
         }

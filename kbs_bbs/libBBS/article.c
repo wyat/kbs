@@ -99,6 +99,7 @@ void malloc_write_dir_arg(struct write_dir_arg*filearg)
     filearg->fd=-1;
     filearg->size=-1;
     filearg->needclosefd=false;
+    filearg->needlock=true;
 }
 
 /** 初始化filearg结构,把各个东西mmap上
@@ -160,19 +161,21 @@ int prepare_write_dir(struct write_dir_arg * filearg,struct fileheader* fileinfo
         if (init_write_dir_arg(filearg)!=0)
             BBS_RETURN(-1);
         count=filearg->size/sizeof(struct fileheader);
-        flock(filearg->fd,LOCK_EX);
+        if (filearg->needlock)
+            flock(filearg->fd,LOCK_EX);
         if (fileinfo) { //定位一下
             if ((filearg->ent>count)||(filearg->ent<=0))
                 needrelocation=true;
             else {
                 nowFh=filearg->fileptr+(filearg->ent-1);
                 needrelocation=strcmp(fileinfo->filename,nowFh->filename);
-            }
+			}
+            
         }
         if (needrelocation) { //重定位这个位置
             int i;
             if (is_sorted_mode(mode)) {
-                filearg->ent=Search_Bin(filearg->fileptr, fileinfo->id, 0, count-1);
+                filearg->ent=Search_Bin(filearg->fileptr, fileinfo->id, 0, count-1)+1;
             } else {//匹配文件名
                 int oldent=filearg->ent;
                 nowFh=filearg->fileptr;
@@ -180,7 +183,7 @@ int prepare_write_dir(struct write_dir_arg * filearg,struct fileheader* fileinfo
                 /* 先从当前位置往前找，因为一般都是被删除导致向前了*/
                 nowFh=filearg->fileptr+(oldent-1);
                 for (i=oldent;i>=0;i--,nowFh--) {
-                    if (!strcmp(nowFh->filename)) {
+                    if (!strcmp(fileinfo->filename,nowFh->filename)) {
                         filearg->ent=i+1;
                         break;
                     }
@@ -188,13 +191,13 @@ int prepare_write_dir(struct write_dir_arg * filearg,struct fileheader* fileinfo
                 /* 再从当前位置往后找*/
                 nowFh=filearg->fileptr+oldent;
                 for (i=oldent+1;i<count;i++,nowFh++) {
-                    if (!strcmp(nowFh->filename)) {
+                    if (!strcmp(fileinfo->filename,nowFh->filename)) {
                         filearg->ent=i+1;
                         break;
                     }
                 }
             }
-            if (filearg->ent==-1)
+            if (filearg->ent<=0)
                 ret=-1;
         }
     }
@@ -210,11 +213,13 @@ int prepare_write_dir(struct write_dir_arg * filearg,struct fileheader* fileinfo
 int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct fileheader *fileinfo, char *board, int currmode, int decpost)
 {
     char *t;
-    int owned, fail;
+    int owned;
+    struct fileheader fh;
 
-    if (prepare_write_dir(dirarg)!=0)
+    if (prepare_write_dir(dirarg,fileinfo,currmode)!=0)
         return-1;
     BBS_TRY {
+		fh=*(dirarg->fileptr + (dirarg->ent - 1));
         memcpy(dirarg->fileptr + (dirarg->ent - 1), 
             dirarg->fileptr + dirarg->ent, 
             dirarg->size - sizeof(struct fileheader) * dirarg->ent);
@@ -224,29 +229,29 @@ int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct filehead
     BBS_CATCH {
     }
     BBS_END;
-    flock(dirarg->fd,LOCK_UN); /*这个是需要赶紧做的*/
-    if (fileinfo->id == fileinfo->groupid)
+	if (dirarg->needlock)
+        flock(dirarg->fd,LOCK_UN); /*这个是需要赶紧做的*/
+    if (fh.id == fh.groupid)
         setboardorigin(board, 1);
     setboardtitle(board, 1);
 
     
-    owned = isowner(user, fileinfo);
-    if (!fail) {
-        cancelpost(board, user->userid, fileinfo, owned, 1);
+    owned = isowner(user, &fh);
+        cancelpost(board, user->userid, &fh, owned, 1);
         updatelastpost(board);
-        if (fileinfo->accessed[0] & FILE_MARKED)
+        if (fh.accessed[0] & FILE_MARKED)
             setboardmark(board, 1);
         if ((DIR_MODE_NORMAL == currmode)        /* 不可以用 “NA ==” 判断：digestmode 三值 */
-            &&!((fileinfo->accessed[0] & FILE_MARKED)
-                && (fileinfo->accessed[1] & FILE_READ)
-                && (fileinfo->accessed[0] & FILE_FORWARDED))) { /* Leeward 98.06.17 在文摘区删文不减文章数目 */
+            &&!((fh.accessed[0] & FILE_MARKED)
+                && (fh.accessed[1] & FILE_READ)
+                && (fh.accessed[0] & FILE_FORWARDED))) { /* Leeward 98.06.17 在文摘区删文不减文章数目 */
             if (owned) {
                 if ((int) user->numposts > 0 && !junkboard(board)) {
                     user->numposts--;   /*自己删除的文章，减少post数 */
                 }
-            } else if (!strstr(fileinfo->owner, ".") && BMDEL_DECREASE && decpost /*版主删除,减少POST数 */ ) {
+            } else if (!strstr(fh.owner, ".") && BMDEL_DECREASE && decpost /*版主删除,减少POST数 */ ) {
                 struct userec *lookupuser;
-                int id = getuser(fileinfo->owner, &lookupuser);
+                int id = getuser(fh.owner, &lookupuser);
 
                 if (id && (int) lookupuser->numposts > 0 && !junkboard(board) && strcmp(board, SYSMAIL_BOARD)) {        /* SYSOP MAIL版删文不减文章 Bigman: 2000.8.12 *//* Leeward 98.06.21 adds above later 2 conditions */
                     lookupuser->numposts--;
@@ -255,10 +260,8 @@ int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct filehead
         }
         if (user != NULL)
             bmlog(user->userid, board, 8, 1);
-        newbbslog(BBSLOG_USER, "Del '%s' on '%s'", fileinfo->title, board);     /* bbslog */
+        newbbslog(BBSLOG_USER, "Del '%s' on '%s'", fh.title, board);     /* bbslog */
         return 0;
-    }
-    return -1;
 }
 
 /* by ylsdd 

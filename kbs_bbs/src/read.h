@@ -30,6 +30,8 @@ struct read_arg {
     int ssize;
     int oldpos; /*在同主题阅读的时候，保存原始位置*/
 
+    struct write_dir_arg* writearg;
+
     /*用于确定当前的阅读模式，如果是
     READ_NORMAL  正常的顺序阅读
     READ_THREAD  正在主题阅读

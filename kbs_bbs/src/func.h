@@ -274,6 +274,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
       int ent;               //当前位置
       off_t size;           //文件大小
       bool needclosefd; //释放结构的时候是否需要关闭文件，内部使用
+      bool needlock; //是否需要自己lock文件
     };
     void malloc_write_dir_arg(struct write_dir_arg*filearg);
     int init_write_dir_arg(struct write_dir_arg*filearg);
@@ -330,7 +331,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     int update_user_usedspace(int delta, struct userec *user);
     int getmailnum(char *recmaildir);
     int isowner(struct userec *user, struct fileheader *fileinfo);
-    int do_del_post(struct userec *user, int ent, struct fileheader *fileinfo, char *direct, char *board, int digestmode, int decpost);
+    int do_del_post(struct userec *user, struct write_dir_arg* delarg,struct fileheader *fileinfo, char *board, int digestmode, int decpost);
     /*
      * 删除文章，digestmode定义阅读模式，decpost表示斑竹删除是否减文章数 
      */
