@@ -169,8 +169,6 @@ char *horoscope(int month, int day);
 
 char *ModeType(int mode);
 
-char *cexp(int exp);
-
 char *cperf(int perf);
 
 int countexp(struct userec *x);
