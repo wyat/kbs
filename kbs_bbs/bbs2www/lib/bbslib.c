@@ -2690,6 +2690,7 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 					print_raw_ansi(&buf[i], 1, output);
 					continue;
 				}
+				STATE_CLR(ansi_state,STATE_UBB_MIDDLE);
 				STATE_SET(ansi_state,STATE_UBB_END);
 				ubbfinish_begin=&buf[i];
 				i++;
@@ -2778,7 +2779,9 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
                 STYLE_CLR(font_style, FONT_STYLE_QUOTE);
                 STATE_CLR(ansi_state, STATE_FONT_SET);
             }
-            output->output("<br />\n", 7, output);
+            if (!STATE_ISSET(ansi_state,STATE_UBB_MIDDLE) || isUBBMiddleOutput) {
+		    output->output("<br />\n", 7, output);
+	    }
             STATE_CLR(ansi_state, STATE_QUOTE_LINE);
             STATE_SET(ansi_state, STATE_NEW_LINE);
         } else {
