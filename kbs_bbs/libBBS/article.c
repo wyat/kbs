@@ -927,10 +927,10 @@ int after_post(struct userec *user, struct fileheader *fh, char *boardname, stru
             isnews = !strcmp(boardname, "News");
             if (isnews || check_badword_str(fh->title, strlen(fh->title)) || check_badword(oldpath))
 #else
-            if (check_badword_str(fh->title, strlen(fh->title)) || check_badword(oldpath))
+            if (check_badword_str(fh->title, strlen(fh->title), session) || check_badword(oldpath, session))
 #endif
 #else
-            if (check_badword_str(fh->title, strlen(fh->title)) || check_badword(oldpath))
+            if (check_badword_str(fh->title, strlen(fh->title), session) || check_badword(oldpath, session))
 #endif
             {
                 /*

@@ -2781,7 +2781,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         char tmp2[STRLEN];      /* Leeward 98.03.29 */
 
 #ifdef FILTER
-        if (check_badword_str(buf, strlen(buf))) {
+        if (check_badword_str(buf, strlen(buf), getSession())) {
             clear();
             move(3, 0);
             outs("     很抱歉，该标题可能含有不恰当的内容，请仔细检查换个标题。");
@@ -3534,7 +3534,7 @@ void notepad()
                 i = 2;
             for (n = 0; n <= i; n++) {
 #ifdef FILTER
-	        if (check_badword_str(note[n],strlen(note[n]))) {
+	        if (check_badword_str(note[n],strlen(note[n]), getSession())) {
 			int t;
                         for (t = n; t <= i; t++) 
                             fprintf(in, "\033[31m│\033[m%-74.74s\033[31m│\033[m\n", note[t]);
