@@ -11,8 +11,6 @@
 #include "bbslib.h"
 #include "vote.h"
 
-#define MAX_DING_NUM	10 //max top article numbers
-
 static unsigned char third_arg_force_ref_1111[] = { 4, BYREF_FORCE, BYREF_FORCE, BYREF_FORCE, BYREF_FORCE };
 static unsigned char third_arg_force_ref_011[] = { 3, BYREF_NONE, BYREF_FORCE, BYREF_FORCE };
 static unsigned char fourth_arg_force_ref_0001[] = { 4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE };
@@ -2037,7 +2035,7 @@ static PHP_FUNCTION(bbs_getthreads)
 						flags[3] = ' ';
 					bbs_make_article_array(element, articles+found, flags, sizeof(flags));
 					zend_hash_index_update(Z_ARRVAL_P(return_value), threadsFounded-1-start, (void *) &element, sizeof(zval *), NULL);
-					if ((threadsFounded>=num+start) || (threadsFounded>MAX_DING_NUM)){
+					if ((threadsFounded>=num+start) || (threadsFounded>MAX_DING)){
 						break;
 					}
 				}
