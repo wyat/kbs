@@ -312,6 +312,7 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼ş£¬È¡³ö±£´
     int brc_size;
     int bid=getbnum(boardname);
     int fd;
+    struct boardheader const* bptr;
     for (i=0;i<BRC_CACHE_NUM;i++) 
     	if (brc_cache_entry[i].bid==bid) {
     		brc_currcache=bid;
@@ -341,7 +342,6 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼ş£¬È¡³ö±£´
     }
 
     entry=brc_getcache(userid);
-    struct boardheader const* bptr;
     bptr=getboard(bid);
     lseek(fd,bid*BRC_ITEMSIZE,SEEK_SET);
     read(fd,&brc_cache_entry[entry].list,BRC_ITEMSIZE);
@@ -356,7 +356,6 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼ş£¬È¡³ö±£´
     {
     		brc_cache_entry[entry].changed=0;
     		brc_cache_entry[entry].bid=bid;
-    		break;
     }
     close(fd);
     return 0;
