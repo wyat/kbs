@@ -527,6 +527,22 @@ char *cperf(int perf)
     return "神～～";
 }
 
+char *cnumposts(int num)
+{
+    if(num== 0 )
+        return "没写文章";
+    if(num>0&&num<=500)
+        return "文采一般";
+    if(num>500&&num<=1500)
+        return "文采奕奕";
+    if(num>1500&&num<=4000)
+        return "文坛高手";
+    if(num>4000&&num<=10000)
+        return "文坛博士";
+    if(num>10000)
+        return "文坛至尊";
+}
+
 int countexp(struct userec *udata)
 {
     int exp;
