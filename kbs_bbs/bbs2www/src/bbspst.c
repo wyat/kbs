@@ -41,7 +41,7 @@ int main()
     printf("作者: %s<br>\n", currentuser->userid);
     printf("使用标题: <input type=\"text\" name=\"title\" size=\"40\" maxlength=\"100\" value=\"%s\">\n", encode_html(buf, void1(title), sizeof(buf)));
     if (attach)
-        printf(("附件：<input type=\"text\" name=\"attachname\" size=\"50\" value=\"\" disabled > \n");
+        printf("附件：<input type=\"text\" name=\"attachname\" size=\"50\" value=\"\" disabled > \n");
     printf("讨论区: [%s]<br>\n", board);
     printf("使用签名档 <select name=\"signature\">\n");
     if (currentuser->signature == 0)

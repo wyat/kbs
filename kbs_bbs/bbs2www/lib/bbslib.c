@@ -751,6 +751,7 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     int fd, anonyboard;
     FILE *fp, *fp2;
 
+    sleep(20);
     memset(&post_file, 0, sizeof(post_file));
     anonyboard = anonymousboard(board);  /* ÊÇ·ñÎªÄäÃû°æ */
 
@@ -797,33 +798,33 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     if (attach_dir!=NULL) {
         DIR* attach_tmp_dir;
         if (NULL!=(attach_tmp_dir=opendir(attach_dir))) {
-    		struct dirent dirp;
+    		struct dirent* dirp;
     		while (NULL!=(dirp=readdir(attach_tmp_dir))) {
                     int fd;
                     char* ptr;
                     off_t begin,size;
                     if (dirp->d_name[0]=='.') continue;
-                    snprintf(filepath,"%s/%s",attach_dir,dirp->d_name);
+                    snprintf(filepath,MAXPATH, "%s/%s",attach_dir,dirp->d_name);
                     if (-1==(fd=open(filepath,O_RDONLY)))
                         continue;
                     if (post_file.attachment==0) {
                         /* log the attachment begin */
                         post_file.attachment=ftell(fp)+1;
                     }
-                    fwrite(fp,ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1);
-                    fwrite(fp,dirp->d_name,strlen(dirp->d_name)+1);
+                    fwrite(ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1,1,fp);
+                    fwrite(dirp->d_name,strlen(dirp->d_name)+1,1,fp);
                     BBS_TRY {
                         if (safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & size) == 0) {
                             size=0;
-                            fwrite(fp,&size,sizeof(size));
+                            fwrite(&size,sizeof(size),1,fp);
                         } else {
-                            fwrite(fp,&size,sizeof(size));
+                            fwrite(&size,sizeof(size),1,fp);
                             begin=ftell(fp);
-                            fwrite(fp,ptr,size);
+                            fwrite(ptr,size,1,fp);
                         }
                     }
                     BBS_CATCH {
-                        ftruncate(fp,begin+size);
+                        ftruncate(fileno(fp),begin+size);
                         fseek(fp,begin+size,SEEK_SET);
                     }
                     BBS_END end_mmapfile((void *) ptr, size, -1);

@@ -50,7 +50,7 @@ int main()
                     break;
                 num++;
                 if (!strncmp(x.title + 4, title, 39) && !strncmp(x.title, "Re: ", 4))
-                    show_file(board, &x, num - 1,brdencode);
+                    show_file(board, &bh, &x, num - 1,brdencode);
             }
         }
     }

@@ -545,8 +545,8 @@ static ZEND_FUNCTION(bbs_printansifile)
             int ansicolor, cal;
 
             outbuf[sizeof(outbuf) - 1] = 0;
-#define FLUSHBUF while(1) { *outp=0;zend_printf("%s",outbuf); outp=outbuf; }
-#define OUTPUT(buf,len) while(1) { if ((outbuf-outp)<len) FLUSHBUF; strncpy(outp,buf,len); outp+=len; }
+#define FLUSHBUF do { *outp=0;zend_printf("%s",outbuf); outp=outbuf; } while (0)
+#define OUTPUT(buf,len) do { if ((outbuf-outp)<len) FLUSHBUF; strncpy(outp,buf,len); outp+=len; } while (0)
             for (p = ptr; (*p) && (p - ptr < st.st_size); p++) {
                 // TODO: need detect link
                 switch (mode) {

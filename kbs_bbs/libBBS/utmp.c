@@ -586,8 +586,8 @@ void clear_utmp2(int uent)
         uent = utmpent;
     }
 #endif
-    if (utmpshm->uinfo[uent - 1].utmpkey!=0)
-        snprintf(buf,MAXPATH,"%s/%s_%s",ATTACHTMPPATH,utmpshm->uinfo[uent-1].userid,uent);
+    if (utmpshm->uinfo[uent - 1].utmpkey!=0) {
+        snprintf(buf,MAXPATH,"%s/%s_%d",ATTACHTMPPATH,utmpshm->uinfo[uent-1].userid,uent);
         f_rm(buf);
     }
     hashkey = utmp_hash(utmpshm->uinfo[uent - 1].userid);

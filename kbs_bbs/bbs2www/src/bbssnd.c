@@ -68,8 +68,8 @@ int main()
     /*if (filtered == 1)
 		r = post_article(FILTER_BOARD, title, filename, currentuser, fromhost, sig, local, anony, oldx);
     else*/
-    if (brd->flag&=BOARD_ATTACH) {
-        snprintf(buf,MAXPATH,"%s/%s_%s",ATTACHTMPPATH,currentuser->userid,utmpent);
+    if (brd->flag&BOARD_ATTACH) {
+        snprintf(buf,MAXPATH,"%s/%s_%d",ATTACHTMPPATH,currentuser->userid,utmpent);
         r = post_article(board, title, filename, currentuser, fromhost, sig, local, anony, oldx,buf);
         f_rm(buf);
     }

@@ -8,6 +8,7 @@
 	global $errno;
 	@$action=$_GET["act"];
     	$totalsize=0;
+    $allnames="";
 	require("funcs.php");
 	if ($loginok !=1 )
 		html_nologin();
@@ -17,7 +18,7 @@
 		$attachdir=ATTACHTMPPATH . "/" . $currentuser["userid"] . "_" . $utmpnum;
 		if ($action=="delete") {
 			@$act_attachname=$_GET["attachname"];
-			unlink($attachdir . "/" . "$act_attachname");
+			@unlink($attachdir . "/" . "$act_attachname");
 		} else if ($action=="add") {
 			@$errno=$_FILES['attachfile']['error'];
 			if ($errno==UPLOAD_ERR_OK) {
@@ -52,7 +53,7 @@
                     	$filesizes[] = filesize($attachdir . "/" . $file);
                     	$totalsize+=$filesizes[$filecount];
                     	$filecount++;
-			$allnames+=$file . ";";
+			            $allnames = $allnames . $file . ";";
                     }
                     closedir($handle);
                 }
@@ -109,7 +110,7 @@ function clickclose() {
 	return false;
 }
 <!--
-        opener.document.forms["postform"].elements["attachname"].value = <?php echo "\"$allnemes\""; ?>;
+        opener.document.forms["postform"].elements["attachname"].value = <?php echo "\"$allnames\""; ?>;
 //-->
 </script>
 <body bgcolor="#FFFFFF"  background="/images/rback.gif">
@@ -119,6 +120,10 @@ function clickclose() {
                 		unlink($attachdir . "/" . $act_attachname);
                 		$errno=UPLOAD_ERR_FORM_SIZE;
                 	}
+                	if ($filecount>ATTACHMAXCOUNT) {
+                		echo "附件个数超过规定！";
+                		break;
+					} else
                 	switch ($errno) {
                 	case UPLOAD_ERR_OK:
                 		echo "文件上载成功！";
@@ -150,12 +155,24 @@ function clickclose() {
             <td colspan="2" height="13" class="txt02"> <font>1、点“<font color="#FF0000">浏览</font>”按钮，找到您所要粘贴的附件文件：</font> 
             </td>
           </tr>
+<?php
+	if ($filecount<ATTACHMAXCOUNT) {
+?>
           <tr> 
             <td colspan="2" height="25" class="form01"> 
               <input type="hidden" name="MAX_FILE_SIZE" value=<?php echo(ATTACHMAXSIZE);?>>
               <input type="file" name="attachfile" size="20" value class="form02">
             </td>
           </tr>
+<?php
+    } else {
+?>
+          <tr> 
+            <td colspan="2" height="25" class="form01">附件个数已满！</td>
+          </tr>
+<?php
+	}
+?>
         </table>
       </td>
     </tr>
@@ -209,12 +226,12 @@ function clickclose() {
     <tr><td>
         <table border="0" width="500">
           <tr> 
-            <td width="150" class="txt01" align="right">现在附件文件总量为：</td>
-            <td width="350" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;<?php echo sizestring($totalsize); ?>字节</b></font></td>
+            <td width="200" class="txt01" align="right">现在附件文件总量为：</td>
+            <td width="300" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;<?php echo sizestring($totalsize); ?>字节</b></font></td>
   	</tr>
           <tr> 
-            <td width="150" class="txt01" align="right">注意：附件总容量最大不能超过：</td>
-            <td width="350" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;<?php echo sizestring(ATTACHMAXSIZE); ?>字节</b></font></td>
+            <td width="200" class="txt01" align="right">注意：附件总容量最大不能超过：</td>
+            <td width="300" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;<?php echo sizestring(ATTACHMAXSIZE); ?>字节</b></font></td>
   	</tr>
   	</table>
   </td></tr>
