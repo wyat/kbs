@@ -791,7 +791,8 @@ int read_new_mail(struct fileheader *fptr, int idc, char *direct)
         prints("(R)»ØÐÅ, (D)É¾³ý, (G)¼ÌÐø ? [G]: ");
         switch (igetkey()) {
         case Ctrl('Y'):  
-//new_i_read todo            zsend_post(NULL, fptr, NULL);
+            setmailfile(fname, currentuser->userid, fptr->filename);
+            zsend_file(fname, fptr->title);
             break;
         case 'R':
         case 'r':

@@ -509,11 +509,10 @@ static int fav_onselect(struct _select_def *conf)
             brc_initial(currentuser->userid, ptr->name);
 #endif
             memcpy(currBM, ptr->BM, BM_LEN - 1);
-            if (DEFINE(currentuser, DEF_FIRSTNEW)) {
+            if (DEFINE(currentuser, DEF_FIRSTNEW)&&(getPos(DIR_MODE_NORMAL,currboard->filename)==0)) {
                 setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
                 tmp = unread_position(buf, ptr);
-                page = tmp - t_lines / 2;
-                getkeep(buf, page > 1 ? page : 1, tmp + 1);
+                savePos(DIR_MODE_NORMAL,currboard->filename,tmp);
             }
             while (1) {
                 returnmode=Read();
@@ -952,7 +951,7 @@ static int fav_key(struct _select_def *conf, int command)
     return SHOW_CONTINUE;
 }
 
-static void fav_refresh(struct _select_def *conf)
+static int fav_refresh(struct _select_def *conf)
 {
     struct favboard_proc_arg *arg = (struct favboard_proc_arg *) conf->arg;
     struct newpostdata *ptr;
@@ -991,7 +990,7 @@ static void fav_refresh(struct _select_def *conf)
             clrtoeol();
             prints("请输入要找寻的 board 名称：%s", arg->bname);
     }
-
+    return SHOW_CONTINUE;
 }
 
 static int fav_getdata(struct _select_def *conf, int pos, int len)

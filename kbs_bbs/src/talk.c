@@ -18,6 +18,7 @@
 */
 
 #include "bbs.h"
+#include "read.h"
 #ifdef lint
 #include <sys/uio.h>
 #endif                          /* 
@@ -1711,7 +1712,7 @@ int friend_edit(struct _select_def* conf,struct friends *fh,void* extraarg)
         bbslog("user","%s","Friend files subs err");
     move(t_lines - 2, 0);
     clrtoeol();
-    return NEWDIRECT;
+    return DIRCHANGED;
 }
 
 int friend_help(struct _select_def* conf,struct friends *fh,void* extraarg)

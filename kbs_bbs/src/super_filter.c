@@ -572,7 +572,7 @@ int super_filter(struct _select_def* conf,struct fileheader* fileinfo,void* extr
         }
     }*/
     strcpy(arg->direct, newdirect);
-    arg->mode=DIR_MODE_SUPERFITER;
+    arg->newmode=DIR_MODE_SUPERFITER;
     return NEWDIRECT;
 }
 

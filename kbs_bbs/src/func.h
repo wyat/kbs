@@ -282,7 +282,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
 	/* Search_Bin 
 	 * 功能：依据key, 对ptr传入的.DIR索引进行二分查找
 	 */
-	int Search_Bin(char *ptr, int key, int start, int end);
+	int Search_Bin(struct fileheader*ptr, int key, int start, int end);
     /*
      * mmap_search_dir_apply
      * 功能:mmap struct fileheader结构的文件，找到需要的记录,

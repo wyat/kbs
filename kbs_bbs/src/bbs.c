@@ -816,8 +816,8 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 
     setreadpost(conf, fileinfo);
 
-//new_i_read    if (!(ch == KEY_RIGHT || ch == KEY_UP || ch == KEY_PGUP
-//        || ch == KEY_DOWN) && (ch <= 0 || strchr("RrEexp", ch) == NULL))
+    if (!(ch == KEY_RIGHT || ch == KEY_UP || ch == KEY_PGUP
+        || ch == KEY_DOWN) && (ch <= 0 || strchr("RrEexp", ch) == NULL))
 reget:
         ch = igetkey();
 
@@ -1047,13 +1047,12 @@ int digest_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extra
 {                               /* 文摘模式 切换 */
     struct read_arg* arg=(struct read_arg*)conf->arg;
     if (arg->mode == DIR_MODE_DIGEST) {
-        arg->mode = DIR_MODE_NORMAL;
-        setbdir(arg->mode, arg->direct, currboard->filename);
+        arg->newmode = DIR_MODE_NORMAL;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
     } else {
-        arg->mode = DIR_MODE_DIGEST;
-        setbdir(arg->mode, arg->direct, currboard->filename);
+        arg->newmode = DIR_MODE_DIGEST;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
         if (!dashf(arg->direct)) {
-            arg->mode = DIR_MODE_NORMAL;
             setbdir(arg->mode, arg->direct, currboard->filename);
             return FULLUPDATE;
         }
@@ -1082,11 +1081,11 @@ int deleted_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     }
 
     if (arg->mode == DIR_MODE_DELETED) {
-        arg->mode = DIR_MODE_NORMAL;
-        setbdir(arg->mode, arg->direct, currboard->filename);
+        arg->newmode = DIR_MODE_NORMAL;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
     } else {
-        arg->mode = DIR_MODE_DELETED;
-        setbdir(arg->mode, arg->direct, currboard->filename);
+        arg->newmode = DIR_MODE_DELETED;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
         if (!dashf(arg->direct)) {
             arg->mode = DIR_MODE_NORMAL;
             setbdir(arg->mode, arg->direct, currboard->filename);
@@ -1198,8 +1197,8 @@ int marked_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extra
                 return FULLUPDATE;
             }
         }
-        arg->mode= DIR_MODE_MARK;
-        setbdir(arg->mode, arg->direct, currboard->filename);
+        arg->newmode= DIR_MODE_MARK;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
         if (!dashf(arg->direct)) {
             arg->mode=DIR_MODE_NORMAL;
             setbdir(DIR_MODE_NORMAL, arg->direct, currboard->filename);
@@ -1225,16 +1224,16 @@ int title_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         return FULLUPDATE;
     }
 
-    arg->mode = DIR_MODE_THREAD;
+    arg->newmode = DIR_MODE_THREAD;
     if (setboardtitle(currboard->filename, -1)) {
-    	setbdir(arg->mode, arg->direct, currboard->filename);
+    	setbdir(arg->newmode, arg->direct, currboard->filename);
         if (gen_title(currboard->filename) == -1) {
             arg->mode=DIR_MODE_NORMAL;
             setbdir(DIR_MODE_NORMAL, arg->direct, currboard->filename);
             return FULLUPDATE;
         }
     }
-    setbdir(arg->mode, arg->direct, currboard->filename);
+    setbdir(arg->newmode, arg->direct, currboard->filename);
     if (!dashf(arg->direct)) {
         arg->mode=DIR_MODE_NORMAL;
         setbdir(DIR_MODE_NORMAL, arg->direct, currboard->filename);
@@ -1259,13 +1258,13 @@ int search_mode(struct _select_def* conf,struct fileheader *fileinfo,int mode, c
 
     strncpy(search_data, index, STRLEN);
     setbdir(DIR_MODE_NORMAL, olddirect, currboard->filename);
-    arg->mode=mode;
+    arg->newmode=mode;
     setbdir(mode,arg->direct, currboard->filename);
     if (mode == DIR_MODE_ORIGIN && !setboardorigin(currboard->filename, -1)) {
         return NEWDIRECT;
     }
     if ((fd = open(arg->direct, O_WRONLY | O_CREAT, 0664)) == -1) {
-        bbslog("user", "%s", "recopen err");
+        bbslog("3user", "%s", "recopen err");
         return FULLUPDATE;      /* 创建文件发生错误*/
     }
     ldata.l_type = F_WRLCK;
@@ -1273,7 +1272,7 @@ int search_mode(struct _select_def* conf,struct fileheader *fileinfo,int mode, c
     ldata.l_len = 0;
     ldata.l_start = 0;
     if (fcntl(fd, F_SETLKW, &ldata) == -1) {
-        bbslog("user", "%s", "reclock err");
+        bbslog("3user", "%s", "reclock err");
         close(fd);
         return FULLUPDATE;      /* lock error*/
     }
@@ -1282,11 +1281,11 @@ int search_mode(struct _select_def* conf,struct fileheader *fileinfo,int mode, c
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
-        return -1;
+        return FULLUPDATE;
     }
 
     if ((fd2 = open(olddirect, O_RDONLY, 0664)) == -1) {
-        bbslog("user", "%s", "recopen err");
+        bbslog("3user", "%s", "recopen err");
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
@@ -1508,13 +1507,12 @@ int junk_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     }
 
     if (arg->mode == DIR_MODE_JUNK) {
-        arg->mode = DIR_MODE_NORMAL;
-        setbdir(arg->mode, arg->direct, currboard->filename);
+        arg->newmode = DIR_MODE_NORMAL;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
     } else {
-        arg->mode = DIR_MODE_JUNK;
+        arg->newmode = DIR_MODE_JUNK;
         setbdir(arg->mode, arg->direct, currboard->filename);
         if (!dashf(arg->direct)) {
-            arg->mode = DIR_MODE_NORMAL;
             setbdir(arg->mode, arg->direct, currboard->filename);
             return DONOTHING;
         }
@@ -2409,7 +2407,7 @@ int zhiding_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     struct read_arg* arg=(struct read_arg*)conf->arg;
     if(POSTFILE_BASENAME(fileinfo->filename)[0]=='Z')
 		return del_ding(conf,fileinfo,extraarg);
-    return change_post_flag(currBM, currentuser, arg->mode, currboard->filename, conf->pos, fileinfo, arg->dingdirect, FILE_DING_FLAG, 0);
+    return change_post_flag(currBM, currentuser, arg->mode, currboard->filename, conf->pos, fileinfo, arg->direct, FILE_DING_FLAG, 0);
 }
 
 int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
@@ -4867,6 +4865,7 @@ static struct key_command read_comms[] = { /*阅读状态，键定义 */
     
     {'b', (READ_KEY_FUNC)SR_BMFunc,(void*)true},
     {'B', (READ_KEY_FUNC)SR_BMFunc,(void*)false},
+    {',', (READ_KEY_FUNC)read_splitscreen,NULL},
     {'\0', NULL},
 };
 
@@ -4877,7 +4876,7 @@ int Read()
     time_t usetime;
     struct stat st;
     int bid;
-    int returnmode=DIR_MODE_DIGEST;
+    int returnmode=CHANGEMODE;
 
     if (!selboard||!currboard) {
         move(2, 0);
@@ -4927,7 +4926,7 @@ int Read()
         }
     }
     usetime = time(0);
-    while (returnmode!=DIR_MODE_NORMAL) {
+    while ((returnmode==CHANGEMODE)&&!(currboard->flag&BOARD_GROUP)) {
     returnmode=new_i_read(DIR_MODE_NORMAL, buf, readtitle, (READ_ENT_FUNC) readdoent, &read_comms[0], sizeof(struct fileheader));  /*进入本版 */
     setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
     }

@@ -6,6 +6,7 @@
 #include "read.h"
 
 extern char MsgDesUid[14];
+extern unsigned int tmpuser;
 
 //每一个模式上次阅读位置保存
 struct _read_pos {
@@ -20,7 +21,7 @@ struct _read_pos {
   * @param direct dir的文件名
   * @return 上次位置，为0则失败
 */
-static int getPos(int mode,char* direct)
+int getPos(int mode,char* direct)
 {
     struct _read_pos* ptr;
     char* key;
@@ -28,13 +29,16 @@ static int getPos(int mode,char* direct)
     ptr=read_pos_head;
     if (mode==DIR_MODE_MAIL)
         key=direct;
+    else if (mode==DIR_MODE_FRIEND)
+        key=NULL;
     else
-        key=currboard.filename;
+        key=currboard->filename;
     while (ptr!=NULL) {
         if (mode==ptr->mode) {
-            if ((key==NULL)||((ptr->key!=NULL)&&(!strcmp(key,ptr->key)))
+            if ((key==NULL)||((ptr->key!=NULL)&&(!strcmp(key,ptr->key))))
                 return ptr->pos;
         }
+        ptr=ptr->next;
     }
     return 0;
 }
@@ -44,7 +48,7 @@ static int getPos(int mode,char* direct)
   * @param direct dir的文件名
   * @param pos 阅读位置
 */
-static void savePos(int mode,char* direct,int pos)
+void savePos(int mode,char* direct,int pos)
 {
     struct _read_pos*ptr;
     char* key;
@@ -52,13 +56,16 @@ static void savePos(int mode,char* direct,int pos)
     ptr=read_pos_head;
     if (mode==DIR_MODE_MAIL)
         key=direct;
+    else if (mode==DIR_MODE_FRIEND)
+        key=NULL;
     else
-        key=currboard.filename;
+        key=currboard->filename;
     while (ptr!=NULL) {
         if (mode==ptr->mode) {
-            if ((key==NULL)||((ptr->key!=NULL)&&(!strcmp(key,ptr->key)))
+            if ((key==NULL)||((ptr->key!=NULL)&&(!strcmp(key,ptr->key))))
                 break;
         }
+        ptr=ptr->next;
     }
     if (ptr==NULL) { /*增加一个表项*/
         ptr=(struct _read_pos*)malloc(sizeof(struct _read_pos));
@@ -66,8 +73,11 @@ static void savePos(int mode,char* direct,int pos)
         read_pos_head=ptr;
     }
     ptr->mode=mode;
+    if (key!=NULL) {
     ptr->key=(char*)malloc(strlen(key)+1);
     strcpy(ptr->key,key);
+    } else
+        ptr->key=NULL;
     ptr->pos=pos;
 }
 
@@ -212,15 +222,23 @@ static int read_key(struct _select_def *conf, int command)
             clear();
             ret=SHOW_REFRESH;
             break;
-        case DIRCHANGED:
         case NEWDIRECT: {
                 int newfd;
                 if ((newfd = open(arg->direct, O_RDWR, 0)) != -1) {
                     close(arg->fd);
                     arg->fd=newfd;
                 }
+/*其实这里有个问题，在savePos的时候，arg->direct其实已经被改动成新的direct了
+  正确的做法是类似newmode的写法，在这里保存原来的。
+  但是，因为返回NEWDIRECT的只有阅读的时候，而阅读的时候只用当前版面作为key,
+  所以，其实arg->direct是无用的。
+*/
                 savePos(arg->mode,arg->direct,conf->pos);
+                conf->pos=getPos(arg->newmode,arg->direct);
+                arg->mode=arg->newmode;
+                arg->newmode=-1;
             }
+        case DIRCHANGED:
         case NEWSCREEN:
             ret=SHOW_DIRCHANGE;
             break;
@@ -325,7 +343,7 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
     int count;
 
     if (arg->data==NULL)
-        arg->data=calloc(BBS_PAGESIZE,arg->ssize);
+        arg->data=calloc(conf->item_per_page,arg->ssize);
     
     if (fstat(arg->fd,&st)!=-1) {
         int entry=0;
@@ -378,6 +396,21 @@ static int read_title(struct _select_def *conf)
     return SHOW_CONTINUE;
 }
 
+static int read_showcontent(struct _select_def* conf,int newpos)
+{
+    char buf[256], *t;
+    struct read_arg *arg = (struct read_arg *) conf->arg;
+    struct fileheader* h;
+    strcpy(buf, read_getcurrdirect(conf));
+    if ((t = strrchr(buf, '/')) != NULL)
+        *t = '\0';
+    h = arg->data+(newpos-conf->page_pos) * arg->ssize;
+    sprintf(genbuf, "%s/%s", buf, h->filename);
+    draw_content(genbuf,h);
+    return SHOW_CONTINUE;
+}
+
+
 static int read_endline(struct _select_def *conf)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
@@ -402,6 +435,8 @@ static int read_endline(struct _select_def *conf)
         prints(pntbuf);
         clrtoeol();
     }
+    if (TDEFINE(TDEF_SPLITSCREEN))
+	    read_showcontent(conf,conf->pos);
     return SHOW_CONTINUE;
 }
 
@@ -414,12 +449,12 @@ static int read_prekey(struct _select_def *conf, int *command)
         case Ctrl('F'):
         case ' ':
         case 'p': //翻页控制使用arg->filecount，不到达置顶
-  	    if (conf->pos+conf->item_per_page<=arg->filecount) 
-    		return select_change(conf, conf->pos + conf->item_per_page);
+  	    if (conf->pos+conf->item_per_page<=conf->item_count) 
+    		conf->new_pos= conf->pos + conf->item_per_page;
 	    else
-    		return select_change(conf, arg->filecount);
-                *command=KEY_INVALID;
-    	break;
+    		conf->new_pos=conf->item_count;
+        *command=KEY_INVALID;
+        return SHOW_SELCHANGE;
     }
     return SHOW_CONTINUE;
 }
@@ -437,23 +472,27 @@ static int read_onsize(struct _select_def* conf)
 {
     int i;
     struct read_arg *arg = (struct read_arg *) conf->arg;
+    int per_page=conf->item_per_page;
+    conf->item_per_page = TDEFINE(TDEF_SPLITSCREEN)?BBS_PAGESIZE/2:BBS_PAGESIZE;
     if (conf->item_pos!=NULL)
         free(conf->item_pos);
-    conf->item_pos = (POINT *) calloc(BBS_PAGESIZE,sizeof(POINT));
+    conf->item_pos = (POINT *) calloc(conf->item_per_page,sizeof(POINT));
 
-    for (i = 0; i < BBS_PAGESIZE; i++) {
+    for (i = 0; i < conf->item_per_page; i++) {
         conf->item_pos[i].x = 1;
         conf->item_pos[i].y = i + 3;
     };
-    if (conf->item_per_page!=BBS_PAGESIZE) {
+    if (per_page!=conf->item_per_page) {
     if (arg->data!=NULL) {
         free(arg->data);
         arg->data=NULL;
     }
-    conf->item_per_page = BBS_PAGESIZE;
+    if (TDEFINE(TDEF_SPLITSCREEN))
+        conf->on_selchange=read_showcontent;
+    else conf->on_selchange=NULL;
     return SHOW_DIRCHANGE;
     }
-    return SHOW_CONTINUE;
+    return DONOTHING;
 }
 
 int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct _select_def*), READ_ENT_FUNC doentry, struct key_command *rcmdlist, int ssize)
@@ -509,7 +548,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
 
     if ((arg.fd = open(arg.direct, O_RDWR, 0)) != -1) {
         bzero((char *) &read_conf, sizeof(struct _select_def));
-        read_conf.item_per_page = BBS_PAGESIZE;
+        read_conf.item_per_page = TDEFINE(TDEF_SPLITSCREEN)?BBS_PAGESIZE/2:BBS_PAGESIZE;
         read_conf.flag = LF_NUMSEL | LF_VSCROLL | LF_BELL | LF_LOOP | LF_MULTIPAGE;     /*|LF_HILIGHTSEL;*/
         read_conf.prompt = ">";
         read_conf.arg = &arg;
@@ -528,15 +567,18 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
         read_conf.key_table = (struct key_translate *)ktab;
 
         read_getdata(&read_conf,1,read_conf.item_per_page);
-        if (lastpos!=-1)
+        if (TDEFINE(TDEF_SPLITSCREEN))
+            read_conf.on_selchange= read_showcontent;
+        if (lastpos!=0)
             read_conf.pos = lastpos;
-        else
-            read_conf.pos = read_conf.item_count; 
-        read_conf.page_pos = ((read_conf.pos-1)/BBS_PAGESIZE)*BBS_PAGESIZE+1;
+        else {
+            read_conf.pos = arg.filecount; 
+        }
+        read_conf.page_pos = ((read_conf.pos-1)/read_conf.item_per_page)*read_conf.item_per_page+1;
 
         list_select_loop(&read_conf);
         close(arg.fd);
-        savePos(cmdmode,direct,read_conf.pos);
+        savePos(arg.mode,direct,read_conf.pos);
     } else {
         prints("没有任何信件...");
         pressreturn();
@@ -550,6 +592,8 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
         free(arg.dingdirect);
     if (read_conf.item_pos!=NULL)
         free(read_conf.item_pos);
+    if (cmdmode!=arg.mode)
+        arg.returnvalue=CHANGEMODE;
     return arg.returnvalue;
 }
 
@@ -1079,3 +1123,13 @@ void setreadpost(struct _select_def* conf,struct fileheader* fh)
     memcpy(arg->readdata,fh,sizeof(struct fileheader));
 }
 
+
+int read_splitscreen(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    if (TDEFINE(TDEF_SPLITSCREEN))
+        tmpuser&=~TDEF_SPLITSCREEN;
+    else
+        tmpuser|=TDEF_SPLITSCREEN;
+    list_select_add_key(conf, KEY_ONSIZE);
+    return DONOTHING;
+}

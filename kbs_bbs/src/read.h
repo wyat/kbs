@@ -41,6 +41,7 @@ struct read_arg {
     int returnvalue; /* 用于设置i_read的返回值*/
     /* save argument */
     enum BBS_DIR_MODE mode;
+    enum BBS_DIR_MODE newmode; /*当返回NEWDIRECT的时候，设置这个*/
     char* direct;
     char* dingdirect; /*置顶的.DIR保存在这里*/
     void (*dotitle) ();
@@ -135,6 +136,8 @@ int read_zsend(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 
 
 int read_addauthorfriend(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+
+int read_splitscreen(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 
 /*
     设置当前阅读的fileheader用于同主题判断

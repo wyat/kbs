@@ -1164,7 +1164,7 @@ get_threads_from_id(const char *filename, int id, fileheader_t *buf, int num)
 //土鳖两分法，    by yuhuan
 //请flyriver同学或其他人自行整合
 int
-Search_Bin(char *ptr, int key, int start, int end)
+Search_Bin(struct fileheader*ptr, int key, int start, int end)
 {
         // 在有序表中折半查找其关键字等于key的数据元素。
         // 若查找到，返回索引
@@ -1176,7 +1176,7 @@ Search_Bin(char *ptr, int key, int start, int end)
         high = end;
         while (low <= high) {
                 mid = (low + high) / 2;
-                totest = (struct fileheader *)(ptr + mid * sizeof(struct fileheader));
+                totest = (struct fileheader *)(ptr + mid );
                 if (key == totest->id)
                         return mid;
                 else if (key < totest->id)
@@ -1320,7 +1320,7 @@ int change_dir_post_flag(struct userec *currentuser, char *currboard, int ent, s
     return newent ? DIRCHANGED : PARTUPDATE;
 }
 
-int change_post_flag(char *currBM, struct userec *currentuser, int currmode, char *currboard, int ent, struct fileheader *fileinfo, char *direct, int flag, int prompt)
+int change_post_flag(char *currBM, struct userec *currentuser, int currmode, char*currboard, int ent, struct fileheader *fileinfo, char *direct, int flag, int prompt)
 {
     /*---	---*/
     int newent = 0, ret = 1;
@@ -1674,7 +1674,8 @@ int change_post_flag(char *currBM, struct userec *currentuser, int currmode, cha
                 }
                 link(&genbuf[512], genbuf);
                 append_record(buf, &digest, sizeof(digest));    /* 文摘目录下添加 .DIR */
-                board_update_toptitle(currboard,1);
+                board_update_toptitle(getbcache(currboard),1);
+                newent=true;
             }
         }
 	break;
