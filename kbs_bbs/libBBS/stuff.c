@@ -918,12 +918,6 @@ int canIsend2(struct userec *user, char *userid)
     return true;
 }
 
-sigjmp_buf bus_jump;
-void sigbus(int signo)
-{
-    siglongjmp(bus_jump, 1);
-};
-
 /**
     将文件描述符fd mmap到内存中
     如果失败，返回0并且*ret_ptr=MAP_FAILED  (-1)
@@ -1229,6 +1223,43 @@ int del_from_file(char filename[STRLEN], char str[STRLEN])
         return -1;
     return (f_mv(fnnew, filename));
 }
+
+struct _sigjmp_stack {
+    sigjmp_buf bus_jump;
+    struct _sigjmp_stack* next;
+} static *sigjmp_stack=NULL;
+
+sigjmp_buf* push_sigbus()
+{
+  struct _sigjmp_stack* jumpbuf;
+  jumpbuf=(struct _sigjmp_stack*) malloc(sizeof(struct _sigjmp_stack));
+  if (sigjmp_stack==NULL) {
+    sigjmp_stack=jumpbuf;
+    jumpbuf->next=NULL;
+  } else {
+    jumpbuf->next=sigjmp_stack;
+    sigjmp_stack=jumpbuf;
+  }
+  return &(jumpbuf->bus_jump);
+}
+
+void popup_sigbus()
+{
+    struct _sigjmp_stack* jumpbuf=sigjmp_stack;
+    if (sigjmp_stack) {
+        sigjmp_stack=jumpbuf->next;
+        free(jumpbuf);
+    }
+    if (sigjmp_stack==NULL)
+        signal(SIGBUS, SIG_IGN);
+}
+
+void sigbus(int signo)
+{
+    if (sigjmp_stack) {
+        siglongjmp(sigjmp_stack->bus_jump, 1);
+    }
+};
 
 int simplepasswd(char *str)
 {

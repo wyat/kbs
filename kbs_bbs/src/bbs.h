@@ -59,6 +59,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <stdarg.h>
+#include <setjmp.h>
 
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>

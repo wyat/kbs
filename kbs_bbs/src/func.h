@@ -170,8 +170,11 @@ void set_user_title(unsigned char titleidx,char* newtitle);
 
 #define time(x) bbstime(x)
 
+    sigjmp_buf* push_sigbus();
+    void popup_sigbus();
+
 #define BBS_TRY \
-    if (!sigsetjmp(bus_jump, 1)) { \
+    if (!sigsetjmp(*push_sigbus(), 1)) { \
         signal(SIGBUS, sigbus);
 
 #define BBS_CATCH \
@@ -179,10 +182,11 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     else { \
 
 #define BBS_END } \
-    signal(SIGBUS, SIG_IGN);
+    popup_sigbus();
 
-#define BBS_RETURN(x) {signal(SIGBUS, SIG_IGN);return (x);}
-#define BBS_RETURN_VOID {signal(SIGBUS, SIG_IGN);return;}
+#define BBS_RETURN(x) {popup_sigbus();return (x);}
+#define BBS_RETURN_VOID {popup_sigbus();return;}
+
 
     int safe_mmapfile(char *filename, int openflag, int prot, int flag, void **ret_ptr, size_t * size, int *ret_fd);
     int safe_mmapfile_handle(int fd, int prot, int flag, void **ret_ptr, size_t * size);
