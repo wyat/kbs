@@ -1,5 +1,5 @@
 /*
- * This program converts .PASSWD from Firebird 2000 to smth_bbs
+ * This program converts .PASSWD from smth to smth_with_wforum 
  */
 
 #include "bbs.h"
