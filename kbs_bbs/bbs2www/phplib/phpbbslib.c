@@ -1540,7 +1540,14 @@ static PHP_FUNCTION(bbs_postarticle)
     }
     *(int *) (u_info->from + 36) = time(0);
     sprintf(filename, "tmp/%s.%d.tmp", getcurruserid(), getpid());
+    if (!sigsetjmp(bus_jump, 1)) {
+        signal(SIGBUS, sigbus);
+        signal(SIGSEGV, sigbus);
+    }
     f_append(filename, unix_string(content));
+    signal(SIGBUS, SIG_IGN);
+    signal(SIGSEGV, SIG_IGN);
+
     if(reid > 0){
         int pos;int fd;
         oldx = (struct fileheader*)emalloc(sizeof(struct fileheader));
@@ -1576,22 +1583,61 @@ static PHP_FUNCTION(bbs_postarticle)
 #else
         snprintf(buf,MAXPATH,"%s/%s_%d",ATTACHTMPPATH,currentuser->userid,utmpent);
 #endif
+        if (!sigsetjmp(bus_jump, 1)) {
+            signal(SIGBUS, sigbus);
+            signal(SIGSEGV, sigbus);
+        }
         r = post_article(board, title, filename, currentuser, fromhost, sig, local, anony, oldx,buf);
+	signal(SIGBUS, SIG_IGN);
+    	signal(SIGSEGV, SIG_IGN);
+        if (!sigsetjmp(bus_jump, 1)) {
+            signal(SIGBUS, sigbus);
+            signal(SIGSEGV, sigbus);
+        }
         f_rm(buf);
+	signal(SIGBUS, SIG_IGN);
+    	signal(SIGSEGV, SIG_IGN);
     }
-    else
+    else {
+        if (!sigsetjmp(bus_jump, 1)) {
+            signal(SIGBUS, sigbus);
+            signal(SIGSEGV, sigbus);
+        }
         r = post_article(board, title, filename, currentuser, fromhost, sig, local, anony, oldx,NULL);
+    
+	signal(SIGBUS, SIG_IGN);
+    	signal(SIGSEGV, SIG_IGN);
+    }
     if (r < 0)
         RETURN_LONG(-9) ; //"内部错误，无法发文";
 #ifdef HAVE_BRC_CONTROL
+    if (!sigsetjmp(bus_jump, 1)) {
+        signal(SIGBUS, sigbus);
+        signal(SIGSEGV, sigbus);
+    }
+
     brc_update(currentuser->userid);
+    signal(SIGBUS, SIG_IGN);
+    signal(SIGSEGV, SIG_IGN);
 #endif
     if(oldx)
     	efree(oldx);
+    if (!sigsetjmp(bus_jump, 1)) {
+        signal(SIGBUS, sigbus);
+        signal(SIGSEGV, sigbus);
+    }
     unlink(filename);
+    signal(SIGBUS, SIG_IGN);
+    signal(SIGSEGV, SIG_IGN);
     if (!junkboard(board)) {
         currentuser->numposts++;
+        if (!sigsetjmp(bus_jump, 1)) {
+            signal(SIGBUS, sigbus);
+            signal(SIGSEGV, sigbus);
+        }
         write_posts(currentuser->userid, board, title);
+        signal(SIGBUS, SIG_IGN);
+        signal(SIGSEGV, SIG_IGN);
     }
     RETURN_LONG(0);
 }
