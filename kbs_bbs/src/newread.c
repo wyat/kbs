@@ -54,8 +54,7 @@ static int read_key(struct _select_def *conf, int command)
                         conf->new_pos = conf->pos - 1;
                         list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                         ret=SHOW_SELCHANGE;
-                    }
-                    ret= SHOW_REFRESH;
+                    } else ret= SHOW_REFRESH;
                     break;
             } 
             break;
@@ -78,8 +77,8 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
     int entry=0;
     int count;
 
-    if (arg.data==NULL)
-        arg.data=calloc(BBS_PAGESIZE,ssize);
+    if (arg->data==NULL)
+        arg->data=calloc(BBS_PAGESIZE,arg->ssize);
     
     if (fstat(arg->fd,&st)!=-1) {
         count=st.st_size/arg->ssize;
@@ -102,6 +101,7 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
 static int read_title(struct _select_def *conf)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
+    clear();
     (*arg->dotitle) ();
     return SHOW_CONTINUE;
 }
@@ -198,7 +198,6 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
         read_conf.item_per_page = BBS_PAGESIZE;
         read_conf.flag = LF_NUMSEL | LF_VSCROLL | LF_BELL | LF_LOOP | LF_MULTIPAGE;     /*|LF_HILIGHTSEL;*/
         read_conf.prompt = ">";
-        read_conf.item_pos = pts;
         read_conf.arg = &arg;
         read_conf.title_pos.x = 0;
         read_conf.title_pos.y = 0;

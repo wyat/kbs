@@ -170,6 +170,9 @@ static int do_select_internal(struct _select_def *conf, int key)
     int ret = SHOW_CONTINUE;
 
     if (!(conf->flag & LF_INITED)) { /*初始化工作*/
+        if (conf->on_size) { //初始化界面
+            (*conf->on_size)(conf);
+        }
         if (conf->get_data)
             if ((*conf->get_data)(conf,conf->pos,conf->item_per_page)==SHOW_QUIT)
                 return SHOW_QUIT;;
@@ -186,9 +189,6 @@ static int do_select_internal(struct _select_def *conf, int key)
             return SHOW_QUIT;
         if (conf->flag & LF_NUMSEL)
             conf->tmpnum=0;
-        if (conf->on_size) { //初始化界面
-            (*conf->on_size)(conf);
-        }
     }
     if (key == KEY_INIT)
         return SHOW_CONTINUE;
