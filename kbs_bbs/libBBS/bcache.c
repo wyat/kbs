@@ -25,24 +25,10 @@ static void bcache_unlock(int fd)
 }
 static void bcache_setreadonly(int readonly)
 {
-    int boardfd;
-	void *oldptr = bcache;
-#ifdef BBSMAIN
-	struct boardheader oldbh = *currboard;
-#endif
-    munmap(bcache, MAXBOARD * sizeof(struct boardheader));
-    if ((boardfd = open(BOARDS, O_RDWR | O_CREAT, 0644)) == -1) {
-        bbslog("3system", "Can't open " BOARDS "file %s", strerror(errno));
-        exit(-1);
-    }
     if (readonly)
-        bcache = (struct boardheader *) mmap(oldptr, MAXBOARD * sizeof(struct boardheader), PROT_READ, MAP_SHARED, boardfd, 0);
+		mprotect(bcache, MAXBOARD * sizeof(struct boardheader), PROT_READ);
     else
-        bcache = (struct boardheader *) mmap(oldptr, MAXBOARD * sizeof(struct boardheader), PROT_READ | PROT_WRITE, MAP_SHARED, boardfd, 0);
-    close(boardfd);
-#ifdef BBSMAIN
-	currboard = getbcache(oldbh.filename);
-#endif
+		mprotect(bcache, MAXBOARD * sizeof(struct boardheader), PROT_READ | PROT_WRITE);
 }
 int getlastpost(char *board, int *lastpost, int *total)
 {
@@ -168,12 +154,13 @@ void resolve_boards()
             exit(-1);
         }
 		ftruncate(boardfd, MAXBOARD * sizeof(struct boardheader));
-        bcache = (struct boardheader *) mmap(NULL, MAXBOARD * sizeof(struct boardheader), PROT_READ , MAP_SHARED, boardfd, 0);
+        bcache = (struct boardheader *) mmap(NULL, MAXBOARD * sizeof(struct boardheader), PROT_READ | PROT_WRITE, MAP_SHARED, boardfd, 0);
         if (bcache == (struct boardheader *) -1) {
             bbslog("4system", "Can't map " BOARDS "file %s", strerror(errno));
             close(boardfd);
             exit(-1);
         }
+		mprotect(bcache, MAXBOARD * sizeof(struct boardheader), PROT_READ);
     }
     if (brdshm == NULL) {
         brdshm = attach_shm("BCACHE_SHMKEY", 3693, sizeof(*brdshm), &iscreate); /* attach board share memory */
