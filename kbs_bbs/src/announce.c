@@ -545,9 +545,9 @@ MENU *pm;
             sprintf(genbuf, "%-s %-55.55s%-s%c", kind, title, fname, ch);
         strncpy(title, genbuf, STRLEN * 2 - 1);
         if (pm->item[n]->attachpos)
-            prints("  %3d  %s\n", n + 1, title);
-        else
             prints("  %3d @%s\n", n + 1, title);
+        else
+            prints("  %3d  %s\n", n + 1, title);
     }
     clrtobot();
     move(t_lines - 1, 0);
@@ -569,6 +569,7 @@ void a_additem(MENU* pm,char* title,char* fname,char* host,int port,long attachp
         } else
             newitem->host = host;
         newitem->port = port;
+        newitem->attachpos = attachpos;
         strncpy(newitem->fname, fname, sizeof(newitem->fname) - 1);
         pm->item[(pm->num)++] = newitem;
     }
@@ -664,6 +665,7 @@ MENU *pm;
             fprintf(fn, "Name=%s\n", item->title + 7);
         } else
             fprintf(fn, "Name=%s\n", item->title);
+        fprintf(fn, "Attach=%ld\n", item->attachpos);
         if (item->host != NULL) {
             fprintf(fn, "Host=%s\n", item->host);
             fprintf(fn, "Port=%d\n", item->port);
@@ -672,7 +674,6 @@ MENU *pm;
         } else
             fprintf(fn, "Path=~/%s\n", item->fname);
         fprintf(fn, "Numb=%d\n", n + 1);
-        fprintf(fn, "Attach=%uld\n", item->attachpos);
         fprintf(fn, "#\n");
     }
     fclose(fn);
@@ -1155,7 +1156,7 @@ int paste;
             fputs("\n", fn);
             fputs(fpath, fn);
             fputs("\n", fn);
-            fprintf(fn,"%uld\n",item->attachpos);
+            fprintf(fn,"%ld\n",item->attachpos);
             fclose(fn);
         } else {
             prints("File open ERROR -- please report SYSOP");
@@ -1182,7 +1183,7 @@ int paste;
             fputs("\n", fn);
             fputs(fpath, fn);
             fputs("\n", fn);
-            fprintf(fn,"%uld\n",item->attachpos);
+            fprintf(fn,"%ld\n",item->attachpos);
             fclose(fn);
         } else {
             prints("File open ERROR -- please report SYSOP");

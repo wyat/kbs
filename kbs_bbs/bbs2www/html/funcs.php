@@ -17,7 +17,8 @@ global $loginok;
 global $currentuinfo_num;
 //global $currentuser;
 global $currentuuser_num;
-global $cachemode="";
+global $cachemode;
+$cachemode="";
 $currentuinfo=array ();
 $currentuser=array ();
 $dir_modes = array(
@@ -106,11 +107,12 @@ window.location="/nologin.html";
 
 function cache_header($scope,$modifytime=0,$expiretime=300)
 {
+	global $cachemode;
 	session_cache_limiter($scope);
 	$cachemode=$scope;
 	if ($scope=="nocache")
 		return FALSE;
-	$oldmodified=$_SERVER["HTTP_IF_MODIFIED_SINCE"];
+	@$oldmodified=$_SERVER["HTTP_IF_MODIFIED_SINCE"];
 	if ($oldmodified!="") {
                 $oldtime=strtotime($oldmodified);
 	} else $oldtime=0;
@@ -127,6 +129,7 @@ function cache_header($scope,$modifytime=0,$expiretime=300)
 
 function html_init($charset,$title="")
 {
+	global $cachemode;
 	if ($cachemode=="")
 		cache_header("nocache");
 	@$css_style = $_COOKIE["STYLE"];
