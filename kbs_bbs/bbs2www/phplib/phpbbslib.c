@@ -18,6 +18,8 @@ static unsigned char fourth_arg_force_ref_0001[] = { 4, BYREF_NONE, BYREF_NONE, 
 static PHP_FUNCTION(bbs_getuser);
 static PHP_FUNCTION(bbs_getonlineuser);
 static PHP_FUNCTION(bbs_getonlinenumber);
+static PHP_FUNCTION(bbs_getonlineusernumber);
+static PHP_FUNCTION(bbs_getwwwguestnumber);
 static PHP_FUNCTION(bbs_countuser);
 static PHP_FUNCTION(bbs_setfromhost);
 static PHP_FUNCTION(bbs_checkpasswd);
@@ -93,6 +95,8 @@ static function_entry smth_bbs_functions[] = {
         PHP_FE(bbs_getuser, NULL)
         PHP_FE(bbs_getonlineuser, NULL)
         PHP_FE(bbs_getonlinenumber, NULL)
+	PHP_FE(bbs_getonlineusernumber,NULL)
+	PHP_FE(bbs_getwwwguestnumber,NULL)
         PHP_FE(bbs_countuser, NULL)
         PHP_FE(bbs_setfromhost, NULL)
         PHP_FE(bbs_checkpasswd, NULL)
@@ -399,6 +403,16 @@ static PHP_FUNCTION(bbs_getonlineuser)
 static PHP_FUNCTION(bbs_getonlinenumber)
 {
     RETURN_LONG(get_utmp_number() + getwwwguestcount());
+}
+
+static PHP_FUNCTION(bbs_getonlineusernumber)
+{
+    RETURN_LONG(get_utmp_number());
+}
+
+static PHP_FUNCTION(bbs_getwwwguestnumber)
+{
+    RETURN_LONG(getwwwguestcount());
 }
 
 
