@@ -81,7 +81,7 @@ static void default_setting()
     FNAME = 1;
     ONLYCOUNT = 0;
 
-    num_of_matched = 0;
+    getSession()->num_of_matched = 0;
 }
 
 int check_badword(char *checkfile)
@@ -93,7 +93,7 @@ int check_badword(char *checkfile)
 
 retry:
     default_setting();
-    CurrentFileName = checkfile;
+    getSession()->CurrentFileName = checkfile;
     BBS_TRY {
         if (safe_mmapfile(checkfile, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, &size, NULL) == 0)
 	{
@@ -127,7 +127,7 @@ int check_badword_str(char *string,int str_len)
     int retrycount=0;
 
     default_setting();
-    CurrentFileName = "";
+    getSession()->CurrentFileName = "";
 retry:
     BBS_TRY {
         if (check_badwordimg(0)!=0) {
@@ -157,7 +157,7 @@ int check_filter(char *patternfile, char *checkfile,int defaultval)
     size_t pattern_imagesize;
 
     default_setting();
-    CurrentFileName = checkfile;
+    getSession()->CurrentFileName = checkfile;
     fp = open(patternfile, O_RDONLY);
     prepf(fp,&pattern_buf,&pattern_imagesize);
     BBS_TRY {

@@ -44,7 +44,7 @@ void ann_add_item(MENU * pm, ITEM * it)
     }
 }
 
-int ann_load_directory(MENU * pm)
+int ann_load_directory(MENU * pm, session_t* session)
 {
     FILE *fn;
     ITEM litem;
@@ -317,7 +317,7 @@ void a_additem(MENU* pm,const char* title,const char* fname,char* host,int port,
     }
 }
 
-int a_loadnames(MENU* pm)             /* 装入 .Names */
+int a_loadnames(MENU* pm, session_t* session)             /* 装入 .Names */
 {
     FILE *fn;
     ITEM litem;
@@ -426,7 +426,7 @@ int a_savenames(MENU* pm)             /*保存当前MENU到 .Names */
     return 0;
 }
 
-int save_import_path(char **i_path,char **i_title,time_t* i_path_time)
+int save_import_path(char **i_path,char **i_title,time_t* i_path_time, session_t* session)
 {
     FILE *fn;
     int i;
@@ -451,7 +451,7 @@ int save_import_path(char **i_path,char **i_title,time_t* i_path_time)
     return -1;
 }
 
-void load_import_path(char ** i_path,char ** i_title, time_t* i_path_time,int * i_path_select)
+void load_import_path(char ** i_path,char ** i_title, time_t* i_path_time,int * i_path_select, session_t* session)
 {
     FILE *fn;
     char buf[MAXPATH];
@@ -493,7 +493,7 @@ void load_import_path(char ** i_path,char ** i_title, time_t* i_path_time,int * 
 
                     bzero(&pm, sizeof(pm));
                     pm.path = i_path[i];
-                    a_loadnames(&pm);
+                    a_loadnames(&pm, session);
                     strncpy(buf, pm.mtitle, MAXPATH - 1);
                     buf[MAXPATH - 1] = 0;
                     a_freenames(&pm);
@@ -512,7 +512,7 @@ void load_import_path(char ** i_path,char ** i_title, time_t* i_path_time,int * 
             i_title[i] = (char *) malloc(1);
             i_title[i][0] = 0;
         }
-        save_import_path(i_path,i_title,i_path_time);
+        save_import_path(i_path,i_title,i_path_time, session);
     }
     * i_path_select = 1;
 }
@@ -551,7 +551,7 @@ char *str;
     return 1;
 }
 
-int linkto(char *path, const char *fname, const char *title)
+int linkto(char *path, const char *fname, const char *title, session_t* session)
 {
     MENU pm;
 
@@ -559,7 +559,7 @@ int linkto(char *path, const char *fname, const char *title)
     pm.path = path;
 
     strcpy(pm.mtitle, title);
-    a_loadnames(&pm);
+    a_loadnames(&pm, session);
     a_additem(&pm, title, fname, NULL, 0, 0);
     if (a_savenames(&pm) != 0) {
 #ifdef BBSMAIN
@@ -580,7 +580,7 @@ int linkto(char *path, const char *fname, const char *title)
  *     title    版精华区的中文名
  *     gname    与 group 对应的中文名
  */
-int add_grp(const char group[STRLEN],const char bname[STRLEN],const char title[STRLEN],const char gname[STRLEN])
+int add_grp(const char group[STRLEN],const char bname[STRLEN],const char title[STRLEN],const char gname[STRLEN], session_t* session)
         /*
          * 精华区 加 目录 
          */
@@ -608,17 +608,17 @@ int add_grp(const char group[STRLEN],const char bname[STRLEN],const char title[S
         mkdir("0Announce/groups", 0755);
         chmod("0Announce/groups", 0755);
 
-        linkto("0Announce", "groups", "讨论区精华");
+        linkto("0Announce", "groups", "讨论区精华", session);
     }
     if (!dashd(gpath)) {
         mkdir(gpath, 0755);
         chmod(gpath, 0755);
-        linkto("0Announce/groups", group, gname);
+        linkto("0Announce/groups", group, gname, session);
     }
     if (!dashd(bpath)) {
         mkdir(bpath, 0755);
         chmod(bpath, 0755);
-        linkto(gpath, bname, title);
+        linkto(gpath, bname, title, session);
         sprintf(buf, "%s/.Names", bpath);
         if ((fn = fopen(buf, "w")) == NULL) {
             return -1;

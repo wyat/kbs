@@ -1021,7 +1021,7 @@ int chk_currBM(const char BMstr[STRLEN - 1], struct userec *user)
     return chk_BM_instr(BMstr, user->userid);
 }
 
-int deldeny(struct userec *user, char *board, char *uident, int notice_only)
+int deldeny(struct userec *user, char *board, char *uident, int notice_only,session_t* session)
 {                               /* 删除 禁止POST用户 */
     char fn[STRLEN];
     FILE *fn1;
@@ -1072,7 +1072,7 @@ int deldeny(struct userec *user, char *board, char *uident, int notice_only)
             sprintf(buffer, "%s 解封 %s 在 %s", user->userid, lookupuser->userid, board);
         mail_file(user->userid, filename, uident, buffer, 0, NULL);
     }
-    post_file(user, "", filename, "undenypost", buffer, 0, 1);
+    post_file(user, "", filename, "undenypost", buffer, 0, 1, session);
     unlink(filename);
     bmlog(user->userid, board, 11, 1);
     if (notice_only)

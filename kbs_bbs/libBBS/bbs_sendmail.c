@@ -193,7 +193,7 @@ int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int u
 
 }
 
-int mail_buf(struct userec*fromuser, char *mail_buf, char *userid, char *title)
+int mail_buf(struct userec*fromuser, char *mail_buf, char *userid, char *title, session_t* session)
 {
     struct fileheader newmessage;
     struct stat st;
@@ -227,7 +227,7 @@ int mail_buf(struct userec*fromuser, char *mail_buf, char *userid, char *title)
 
 	fp = fopen(filepath, "w");
 	if (fp != NULL) {
-		write_header(fp, fromuser,1,NULL,title,0,0);
+		write_header(fp, fromuser,1,NULL,title,0,0,session);
 		fprintf(fp, "%s\n", mail_buf);
 		fclose(fp);
 	} else

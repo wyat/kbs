@@ -53,7 +53,7 @@ static void bcache_setreadonly(int readonly)
     close(boardfd);
     */
 }
-int getlastpost(char *board, int *lastpost, int *total)
+int getlastpost(const char *board, int *lastpost, int *total)
 {
     struct fileheader fh;
     struct stat st;
@@ -79,7 +79,7 @@ int getlastpost(char *board, int *lastpost, int *total)
     close(fd);
     return 0;
 }
-int updatelastpost(char *board)
+int updatelastpost(const char *board)
 {
     int pos;
 
@@ -91,7 +91,7 @@ int updatelastpost(char *board)
         return -1;
 }
 
-int setboardmark(char *board, int i)
+int setboardmark(const char *board, int i)
 {
     int pos;
 
@@ -106,7 +106,7 @@ int setboardmark(char *board, int i)
         return -1;
 }
 
-int setboardorigin(char *board, int i)
+int setboardorigin(const char *board, int i)
 {
     int pos;
 
