@@ -617,10 +617,10 @@ extern struct sms_shm_head* head;
 #endif
 
 #include "var.h"
-#include "func.h"
 #ifdef BBSMAIN
 #include "vars.h"
 #include "defines_t.h"
 #endif
+#include "func.h"
 
 #endif                          /* of _BBS_H_ */

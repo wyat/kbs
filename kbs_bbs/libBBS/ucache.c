@@ -1027,7 +1027,7 @@ int do_after_logout(struct userec* user,struct user_info* userinfo,int unum,int 
 #endif
     }
     if (userinfo&&userinfo->currentboard)
-        board_setsession->currentuser(userinfo->currentboard,-1);
+        board_setcurrentuser(userinfo->currentboard,-1);
     return 0;
 }
 

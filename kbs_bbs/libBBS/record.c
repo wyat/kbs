@@ -166,7 +166,7 @@ void load_mail_list(struct userec *user, struct _mail_list *mail_list)
     }
 }
 
-void save_mail_list(struct _mail_list *mail_list)
+void save_mail_list(struct _mail_list *mail_list,session_t* session)
 {
     char fname[STRLEN];
     int fd;

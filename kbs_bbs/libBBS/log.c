@@ -51,7 +51,7 @@ static logconfig logconf[] = {
 int bdoatexit = 0;
 
 
-static void getheader(char *header, const char *from, int prio)
+static void getheader(char *header, const char *from, int prio,session_t* session)
 {
     struct tm *pt;
     time_t tt;
@@ -63,7 +63,7 @@ static void getheader(char *header, const char *from, int prio)
 }
 
 /* 写入log, 如果buf==NULL那么flush。否则根据大小决定是否缓存 */
-static void writelog(logconfig * pconf, const char *from, int prio, const char *buf)
+static void writelog(logconfig * pconf, const char *from, int prio, const char *buf, session_t* session)
 {
     char header[64];
 
@@ -72,7 +72,7 @@ static void writelog(logconfig * pconf, const char *from, int prio, const char *
     if (!from)
         from = "unknown";
 
-    getheader(header, from, prio);
+    getheader(header, from, prio, session);
 
     if (buf && pconf->buf) {
         if ((int) (pconf->bufptr + strlen(header) + strlen(buf) + 2) <= pconf->bufsize) {
@@ -109,7 +109,7 @@ static void logatexit()
 
     while (pconf - logconf < (int) (sizeof(logconf) / sizeof(logconfig))) {
         if (pconf->buf && pconf->bufptr)
-            writelog(pconf, NULL, 0, NULL);
+            writelog(pconf, NULL, 0, NULL,getSession());
         if (pconf->buf)
             free(pconf->buf);
         if (pconf->fd > 0)
@@ -168,7 +168,7 @@ int bbslog(const char *from, const char *fmt, ...)
                         pconf->bufptr = 0;
                     }
                 }
-                writelog(pconf, from, prio, buf);
+                writelog(pconf, from, prio, buf, getSession());
                 if (!pconf->searchnext)
                     break;
             }
@@ -259,7 +259,7 @@ int init_bbslog()
 }
 
 
-void newbbslog(int type, session_t* session,const char *fmt, ...)
+void newbbslog(int type, const char *fmt, ...)
 {
     char buf[512];
     struct bbs_msgbuf *msg = (struct bbs_msgbuf *) buf;
@@ -283,8 +283,8 @@ void newbbslog(int type, session_t* session,const char *fmt, ...)
     msg->mtype = type;
     msg->pid = getpid();
     msg->msgtime = time(0);
-    if (session->currentuser)
-        strncpy(msg->userid, session->currentuser->userid, IDLEN);
+    if (getSession()->currentuser)
+        strncpy(msg->userid, getSession()->currentuser->userid, IDLEN);
     else
         strncpy(msg->userid, "[null]", IDLEN);
 

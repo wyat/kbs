@@ -104,8 +104,8 @@ void set_user_title(unsigned char titleidx,char* newtitle);
 
     int t_cmpuids(int uid, struct user_info *up);
     int apply_utmp(APPLY_UTMP_FUNC fptr, int maxcount,const char *userid, void *arg);
-    int getfriendstr(struct userec *user, struct user_info *puinfo);
-    int myfriend(int uid, char *fexp);
+    int getfriendstr(struct userec *user, struct user_info *puinfo,session_t* session);
+    int myfriend(int uid, char *fexp,session_t* session);
     bool hisfriend(int uid, struct user_info *him);
 
 /* defined in newio.c */
@@ -124,7 +124,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     int import_friends_mailgroup(const char *userid, mailgroup_list_t * mgl);
     int add_mailgroup_item(const char *userid, mailgroup_list_t * mgl, mailgroup_list_item * item);
     int delete_mailgroup_item(const char *userid, mailgroup_list_t * mgl, int entry);
-    int add_default_mailgroup_item(const char *userid, mailgroup_list_t * mgl);
+    int add_default_mailgroup_item(const char *userid, mailgroup_list_t * mgl,session_t* session);
     int modify_mailgroup_item(const char *userid, mailgroup_list_t * mgl, int entry, mailgroup_list_item * item);
     int import_old_mailgroup(const char *userid, mailgroup_list_t * mgl);
 
@@ -141,7 +141,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     int seek_in_file(const char* filename, const char* seekstr);
     char *setbdir(int digestmode, char *buf, const char *boardname);
     int my_system(const char *cmdstring);
-    char *modestring(int mode, int towho, int complete, char *chatid);
+    char *modestring(char* buf,int mode, int towho, int complete, char *chatid);
     int countexp(struct userec *udata);
     int countperf(struct userec *udata);
     int compute_user_value(struct userec *urec);
@@ -175,11 +175,11 @@ void set_user_title(unsigned char titleidx,char* newtitle);
 	int cmpfileid(int *id, struct fileheader *fi);
     int dodaemon(char *daemonname, bool single, bool closefd);
 
-    int canIsend2(struct userec *user, char *userid);
+    int canIsend2(struct userec* src,struct userec *user, char *userid);
     void sigbus(int signo);
     void encodestr(register char *str);
     int Isspace(char ch);
-    char *idle_str(struct user_info *uent);
+    char *idle_str(char* buf,struct user_info *uent);
     int read_userdata(const char *userid, struct userdata *ud);
     int write_userdata(const char *userid, struct userdata *ud);
     void getuinfo(FILE * fn, struct userec *ptr_urec);
@@ -248,11 +248,11 @@ void unlock_sem_check(int lockid);
     int normal_board(const char *bname);
     int getboardnum(const char *bname, struct boardheader *bh);       /* board name --> board No. & not check level */
 
-	int fill_super_board(char *searchname, int result[], int max);
+	int fill_super_board(struct userec* user,char *searchname, int result[], int max);
     int add_board(struct boardheader *newboard);
     void build_board_structure(const char *board);
     int apply_boards(int (*func) (struct boardheader*,void*),void* arg);   /* 对所有版 应用 func函数 */
-    int delete_board(char *boardname, char *title);     /* delete board entry */
+    int delete_board(char *boardname, char *title,session_t* session);     /* delete board entry */
     struct boardheader const *getboard(int num);
     int set_board(int bid, struct boardheader *board, struct boardheader *oldbh);
     struct BoardStatus *getbstatus(int index);  /* 获得版面的发文状态结构 */
@@ -274,46 +274,46 @@ void unlock_sem_check(int lockid);
 	int valid_brdname(char *brd);
     void detach_boards(ARG_VOID);
     int anonymousboard(const char *board);
-    int load_boards(struct newpostdata *nbrd, char *boardprefix, int group, int pos, int len, bool sort, bool yank_flag, const char **input_namelist);
+    int load_boards(struct newpostdata *nbrd, char *boardprefix, int group, int pos, int len, bool sort, bool yank_flag, const char **input_namelist,session_t* session);
 #if USE_TMPFS==1
     void init_brc_cache(const char* userid,bool replace);
     void free_brc_cache(char* userid);
 #endif
 
-    void brc_clear_new_flag(unsigned fid);      /* 清除版面的到这篇文章未读标记 */
+    void brc_clear_new_flag(unsigned fid,session_t* session);      /* 清除版面的到这篇文章未读标记 */
 
-    int getfavnum(ARG_VOID);
-    void save_zapbuf(ARG_VOID);
-    void addFavBoard(int);
-    void addFavBoardDir(char *);
-    int changeFavBoardDir(int i, char *s);
-    int changeFavBoardDirEname(int i, char *s);
-	int EnameInFav(char *ename);
-    int ExistFavBoard(int idx);
-    void load_favboard(int dohelp,int mode);
-    void save_favboard(int mode);
-    int FavGetFather(int select);
-    void save_userfile(char *fname, int blknum, char *buf);
-    int IsFavBoard(int idx);
-    int MoveFavBoard(int p, int q);
-    int DelFavBoard(int i);
-	int DelFavBoardDir(int i,int fath);
-    int SetFav(int i);
-	char * FavGetTitle(int select,char *title);
+    int getfavnum(session_t* session);
+    void save_zapbuf(session_t* session);
+    void addFavBoard(int ,session_t* session);
+    void addFavBoardDir(char *,session_t* session);
+    int changeFavBoardDir(int i, char *s,session_t* session);
+    int changeFavBoardDirEname(int i, char *s,session_t* session);
+	int EnameInFav(char *ename,session_t* session);
+    int ExistFavBoard(int idx,session_t* session);
+    void load_favboard(int dohelp,int mode,session_t* session);
+    void save_favboard(int mode,session_t* session);
+    int FavGetFather(int select,session_t* session);
+    void save_userfile(char *fname, int blknum, char *buf,session_t* session);
+    int IsFavBoard(int idx,session_t* session);
+    int MoveFavBoard(int p, int q,session_t* session);
+    int DelFavBoard(int i,session_t* session);
+	int DelFavBoardDir(int i,int fath,session_t* session);
+    int SetFav(int i,session_t* session);
+	char * FavGetTitle(int select,char *title,session_t* session);
 	void load_allboard(struct favbrd_struct *brdlist, int * brdlist_t);
 	void load_wwwboard(struct favbrd_struct *brdlist, int * brdlist_t);
 
-    int brc_initial(const char *userid, const char *boardname);
+    int brc_initial(const char *userid, const char *boardname,session_t* session);
     char *brc_putrecord(char *ptr, char *name, int num, int *list);
-    int fav_loaddata(struct newpostdata *nbrd, int favnow, int pos, int len, bool sort,const char **input_namelist);
+    int fav_loaddata(struct newpostdata *nbrd, int favnow, int pos, int len, bool sort,const char **input_namelist,session_t* session);
     /*
      * 保存一个版的brclist 
      */
-    void brc_update(const char *userid);      /* 保存当前的brclist到用户的.boardrc */
-    void brc_add_read(unsigned int fid);
+    void brc_update(const char *userid,session_t* session);      /* 保存当前的brclist到用户的.boardrc */
+    void brc_add_read(unsigned int fid,session_t* session);
     void brc_addreaddirectly(char *userid, int bnum, unsigned int fid);
-    void brc_clear(ARG_VOID);
-    int brc_unread(unsigned int fid);
+    void brc_clear(session_t* session);
+    int brc_unread(unsigned int fid,session_t* session);
     int junkboard(const char *currboard);     /* 判断是否为 junkboards */
     int checkreadonly(const char *board);     /* 判断是不是只读版面 */
     int deny_me(const char *user,const char *board);       /* 判断用户 是否被禁止在当前版发文章 */
@@ -490,7 +490,7 @@ void unlock_sem_check(int lockid);
                            void *rptr,  /* record data buffer to be used for reading idx file */
                            int sorted); /* if records in file are sorted */
     void load_mail_list(struct userec *user, struct _mail_list *mail_list);
-    void save_mail_list(struct _mail_list *mail_list);
+    void save_mail_list(struct _mail_list *mail_list,session_t* session);
 
 
 /* define in sysconf.c */
@@ -591,7 +591,7 @@ int pc_logs(struct pc_logs *pn);
     int mail_buf(struct userec*fromuser, char *mail_buf, char *userid, char *title);
     int chkusermail(struct userec *user);
     int chkreceiver(struct userec *fromuser, struct userec *touser);
-    int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5, int noansi);
+    int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5, int noansi,session_t* session);
     int check_query_mail(char qry_mail_dir[STRLEN]);
 /* convcode.c */
     void conv_init(ARG_VOID);
@@ -670,6 +670,9 @@ unsigned int byte2long(byte arg[4]);
 void long2byte(unsigned int num, byte* arg);
 #endif
 
+/* var.c*/
+session_t * getSession();
+void init_sessiondata(session_t* session);
 #ifdef __cplusplus
 }
 #endif

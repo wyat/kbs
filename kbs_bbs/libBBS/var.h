@@ -11,6 +11,17 @@ struct UTMPHEAD {
     time_t uptime;
 };
 
+struct newpostdata {            
+    char dir;    /* added by bad  0-board 1-board directory 2-mail 3-function */
+    const char *name, *title, *BM;
+    unsigned int flag;
+    int pos; /*如果是版面，这个是版面的bcache位置,如果是收藏夹，是收藏家的flag*/
+    int total, tag;
+    int currentusers;
+    char unread, zap;
+    int (*fptr) ();
+};
+
 /* global unique variable */
 extern struct boardheader *bcache;
 extern struct BCACHE *brdshm;
@@ -77,5 +88,9 @@ typedef struct {
 
     char gb2big_savec[2];
     char big2gb_savec[2];
+
+	char strbuf[STRLEN];
+
+	int utmpent;
 } session_t;
 #endif

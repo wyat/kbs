@@ -249,7 +249,7 @@ int apply_boards(int (*func) (struct boardheader *, void* ),void* arg)
     return 0;
 }
 
-int fill_super_board(char *searchname, int result[], int max)
+int fill_super_board(struct userec* user,char *searchname, int result[], int max)
 {
 	register int i;
 	int total=0;
@@ -257,7 +257,7 @@ int fill_super_board(char *searchname, int result[], int max)
     for (i = 0; i < brdshm->numboards && total < max ; i++){
         if (bcache[i].filename[0] == '\0')
 			continue;
-    	if (check_read_perm(session->currentuser, &bcache[i])) {
+    	if (check_read_perm(user, &bcache[i])) {
 			if (strcasestr(bcache[i].filename, searchname) || strcasestr(bcache[i].des, searchname) || strcasestr(bcache[i].title, searchname) ){
 				result[total] = i + 1;
 				total ++;
@@ -314,7 +314,7 @@ const struct boardheader *getboard(int num)
     }
     return NULL;
 }
-int delete_board(char *boardname, char *title)
+int delete_board(char *boardname, char *title,session_t* session)
 {
     int bid, i;
     char buf[1024];
@@ -495,18 +495,18 @@ int board_setreadonly(const char *board, int readonly)
     return 0;
 }
 
-void board_setsession->currentuser(int idx,int num)
+void board_setcurrentuser(int idx,int num)
 {
     if (idx<=0) return;
     if (num > 0)
-        brdshm->bstatus[idx - 1].session->currentusers++;
+        brdshm->bstatus[idx - 1].currentusers++;
     else  if (num < 0) {
-      brdshm->bstatus[idx - 1].session->currentusers--;
-      if (brdshm->bstatus[idx - 1].session->currentusers<0)
-          brdshm->bstatus[idx - 1].session->currentusers=0;
+      brdshm->bstatus[idx - 1].currentusers--;
+      if (brdshm->bstatus[idx - 1].currentusers<0)
+          brdshm->bstatus[idx - 1].currentusers=0;
     }
     else
-        brdshm->bstatus[idx - 1].session->currentusers=0;
+        brdshm->bstatus[idx - 1].currentusers=0;
 }
 
 void board_update_toptitle(int bid,bool needlock)

@@ -181,7 +181,7 @@ int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int u
     else
         f_cp(tmpfile, filepath, 0);
     if (stat(filepath, &st) != -1)
-        session->currentuser->usedspace += st.st_size;
+        getSession()->currentuser->usedspace += st.st_size;
     setmailfile(buf, userid, ".SENT");
     newmessage.accessed[0] |= FILE_READ;
     if (append_record(buf, &newmessage, sizeof(newmessage)) == -1)
@@ -441,14 +441,14 @@ void print_recipient_status(smtp_recipient_t recipient, const char *mailbox, voi
     prints("mail to %s: %d %s\n", mailbox, status->code, status->text);
 #endif
 }
-int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5, int noansi)
+int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5, int noansi,session_t *session)
 {                               /* Modified by ming, 96.10.9  KCN,99.12.16 */
     struct mail_option mo;
     FILE *fin;
     char uname[STRLEN];
     char from[STRLEN];
     int len;
-    smtp_session_t session;
+    smtp_session_t smtpsession;
     smtp_message_t message;
     smtp_recipient_t recipient;
     const smtp_status_t *status;
@@ -470,8 +470,8 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
 #endif
         return -1;
     }
-    session = smtp_create_session();
-    message = smtp_add_message(session);
+    smtpsession = smtp_create_session();
+    message = smtp_add_message(smtpsession);
 
 /*
     if ((fout = fopen ("tmp/maillog", "w+")) == NULL)
@@ -487,7 +487,7 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
      */
     if ((server == NULL) || !strcmp(server, "(null ptr)"))
         server = "127.0.0.1:25";
-    smtp_set_server(session, server);
+    smtp_set_server(smtpsession, server);
     sprintf(newbuf, "%s@%s", session->currentuser->userid, email_domain());
     snprintf(from, STRLEN, "%s(%s) <%s@%s>",session->currentuser->userid, session->currentuser->username, session->currentuser->userid, email_domain());
     from[STRLEN-1]=0;
@@ -518,7 +518,7 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
      * Initiate a connection to the SMTP server and transfer the
      * message. 
      */
-    smtp_start_session(session);
+    smtp_start_session(smtpsession);
     status = smtp_message_transfer_status(message);
 #ifdef BBSMAIN
     prints("return code:%d(%s)\n", status->code, status->text);
@@ -528,7 +528,7 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
     /*
      * Free resources consumed by the program.
      */
-    smtp_destroy_session(session);
+    smtp_destroy_session(smtpsession);
     fclose(fin);
     if (isuu)
         unlink(uname);

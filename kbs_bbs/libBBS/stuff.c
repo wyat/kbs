@@ -71,11 +71,13 @@ int my_system(const char *cmdstring)
     }
     return status;
 }
-char *idle_str(struct user_info *uent)
+
+char *idle_str(char* hh_mm_ss,struct user_info *uent)
 {
     time_t now, diff;
     int hh, mm;
-    char hh_mm_ss[8];
+/*    char hh_mm_ss[8];
+*/
 
     now = time(0);
     diff = now - uent->freshtime;
@@ -104,10 +106,9 @@ char *idle_str(struct user_info *uent)
     return hh_mm_ss;
 }
 
-char *modestring(int mode, int towho, int complete, char *chatid)
+char *modestring(char* modestr,int mode, int towho, int complete, char *chatid)
 {
     struct userec urec;
-    char modestr[STRLEN];
 
     /*
      * Leeward: 97.12.18: Below removing ' characters for more display width 
@@ -366,20 +367,19 @@ char *Cdate(time_t clock)
     /*
      * Leeward 2000.01.01 Adjust year display for 20** 
      */
-    char foo[24 /*22 */ ];
-    struct tm *mytm = localtime(&clock);
+    struct tm mytm;
+	struct tm * dtm= localtime_r(&clock,&mytm);
 
-    strftime(foo, 24 /*22 */ , "%Y-%m-%d %T %a" /*"%D %T %a" */ , mytm);
-    return (foo);
+    strftime(getSession()->strbuf, 24 /*22 */ , "%Y-%m-%d %T %a" /*"%D %T %a" */ , dtm);
+    return (getSession()->strbuf);
 }
 
 char *Ctime(time_t clock)
 {                               /* 时间 转换 成 英文 */
-    char *foo;
-    char *ptr = ctime(&clock);
+    char *p,*ptr = ctime_r(&clock,getSession()->strbuf);
 
-    if ((foo = strchr(ptr, '\n')) != NULL)
-        *foo = '\0';
+    if ((p = strchr(ptr, '\n')) != NULL)
+        *p= '\0';
     return (ptr);
 }
 int Isspace(char ch)
@@ -580,10 +580,10 @@ char *setbdir(int digestmode, char *buf,const  char *boardname)
         strcpy(dir, ".ORIGIN");
         break;
     case DIR_MODE_AUTHOR:
-        sprintf(dir, ".AUTHOR.%s", session->currentuser->userid);
+        sprintf(dir, ".AUTHOR.%s", getSession()->currentuser->userid);
         break;
     case DIR_MODE_TITLE:
-        sprintf(dir, ".TITLE.%s", session->currentuser->userid);
+        sprintf(dir, ".TITLE.%s", getSession()->currentuser->userid);
         break;
     case DIR_MODE_ZHIDING:
 	strcpy(dir, DING_DIR);
@@ -592,10 +592,10 @@ char *setbdir(int digestmode, char *buf,const  char *boardname)
         strcpy(dir, DOT_DIR);
         break;
     case DIR_MODE_SUPERFITER:
-        sprintf(dir, ".Search.%s", session->currentuser->userid);
+        sprintf(dir, ".Search.%s", getSession()->currentuser->userid);
         break;
     default:
-        sprintf(dir, ".Search.%s", session->currentuser->userid);
+        sprintf(dir, ".Search.%s", getSession()->currentuser->userid);
 	newbbslog(BBSLOG_DEBUG,"uknown dir mode %d",digestmode); 
         break;
     }
@@ -949,7 +949,7 @@ int cmpfileid(int *id, struct fileheader *fi)
 	return (*id==fi->id);
 }
 
-int canIsend2(struct userec *user, char *userid)
+int canIsend2(struct userec *src,struct userec *user, char *userid)
 {                               /* Leeward 98.04.10 */
     char buf[IDLEN + 1];
     char path[256];
@@ -957,7 +957,7 @@ int canIsend2(struct userec *user, char *userid)
     if (HAS_PERM(user, PERM_SYSOP))
         return true;
     sethomefile(path, userid, "ignores");
-    if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, session->currentuser->userid))
+    if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, src->userid))
         return false;
     /*
      * sethomefile(path, userid, "/bads");
@@ -1298,35 +1298,35 @@ int del_from_file(char filename[STRLEN], char str[STRLEN])
     return (f_mv(fnnew, filename));
 }
 
-sigjmp_buf* push_sigbus(session_t* session)
+sigjmp_buf* push_sigbus()
 {
   struct _sigjmp_stack* jumpbuf;
   jumpbuf=(struct _sigjmp_stack*) malloc(sizeof(struct _sigjmp_stack));
-  if (session->sigjmp_stack==NULL) {
-    session->sigjmp_stack=jumpbuf;
+  if (getSession()->sigjmp_stack==NULL) {
+    getSession()->sigjmp_stack=jumpbuf;
     jumpbuf->next=NULL;
   } else {
-    jumpbuf->next=session->sigjmp_stack;
-    session->sigjmp_stack=jumpbuf;
+    jumpbuf->next=getSession()->sigjmp_stack;
+    getSession()->sigjmp_stack=jumpbuf;
   }
   return &(jumpbuf->bus_jump);
 }
 
-void popup_sigbus(session_t* session)
+void popup_sigbus()
 {
-    struct _sigjmp_stack* jumpbuf=session->sigjmp_stack;
-    if (session->sigjmp_stack) {
-        session->sigjmp_stack=jumpbuf->next;
+    struct _sigjmp_stack* jumpbuf=getSession()->sigjmp_stack;
+    if (getSession()->sigjmp_stack) {
+        getSession()->sigjmp_stack=jumpbuf->next;
         free(jumpbuf);
     }
-    if (session->sigjmp_stack==NULL)
+    if (getSession()->sigjmp_stack==NULL)
         signal(SIGBUS, SIG_IGN);
 }
 
-void sigbus(int signo,session_t* session)
+void sigbus(int signo)
 {
-    if (session->sigjmp_stack) {
-        siglongjmp(session->sigjmp_stack->bus_jump, 1);
+    if (getSession()->sigjmp_stack) {
+        siglongjmp(getSession()->sigjmp_stack->bus_jump, 1);
     }
 };
 
@@ -1654,7 +1654,7 @@ int add_mailgroup_item(const char *userid, mailgroup_list_t * mgl, mailgroup_lis
     return -1;
 }
 
-int add_default_mailgroup_item(const char *userid, mailgroup_list_t * mgl)
+int add_default_mailgroup_item(const char *userid, mailgroup_list_t * mgl,session_t* session)
 {
     mailgroup_list_item item;
 
@@ -1886,7 +1886,7 @@ int gettmpfilename(char *retchar, char *fmt, ...){
         mkdir(retchar, 0755);
         chmod(retchar, 0755);
 	}
-	strcat(retchar, session->currentuser->userid);
+	strcat(retchar, getSession()->currentuser->userid);
     if (!dashd(retchar)) {
         mkdir(retchar, 0755);
         chmod(retchar, 0755);

@@ -17,6 +17,9 @@ int logmsqid = -1;
 
 struct public_data *publicshm;
 
+#ifndef THREAD
+session_t session;
+#endif
 void init_sessiondata(session_t * session)
 {
     bzero(session,sizeof(*session));
@@ -42,4 +45,11 @@ void init_sessiondata(session_t * session)
 #ifdef SMS_SUPPORT    
     session->lastsmsstatus=0;
 #endif
+
+    session->utmpent=-1;
+}
+
+session_t* getSession()
+{
+  return &session;
 }
