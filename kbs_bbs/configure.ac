@@ -43,6 +43,7 @@ AC_ARG_ENABLE(innbbsd,
 [
 	if test "$enableval" = "yes" ; then
             if test -d innbbsd; then
+                    BBS_LIB_ICONV
                     AC_CONFIG_FILES(innbbsd/Makefile
                                     innbbsd/linkinnd.sh)
                     BBSSUBDIRS="$BBSSUBDIRS innbbsd"
