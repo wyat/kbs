@@ -165,7 +165,13 @@ int show_authorinfo(int ent, struct fileheader *fileinfo, char *direct);
 struct keeploc *getkeep(char *s, int def_topline, int def_cursline);
 int sread(int passonly, int readfirst, int auser, int pnum, struct fileheader *ptitle);
 void fixkeep(char *s, int first, int last);
-typedef char *(*READ_FUNC) (void *, int, void *);
+
+/*@param buf 显示的字符串
+   @param num 序号
+   @param data 数据
+   @param readdata 上次阅读的数据,用于判断同主题之类
+*/
+typedef char *(*READ_FUNC) (void *, int, void *,void*);
 int i_read(int cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct one_key *rcmdlist, int ssize);
 void u_exit();
 

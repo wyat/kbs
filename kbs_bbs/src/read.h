@@ -18,6 +18,7 @@ struct read_arg {
     /* save argument */
     enum BBS_DIR_MODE mode;
     char* direct;
+    char* dingdirect; /*置顶的.DIR保存在这里*/
     void (*dotitle) ();
     READ_FUNC doentry;
     struct key_command *rcmdlist;
@@ -32,8 +33,14 @@ struct read_arg {
     void* data; //readed data
     int fd; //filehandle,open always
 
+    void* readdata;
+
     int filecount; //the item count of file
 };
+
+
+/* 获得当前的pos所属的文件名,主要是为了区分置顶和普通的.DIR*/
+char* read_getcurrdirect(struct _select_def* conf);
 
 enum {
         APPLY_CONTINUE,
@@ -84,7 +91,15 @@ int read_showauthor(struct _select_def* conf, struct fileheader* fh, void* extra
 int read_showauthorinfo(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 int read_cross(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 int read_zsend(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+
+
 int read_addauthorfriend(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+
+/*
+    设置当前阅读的fileheader用于同主题判断
+*/
+void setreadpost(struct _select_def* conf,struct fileheader* fh);
+
 int read_showauthorBM(struct _select_def* conf, struct fileheader* fh, void* extraarg);
 
 #ifdef PERSONAL_CORP

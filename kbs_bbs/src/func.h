@@ -403,7 +403,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
                            void *farg,  /* additional param to call fptr() / original record */
                            void *rptr,  /* record data buffer to be used for reading idx file */
                            int sorted); /* if records in file are sorted */
-    int del_range(int ent, struct fileheader *fileinfo, char *direct, int mailmode);
+    int del_range(struct _select_def* conf,struct fileheader *fileinfo, int mailmode);
     void load_mail_list(struct userec *user, struct _mail_list *mail_list);
     void save_mail_list(struct _mail_list *mail_list);
 

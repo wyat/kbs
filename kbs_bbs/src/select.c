@@ -173,9 +173,11 @@ static int do_select_internal(struct _select_def *conf, int key)
         if (conf->on_size) { //初始化界面
             (*conf->on_size)(conf);
         }
+        /*这个先不做..
         if (conf->get_data)
             if ((*conf->get_data)(conf,conf->page_pos,conf->item_per_page)==SHOW_QUIT)
                 return SHOW_QUIT;;
+                */
         if ((ret=check_valid(conf)) == SHOW_QUIT)
             return SHOW_QUIT;
         if (conf->init)

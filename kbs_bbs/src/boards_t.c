@@ -174,10 +174,6 @@ int query_bm()
 
 /* end of insertion */
 
-extern int load_mboards();
-extern void mailtitle();
-extern char *maildoent(char *buf, int num, struct fileheader *ent);
-
 static int check_newpost(struct newpostdata *ptr)
 {
     struct BoardStatus *bptr;

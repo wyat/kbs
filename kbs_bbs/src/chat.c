@@ -1376,7 +1376,6 @@ void call_alias(chatcontext * pthis, const char *arg)
 }
 void call_mail(chatcontext * pthis, const char *arg)
 {                               /* added by Luzi, 1997/12/22 */
-    extern char currdirect[255];
     fileheader mailheader;
     FILE *fpin;
     char b2[STRLEN];

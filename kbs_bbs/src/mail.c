@@ -32,7 +32,6 @@ extern int numofsig;
 extern char quote_user[];
 char *sysconf_str();
 //char currmaildir[STRLEN];
-extern char currdirect[];
 
 #define maxrecp 300
 
@@ -896,15 +895,13 @@ void mailtitle()
     resetcolor();
 }
 
-char *maildoent(char *buf, int num, struct fileheader *ent)
+char *maildoent(char *buf, int num, struct fileheader *ent,struct fileheader* readfh)
 {
     time_t filetime;
     char *date;
     char b2[512];
     char status, reply_status;
     char *t;
-    extern char ReadPost[];
-    extern char ReplyPost[];
     char c1[8];
     char c2[8];
     int same = false;
@@ -928,7 +925,7 @@ char *maildoent(char *buf, int num, struct fileheader *ent)
         strcpy(c1, "[33m");
         strcpy(c2, "[36m");
     }
-    if (!strncmp(ReadPost, ent->title, STRLEN) || !strncmp(ReplyPost, ent->title, STRLEN))
+    if (readfh&&isThreadTitle(readfh->title, ent->title))
         same = true;
     strncpy(b2, ent->owner, OWNER_LEN);
     ent->owner[OWNER_LEN - 1] = 0;
@@ -989,7 +986,7 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     clear();
     readnext = false;
     readprev = false;
-    setqtitle(fileinfo->title);
+    setreadpost(fileinfo);
     strcpy(buf, arg->direct);
     if ((t = strrchr(buf, '/')) != NULL)
         *t = '\0';
@@ -1351,7 +1348,7 @@ int mail_del_range(struct _select_def* conf,struct fileheader *fileinfo,void* ex
     int ent=conf->pos;
     struct read_arg* arg=conf->arg;
 
-    ret = (del_range(ent, fileinfo, arg->direct, 0));        /*Haohmaru.99.5.14.ÐÞ¸ÄÒ»¸öbug,
+    ret = (del_range(conf, fileinfo, true));        /*Haohmaru.99.5.14.ÐÞ¸ÄÒ»¸öbug,
                                                          * * ·ñÔò¿ÉÄÜ»áÒòÎªÉ¾ÐÅ¼þµÄ.tmpfile¶ø´íÉ¾°æÃæµÄ.tmpfile */
     if (!strcmp(arg->direct, ".DELETED"))
         get_mailusedspace(currentuser, 1);
@@ -1462,8 +1459,8 @@ struct key_command mail_comms[] = {
     {'A', (READ_KEY_FUNC)auth_search,(void*)true},
     {'/', (READ_KEY_FUNC)title_search,(void*)false},
     {'?', (READ_KEY_FUNC)title_search,(void*)true},
-    {']', (READ_KEY_FUNC)thread_search,(void*)false},
-    {'[', (READ_KEY_FUNC)thread_search,(void*)true},
+    {']', (READ_KEY_FUNC)thread_read,(void*)SR_NEXT},
+    {'[', (READ_KEY_FUNC)thread_read,(void*)SR_PREV},
 
     {Ctrl('N'), (READ_KEY_FUNC)thread_read,(void*)SR_FIRSTNEW},
     {'\\', (READ_KEY_FUNC)thread_read,(void*)SR_LAST},

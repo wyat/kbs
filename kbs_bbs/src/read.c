@@ -65,7 +65,6 @@ static int search_threadid(struct keeploc *locmem, int offset, int groupid, int 
 
 
 /*struct fileheader *files = NULL;*/
-char currdirect[255];           /*COMMAN: increased directory length to MAX_PATH */
 int screen_len;
 int last_line;
 
@@ -1364,7 +1363,6 @@ static int search_thread(struct keeploc *locmem, int offset, char *title)
 int sread(int passonly, int readfirst, int pnum, int auser, struct fileheader *ptitle)
 {
     struct keeploc *locmem;
-    extern struct fileheader ReadPostHeader;
     int istest = 0, isstart = 0, isnext = 1;
     int previous;
     char genbuf[STRLEN], title[STRLEN],path[MAXPATH];
@@ -1427,7 +1425,6 @@ int sread(int passonly, int readfirst, int pnum, int auser, struct fileheader *p
         title[OWNER_LEN-1]=0;
         setqtitle(ptitle->title);
     }
-    memcpy(&ReadPostHeader, ptitle, sizeof(struct fileheader));
     if (!strncmp(title, "Re: ", 4)) {
         strcpy(title, title + 4);
     }

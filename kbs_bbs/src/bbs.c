@@ -40,15 +40,11 @@ int currboardent;
 char currBM[BM_LEN - 1];
 int selboard = 0;
 
-char ReadPost[STRLEN] = "";
-char ReplyPost[STRLEN] = "";
-struct fileheader ReadPostHeader;
 int Anony;
 char genbuf[1024];
 unsigned int tmpuser = 0;
 char quote_title[120], quote_board[120];
 char quote_user[120];
-extern char currdirect[255];
 
 #ifndef NOREPLY
 char replytitle[STRLEN];
@@ -61,14 +57,6 @@ int change_post_flag(char *currBM, struct userec *currentuser, int digestmode, c
 
 /* bad 2002.8.1 */
 
-int auth_search_down();
-int auth_search_up();
-int t_search_down();
-int t_search_up();
-int post_search_down();
-int post_search_up();
-int thread_up();
-int thread_down();
 int deny_user();
 
 int m_template();
@@ -76,21 +64,7 @@ int m_template();
 /*int     b_jury_edit();  stephen 2001.11.1*/
 int add_author_friend();
 int m_read();                   /*Haohmaru.2000.2.25 */
-int SR_first_new();
-int SR_last();
-int SR_first();
-int SR_read();
-int SR_readX();                 /* Leeward 98.10.03 */
-int SR_author();
-int SR_authorX();               /* Leeward 98.10.03 */
-int SR_BMfunc();
-int SR_BMfuncX();               /* Leeward 98.04.16 */
 int Goodbye();
-int i_read_mail();              /* period 2000.11.12 */
-
-#ifdef PERSONAL_CORP
-extern int import_to_pc();		/* stiger, 2003.8.26 */
-#endif
 
 void RemoveAppendedSpace();     /* Leeward 98.02.13 */
 int set_delete_mark(int ent, struct fileheader *fileinfo, char *direct);        /* KCN */
@@ -139,7 +113,7 @@ int insert_func(int fd, struct fileheader *start, int ent, int total, struct fil
 
 /* undelete Ò»ÆªÎÄÕÂ Leeward 98.05.18 */
 /* modified by ylsdd */
-int UndeleteArticle(int ent, struct fileheader *fileinfo, char *direct)
+int UndeleteArticle(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char *p, buf[1024];
     char UTitle[128];
@@ -255,22 +229,6 @@ int check_stuffmode()
 }
 
 /*Add by SmallPig*/
-void setqtitle(char *stitle)
-{                               /* È¡ Reply ÎÄÕÂºóĞÂµÄ ÎÄÕÂtitle */
-    if (strncmp(stitle, "Re: ", 4) != 0 && strncmp(stitle, "RE: ", 4) != 0) {
-        snprintf(ReplyPost,STRLEN - 1, "Re: %s", stitle);
-        ReplyPost[STRLEN - 1]=0;
-        strncpy(ReadPost, stitle, STRLEN - 1);
-        ReadPost[STRLEN - 1] = 0;
-    } else {
-        strncpy(ReplyPost, stitle, STRLEN - 1);
-        strncpy(ReadPost, ReplyPost + 4, STRLEN - 1);
-        ReplyPost[STRLEN - 1] = 0;
-        ReadPost[STRLEN - 1] = 0;
-    }
-}
-
-/*Add by SmallPig*/
 int shownotepad()
 {                               /* ÏÔÊ¾ notepad */
     modify_user_mode(NOTEPAD);
@@ -369,7 +327,7 @@ int get_a_boardname(char *bname, char *prompt)
 }
 
 /* Add by SmallPig */
-int do_cross(int ent, struct fileheader *fileinfo, char *direct)
+int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {                               /* ×ªÌù Ò»Æª ÎÄÕÂ */
     char bname[STRLEN];
     char dbname[STRLEN];
@@ -595,7 +553,7 @@ void readtitle()
     resetcolor();
 }
 
-char *readdoent(char *buf, int num, struct fileheader *ent)
+char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* readfh)
 {                               /* ÔÚÎÄÕÂÁĞ±íÖĞ ÏÔÊ¾ Ò»ÆªÎÄÕÂ±êÌâ */
     time_t filetime;
     char date[20];
@@ -664,7 +622,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent)
     if (uinfo.mode != RMAIL && digestmode != DIR_MODE_DIGEST && digestmode != DIR_MODE_DELETED && digestmode != DIR_MODE_JUNK
         && strcmp(currboard->filename, "sysmail")) { /* ĞÂ·½·¨±È½Ï*/
             if ((ent->groupid != ent->id)&&(digestmode==DIR_MODE_THREAD||!strncasecmp(TITLE,"Re:",3)||!strncmp(TITLE,"»Ø¸´:",5))) {      /*ReµÄÎÄÕÂ */
-                if (ReadPostHeader.groupid == ent->groupid)     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
+                if (readfh->groupid == ent->groupid)     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
                     if (DEFINE(currentuser, DEF_HIGHCOLOR))
                         sprintf(buf, " [1;36m%4d[m %s%c%s %-12.12s %s[1;36m.%c%s[m ", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
                     else
@@ -672,7 +630,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent)
                 else
                     sprintf(buf, " %4d %s%c%s %-12.12s %s %c%s", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
             } else {
-                if (ReadPostHeader.groupid == ent->groupid)     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
+                if (readfh->groupid == ent->groupid)     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
                     if (DEFINE(currentuser, DEF_HIGHCOLOR))
                         sprintf(buf, " [1;33m%4d[m %s%c%s %-12.12s %s[1;33m.%c¡ñ %s[m ", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
                     else
@@ -683,7 +641,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent)
 
     } else                     /* ÔÊĞí ÏàÍ¬Ö÷Ìâ±êÊ¶ */
         if (!strncmp("Re:", ent->title, 3)) {   /*ReµÄÎÄÕÂ */
-            if (!strncmp(ReplyPost + 3, ent->title + 3,STRLEN-3)) /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
+            if (isThreadTitle(readfh->title, ent->title)) /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
                 if (DEFINE(currentuser, DEF_HIGHCOLOR))
                     sprintf(buf, " [1;36m%4d[m %s%c%s %-12.12s %s[1;36m.%c%s[m ", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
                 else
@@ -691,7 +649,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent)
             else
                 sprintf(buf, " %4d %s%c%s %-12.12s %s %c%s", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
         } else {
-            if (strcmp(ReadPost, ent->title) == 0)      /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
+            if ((readfh!=NULL)&&!strcmp(readfh->title, ent->title))      /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
                 if (DEFINE(currentuser, DEF_HIGHCOLOR))
                     sprintf(buf, " [1;33m%4d[m %s%c%s %-12.12s %s[1;33m.%c¡ñ %s[m ", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
                 else
@@ -805,19 +763,22 @@ int zsend_attach(int ent, struct fileheader *fileinfo, char *direct)
     return 0;
 }
 
-int read_post(int ent, struct fileheader *fileinfo, char *direct)
+int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char *t;
     char buf[512];
     int ch;
-    int cou;
+    int ent=conf->pos;
+    struct read_arg* arg=conf->arg;
 
     /* czz 2003.3.4 forbid reading cancelled post in board */
-    if ((fileinfo->owner[0] == '-') && (digestmode != 4) && (digestmode != 5))
-	    return FULLUPDATE;
+    if ((fileinfo->owner[0] == '-') 
+        && (arg->readmode != DIR_MODE_DELETED) 
+        && (arg->readmode != DIR_MODE_JUNK) )
+	    return DONOTHING;
 
     clear();
-    strcpy(buf, direct);
+    strcpy(buf, read_getcurrdirect(conf));
     if ((t = strrchr(buf, '/')) != NULL)
         *t = '\0';
     sprintf(genbuf, "%s/%s", buf, fileinfo->filename);
@@ -857,22 +818,8 @@ int read_post(int ent, struct fileheader *fileinfo, char *direct)
 
     clrtoeol();                 /* ÇåÆÁµ½ĞĞÎ² */
     resetcolor();
-    if (!strncmp(fileinfo->title, "Re:", 3)) {
-        strncpy(ReplyPost, fileinfo->title,STRLEN);
-        for (cou = 0; cou < STRLEN; cou++)
-            ReadPost[cou] = ReplyPost[cou + 4];
-    } else if (!strncmp(fileinfo->title, "©À ", 3) || !strncmp(fileinfo->title, "©¸ ", 3)) {
-        strcpy(ReplyPost, "Re: ");
-        strncat(ReplyPost, fileinfo->title + 3, STRLEN - 4);
-        for (cou = 0; cou < STRLEN-4; cou++)
-            ReadPost[cou] = ReplyPost[cou + 4];
-    } else {
-        strcpy(ReplyPost, "Re: ");
-        strncat(ReplyPost, fileinfo->title, STRLEN - 4);
-        strncpy(ReadPost, fileinfo->title, STRLEN - 1);
-        ReadPost[STRLEN - 1] = 0;
-    }
-    memcpy(&ReadPostHeader, fileinfo, sizeof(struct fileheader));
+
+    setreadpost(conf, fileinfo);
 
     if (!(ch == KEY_RIGHT || ch == KEY_UP || ch == KEY_PGUP
         || ch == KEY_DOWN) && (ch <= 0 || strchr("RrEexp", ch) == NULL))
@@ -883,10 +830,10 @@ int read_post(int ent, struct fileheader *fileinfo, char *direct)
         r_lastmsg();            /* Leeward 98.07.30 support msgX */
         break;
     case Ctrl('Y'):
-        zsend_post(ent, fileinfo, direct);
+        zsend_post(ent, fileinfo, read_getcurrdirect(conf));
         break;
     case Ctrl('D'):
-        zsend_attach(ent, fileinfo, direct);
+        zsend_attach(ent, fileinfo, read_getcurrdirect(conf));
         break;
     case 'Q':
     case 'q':
@@ -928,13 +875,13 @@ int read_post(int ent, struct fileheader *fileinfo, char *direct)
         do_reply(fileinfo);
         break;
     case Ctrl('R'):
-        post_reply(ent, fileinfo, direct);      /* »ØÎÄÕÂ */
+        post_reply(ent, fileinfo, read_getcurrdirect(conf));      /* »ØÎÄÕÂ */
         break;
     case 'g':
-        digest_post(ent, fileinfo, direct);     /* ÎÄÕªÄ£Ê½ */
+        digest_post(ent, fileinfo, read_getcurrdirect(conf));     /* ÎÄÕªÄ£Ê½ */
         break;
     case 'M':
-        mark_post(ent, fileinfo, direct);       /* Leeward 99.03.02 */
+        mark_post(ent, fileinfo, read_getcurrdirect(conf));       /* Leeward 99.03.02 */
         break;
     case Ctrl('U'):
         sread(0, 1, NULL /*ent */ , 1, fileinfo);       /* Leeward 98.10.03 */
@@ -1018,7 +965,7 @@ int read_post(int ent, struct fileheader *fileinfo, char *direct)
     return FULLUPDATE;
 }
 
-int skip_post(int ent, struct fileheader *fileinfo, char *direct)
+int skip_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
 #ifdef HAVE_BRC_CONTROL
     brc_add_read(fileinfo->id);
@@ -1026,7 +973,7 @@ int skip_post(int ent, struct fileheader *fileinfo, char *direct)
     return GOTO_NEXT;
 }
 
-int do_select(int ent, struct fileheader *fileinfo, char *direct)
+int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
         /*
          * ÊäÈëÌÖÂÛÇøÃû Ñ¡ÔñÌÖÂÛÇø 
          */
@@ -1087,7 +1034,7 @@ int do_select(int ent, struct fileheader *fileinfo, char *direct)
     return CHANGEMODE;
 }
 
-int digest_mode()
+int digest_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {                               /* ÎÄÕªÄ£Ê½ ÇĞ»» */
     if (digestmode == true) {
         digestmode = false;
@@ -1116,7 +1063,7 @@ int isJury()
     return seek_in_file(buf, currentuser->userid);
 }
 
-int deleted_mode()
+int deleted_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
 
 /* Allow user in file "jury" to see deleted area. stephen 2001.11.1 */
@@ -1255,7 +1202,7 @@ int marked_mode()
     return NEWDIRECT;
 }
 
-int title_mode()
+int title_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     struct stat st;
 
@@ -1406,7 +1353,7 @@ int search_x(char * b, char * s)
     modify_user_mode(oldmode);
 }
 
-int change_mode(int ent, struct fileheader *fileinfo, char *direct)
+int change_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char ans[4];
     char buf[STRLEN], buf2[STRLEN];
@@ -1494,7 +1441,7 @@ int change_mode(int ent, struct fileheader *fileinfo, char *direct)
     return FULLUPDATE;
 }
 
-int read_hot_info(int ent, struct fileheader *fileinfo, char *direct)
+int read_hot_info(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char ans[4];
     move(t_lines - 1, 0);
@@ -1523,7 +1470,7 @@ int read_hot_info(int ent, struct fileheader *fileinfo, char *direct)
     return FULLUPDATE;
 }
 
-int junk_mode()
+int junk_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     if (!HAS_PERM(currentuser, PERM_SYSOP)) {
         return DONOTHING;
@@ -1544,7 +1491,7 @@ int junk_mode()
     return NEWDIRECT;
 }
 
-int digest_post(int ent, struct fileheader *fhdr, char *direct)
+int digest_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     return change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fhdr, direct, FILE_DIGEST_FLAG, 1);
 }
@@ -1697,7 +1644,7 @@ void do_quote(char *filepath, char quote_mode, char *q_file, char *q_user)
     fclose(outf);
 }
 
-int do_post()
+int do_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {                               /* ÓÃ»§post */
 #ifndef NOREPLY
     *replytitle = '\0';
@@ -1706,7 +1653,7 @@ int do_post()
     return post_article("", NULL);
 }
 
- /*ARGSUSED*/ int post_reply(int ent, struct fileheader *fileinfo, char *direct)
+ /*ARGSUSED*/ int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
         /*
          * »ØĞÅ¸øPOST×÷Õß 
          */
@@ -2257,7 +2204,7 @@ int post_article(char *q_file, struct fileheader *re_file)
     return FULLUPDATE;
 }
 
- /*ARGSUSED*/ int edit_post(int ent, struct fileheader *fileinfo, char *direct)
+int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
         /*
          * POST ±à¼­
          */
@@ -2331,7 +2278,7 @@ int post_article(char *q_file, struct fileheader *re_file)
     return FULLUPDATE;
 }
 
-int edit_title(int ent, struct fileheader *fileinfo, char *direct)
+int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
         /*
          * ±à¼­ÎÄÕÂ±êÌâ 
          */
@@ -2439,7 +2386,7 @@ int edit_title(int ent, struct fileheader *fileinfo, char *direct)
 }
 
 /* Mark POST */
-int mark_post(int ent, struct fileheader *fileinfo, char *direct)
+int mark_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     return change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fileinfo, direct, FILE_MARK_FLAG, 0);
 }
@@ -2452,7 +2399,7 @@ int zhiding_post(int ent, struct fileheader *fileinfo, char *direct)
     return change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fileinfo, direct, FILE_DING_FLAG, 0);
 }
 
-int noreply_post(int ent, struct fileheader *fileinfo, char *direct)
+int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
 	/* add by stiger ,20030414, ÖÃ¶¥Ñ¡Ôñ*/
 	char ans[4];
@@ -2478,13 +2425,13 @@ int noreply_post_noprompt(int ent, struct fileheader *fileinfo, char *direct)
     return change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fileinfo, direct, FILE_NOREPLY_FLAG, 0);
 }
 
-int sign_post(int ent, struct fileheader *fileinfo, char *direct)
+int sign_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     return change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fileinfo, direct, FILE_SIGN_FLAG, 1);
 }
 
 #ifdef FILTER
-int censor_post(int ent, struct fileheader *fileinfo, char *direct)
+int censor_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     return change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fileinfo, direct, FILE_CENSOR_FLAG, 1);
 }
@@ -2492,7 +2439,7 @@ int censor_post(int ent, struct fileheader *fileinfo, char *direct)
 
 int set_be_title(int ent, struct fileheader *fileinfo, char *direct);
 
-int del_range(int ent, struct fileheader *fileinfo, char *direct, int mailmode)
+int del_range(struct _select_def* conf,struct fileheader *fileinfo,bool mailmode)
   /*
    * ÇøÓòÉ¾³ı 
    */
@@ -2615,7 +2562,7 @@ int del_ding(int ent, struct fileheader *fileinfo, char *direct)
 }
 /* add end */
 
-int del_post(int ent, struct fileheader *fileinfo, char *direct)
+int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char usrid[STRLEN];
     int owned, keep, olddigestmode = 0;
@@ -2795,20 +2742,12 @@ int show_sec_b_note()
 }
 #endif
 
-int into_announce()
+int into_announce(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     if (a_menusearch("0Announce", currboard->filename, (HAS_PERM(currentuser, PERM_ANNOUNCE) || HAS_PERM(currentuser, PERM_SYSOP) || HAS_PERM(currentuser, PERM_OBOARDS)) ? PERM_BOARDS : 0))
         return FULLUPDATE;
     return DONOTHING;
 }
-
-extern int mainreadhelp();
-extern int b_results();
-extern int b_vote();
-extern int b_vote_maintain();
-extern int b_notes_edit();
-extern int b_sec_notes_edit();
-extern int b_jury_edit();       /*stephen 2001.11.1 */
 
 static int sequent_ent;
 
@@ -3018,32 +2957,49 @@ int b_note_edit_new()
 
 int mail_forward_old(int ent,struct fileheader* data,void* extradata);
 int mail_uforward_old(int ent,struct fileheader* data,void* extradata);
-struct one_key read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
-    {'r', read_post},
-    {'K', skip_post},
-    /*
-     * {'u',        skip_post},    rem by Haohmaru.99.11.29 
-     */
-    {'d', del_post},
-    {'D', del_range},
-    {'m', mark_post},
-    {';', noreply_post},        /*Haohmaru.99.01.01,Éè¶¨²»¿ÉreÄ£Ê½ */
-    {'#', sign_post},           /* Bigman: 2000.8.12  Éè¶¨ÎÄÕÂ±ê¼ÇÄ£Ê½ */
+struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
+    {'r', (READ_FUNC)read_post,NULL},
+    {'K', (READ_FUNC)skip_post,NULL},
+
+    /*----------------------------------*/
+    {'d', (READ_FUNC)del_post,NULL},
+    {'D', (READ_FUNC)del_range,(void*)false},
+    {Ctrl('C'), (READ_FUNC)do_cross},
+    {'Y', (READ_FUNC)UndeleteArticle},     /* Leeward 98.05.18 */
+    {Ctrl('P'), (READ_FUNC)do_post},
+
+    {'m', (READ_FUNC)mark_post},
+    {';', (READ_FUNC)noreply_post},        /*Haohmaru.99.01.01,Éè¶¨²»¿ÉreÄ£Ê½ */
+    {'#', (READ_FUNC)sign_post},           /* Bigman: 2000.8.12  Éè¶¨ÎÄÕÂ±ê¼ÇÄ£Ê½ */
 #ifdef FILTER
-    {'@', censor_post},         /* czz: 2002.9.29 ÉóºË±»¹ıÂËÎÄÕÂ */
+    {'@', (READ_FUNC)censor_post},         /* czz: 2002.9.29 ÉóºË±»¹ıÂËÎÄÕÂ */
 #endif
-    {'E', edit_post},
-    {Ctrl('G'), change_mode},   /* bad : 2002.8.8 add marked mode */
-    {'H', read_hot_info},   /* flyriver: 2002.12.21 Ôö¼ÓÈÈÃÅĞÅÏ¢ÏÔÊ¾ */
-    {'`', digest_mode},
-    {'.', deleted_mode},
-    {'>', junk_mode},
-    {'g', digest_post},
-    {'T', edit_title},
-    {'s', do_select},
-    {Ctrl('C'), do_cross},
-    {'Y', UndeleteArticle},     /* Leeward 98.05.18 */
-    {Ctrl('P'), do_post},
+    {'g', (READ_FUNC)digest_post},
+    {'t', (READ_FUNC)set_delete_mark},     /*KCN 2001 */
+    {'|', set_be_title},
+
+    {'E', (READ_FUNC)edit_post},
+    {'T', (READ_FUNC)edit_title},
+
+    {Ctrl('G'), (READ_FUNC)change_mode},   /* bad : 2002.8.8 add marked mode */
+    {'`', (READ_FUNC)digest_mode},
+    {'.', (READ_FUNC)deleted_mode},
+    {'>', (READ_FUNC)junk_mode},
+    {Ctrl('T'), (READ_FUNC)title_mode},
+
+    {'s', (READ_FUNC)do_select},
+    {'x', (READ_FUNC)into_announce},
+    {'v', (READ_FUNC)i_read_mail},         /* period 2000-11-12 read mail in article list */
+
+    {'H', (READ_FUNC)read_hot_info},   /* flyriver: 2002.12.21 Ôö¼ÓÈÈÃÅĞÅÏ¢ÏÔÊ¾ */
+
+#ifdef INTERNET_EMAIL
+        {'F', (READ_FUNC)mail_forward},
+        {'U', (READ_FUNC)mail_uforward},
+        {Ctrl('R'), (READ_FUNC)post_reply},
+#endif
+    /*----------------------------------------*/
+
 #ifdef NINE_BUILD
     {'c', show_t_friends},
     {'C', clear_new_flag},
@@ -3052,12 +3008,6 @@ struct one_key read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
 #endif
     {'f', clear_all_new_flag},  /* added by dong, 1999.1.25 */
     {'S', sequential_read},
-#ifdef INTERNET_EMAIL
-//TODO: change interface
-    {'F', mail_forward_old},
-    {'U', mail_uforward_old},
-    {Ctrl('R'), post_reply},
-#endif
     {'J', Semi_save},
     {'i', Save_post},
     {'I', Import_post},
@@ -3069,7 +3019,7 @@ struct one_key read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {'X', b_jury_edit},
 /*±à¼­°æÃæµÄÖÙ²ÃÎ¯Ô±Ãûµ¥,stephen on 2001.11.1 */
     {KEY_TAB, show_b_note},
-    {'x', into_announce},
+    
     {'a', auth_search_down},
     {'A', auth_search_up},
     {'/', t_search_down},
@@ -3095,7 +3045,6 @@ struct one_key read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {Ctrl('N'), SR_first_new},
     {'n', SR_first_new},
     {'\\', SR_last},
-    {'|', set_be_title},
     {'=', SR_first},
     {Ctrl('S'), SR_read},
     {'p', SR_read},
@@ -3104,12 +3053,6 @@ struct one_key read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {Ctrl('H'), SR_authorX},    /* Leeward 98.10.03 */
     {'b', SR_BMfunc},
     {'B', SR_BMfuncX},          /* Leeward 98.04.16 */
-    {Ctrl('T'), title_mode},
-    {'t', set_delete_mark},     /*KCN 2001 */
-    {'v', i_read_mail},         /* period 2000-11-12 read mail in article list */
-    /*
-     * {'!',      Goodbye},Haohmaru 98.09.21 
-     */
     {Ctrl('Y'), zsend_post},    /* COMMAN 2002 */
 #ifdef PERSONAL_CORP
 	{'y', import_to_pc},
@@ -3677,7 +3620,7 @@ void RemoveAppendedSpace(char *ptr)
     }
 }
 
-int i_read_mail()
+int i_read_mail(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     /*char savedir[STRLEN];*/
     /*Èç¹ûcurrdirect > 80 ,ÏÂÃæµÄstrcpy¾Í»áÒç³ö,µ«ÊÇ»á³¬¹ı80Âğ? 
@@ -3703,12 +3646,12 @@ int i_read_mail()
     return FULLUPDATE;
 }
 
-int set_delete_mark(int ent, struct fileheader *fileinfo, char *direct)
+int set_delete_mark(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     return change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fileinfo, direct, FILE_DELETE_FLAG, 1);
 }
 
-int set_be_title(int ent, struct fileheader *fileinfo, char *direct)
+int set_be_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     /*
      * ÉèÖÃ¸ÃÎÄ¼şÎª±êÌâÎÄ¼ş---- added by bad 2002.8.14

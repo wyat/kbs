@@ -996,7 +996,6 @@ int chk_friend_book()
 
 void main_bbs(int convit, char *argv)
 {
-    extern char currdirect[255];
     char notename[STRLEN];
     int currmail;
 	int summail;
@@ -1075,8 +1074,8 @@ void main_bbs(int convit, char *argv)
     tBBSlog_recover();             /* 2000.9.15 Bigman Ìí¼ÓÖĞ¶ÏtalkµÄ»Ö¸´ */
 #endif
 
-    setmailfile(currdirect, currentuser->userid, DOT_DIR);
-    currmail = get_num_records(currdirect, sizeof(struct fileheader));
+    setmailfile(genbuf, currentuser->userid, DOT_DIR);
+    currmail = get_num_records(genbuf, sizeof(struct fileheader));
 	get_mail_limit(currentuser, &summail, &nummail);
 	if (currmail > nummail)
 	{

@@ -118,10 +118,12 @@ static int read_key(struct _select_def *conf, int command)
             ret=SHOW_QUIT;
             break;
         case READ_NEXT:
+        case GOTO_NEXT:
             if (arg->readmode==READ_NORMAL) {
                 if (conf->pos<conf->item_count) {
                     conf->new_pos = conf->pos + 1;
-                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    if (mode==READ_NEXT)
+                        list_select_add_key(conf,'r'); //SEL change的下一条指令是read
                     ret=SHOW_SELCHANGE;
                 } else ret=SHOW_REFRESH;
             } else  { /* 处理同主题阅读*/
@@ -247,7 +249,7 @@ static int read_show(struct _select_def *conf, int pos)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
     char foroutbuf[512];
-    prints("%s",(*arg->doentry) (foroutbuf, pos, arg->data+(pos-conf->page_pos) * arg->ssize));
+    prints("%s",(*arg->doentry) (foroutbuf, pos, arg->data+(pos-conf->page_pos) * arg->ssize),arg->readdata);
     clrtoeol();
     return SHOW_CONTINUE;
 }
@@ -300,6 +302,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
         modify_user_mode(READBRD);
 
     /* save argument */
+    bzero(&arg,sizeof(struct read_arg));
     arg.mode=cmdmode;
     arg.direct=direct;
     arg.dotitle=dotitle;
@@ -308,6 +311,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
     arg.ssize=ssize;
     arg.readmode=READ_NORMAL;
     arg.data=NULL;
+    arg.readdata=NULL;
 
     clear();
 
@@ -338,6 +342,8 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
         list_select_loop(&read_conf);
         if (arg.data!=NULL)
             free(arg.data);    
+        if (arg.readdata!=NULL)
+            free(arg.readdata);
         if (read_conf.item_pos!=NULL)
             free(read_conf.item_pos);
         close(arg.fd);
@@ -424,7 +430,7 @@ static int read_search_articles(struct _select_def* conf, char *query, bool up, 
                     } else
                         continue;
                 }
-                strncpy(ptr, aflag ? pFh1->owner : pFh1->title, STRLEN - 1);
+                strncpy(ptr, pFh1->owner, STRLEN - 1);
                 ptr[STRLEN - 1] = 0;
                 if (complete_search == 1) {
                     char *ptr2 = ptr;
@@ -523,9 +529,13 @@ int title_search(struct _select_def* conf, struct fileheader* fh, void* extraarg
 
 bool isThreadTitle(char* a,char* b)
 {
-  if (!strncasecmp(a,"re: ",4)) a+=4;
-  if (!strncasecmp(b,"re: ",4)) b+=4;
-  return strcmp(a,b)?0:1;
+    if (!strncasecmp(a,"re: ",4)) a+=4;
+    if (!strncasecmp(b,"re: ",4)) b+=4;
+    if (!strncmp(a, "├ ", 3) a+=3;
+    if (!strncmp(b, "├ ", 3) b+=3;
+    if (!strncmp(a, "└ ", 3) a+=3;
+    if (!strncmp(b, "└ ", 3) b+=3;
+    return strcmp(a,b)?0:1;
 }
 
 int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func, bool down,void* arg)
@@ -543,12 +553,9 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
     BBS_TRY {
         if (safe_mmapfile_handle(read_arg->fd, PROT_READ|PROT_WRITE, MAP_SHARED, (void **) &pFh, &size) ) {
             bool needmove;
-            if(now > read_arg->filecount){
-            /*在置顶文章前搜索*/
-                now = read_arg->filecount;
-            }
             recordcount=size/sizeof(struct fileheader);
             if (now>recordcount)
+                /*在置顶文章前搜索*/
                 now=recordcount;
             nowFh=pFh+now-1;
             needmove=true;
@@ -568,7 +575,9 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
                 }
                 
                 /* 判断是不是同一主题,不是直接continue*/
-                if (read_arg->mode==DIR_MODE_NORMAL) { /*判断是否使用groupid*/
+                if ((read_arg->mode==DIR_MODE_NORMAL)||
+                     ((read_arg->mode>=DIR_MODE_THREAD)&&(read_arg->mode>=DIR_MODE_WEB_THREAD)))
+                { /*使用groupid*/
                     if (fh->groupid!=nowFh->groupid)
                     continue;
                 } else {
@@ -596,24 +605,6 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
     return count;
 }
 
-int thread_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
-{
-//TODO: 在.DIR的时候，用groupid来搜
-    bool up=(bool)extraarg;
-    char* title=fh->title;
-    if (title[0] == 'R' && (title[1] == 'e' || title[1] == 'E')
-        && title[2] == ':')
-        title += 4;
-    setqtitle(title);
-    switch (read_search_articles(conf, title, up, 2)) {
-        case 1:
-            return PARTUPDATE;
-        default:
-            conf->show_endline(conf);
-    }
-    return DONOTHING;
-}
-
 int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 {
     int mode=(int)extraarg;
@@ -621,9 +612,11 @@ int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     conf->new_pos=0;
     switch (mode) {
         case SR_FIRST:
+        case SR_PREV:
             apply_thread(conf,fh,fileheader_thread_read,false,(void*)mode);
             break;
         case SR_LAST:
+        case SR_NEXT:
             apply_thread(conf,fh,fileheader_thread_read,true,(void*)mode);
             break;
         case SR_FIRSTNEW:
@@ -785,4 +778,21 @@ int read_importpc(struct _select_def* conf, struct fileheader* fh, void* extraar
     return import_to_pc(conf->pos, fh, read_arg->direct);
 }
 #endif
+
+char* read_getcurrdirect(struct _select_def* conf)
+{
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
+    if (conf->pos>read_arg->filecount) {
+        return read_arg->dingdirect;
+    }
+    return read_arg->direct;
+}
+
+void setreadpost(struct _select_def* conf,struct fileheader* fh)
+{
+    struct read_arg* arg=conf->arg;
+    if (arg->readdata==NULL)
+        arg->readdata=malloc(sizeof(struct fileheader));
+    memcpy(arg->readdata,fh,sizeof(struct fileheader));
+}
 
