@@ -912,9 +912,6 @@ int (*filecheck)() ;
     /*    fstat(fd,&st) ;  */
     numents = ((long)st.st_size)/size ;
     if(((long)st.st_size) % size != 0)
-        /* change by KCN 1999.09.08
-                fprintf(stderr,"align err\n") ;
-        */
         if(lseek(fd,size*(ent-1),SEEK_SET) != -1) {
             if(read(fd,abuf,size) == size)
                 if((*filecheck)(abuf)) {
