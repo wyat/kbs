@@ -153,7 +153,7 @@ int post_cross2(char islocal, char *board)
         report(buf);
         return 1 ;
     }
-    /* brc_addlist( postfile.filename ) ;*/
+    /* brc_add_read( postfile.filename ) ;*/
     //if(!mode)       /* 用户post还是自动发信*/
 	sprintf(buf,"cross_posted '%s' on '%s'", postfile.title, board) ;
     report(buf) ;
