@@ -2699,13 +2699,39 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 				} else if (!strcasecmp(UBBCode, "move")){
 					UBBCodeType=UBB_TYPE_MOVE;
 					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "email")){
+					UBBCodeType=UBB_TYPE_EMAIL;
+					isUBBMiddleOutput=0;
 				} else {
 					int num;
 					num=0;
 					sscanf(UBBCode, "upload=%d",&num);
-					if (num!=0) {
+					if (num>0) {
 						UBBArg1=num;
 						UBBCodeType=UBB_TYPE_ATTACH;
+						isUBBMiddleOutput=0;
+					} else {
+					sscanf(UBBCode, "em%d",&num);
+					if (num!=0) {
+						char outbuf[512];
+						snprintf(outbuf, 511, "<img src='emot/em%02d.gif'></img>", num);
+						outbuf[511]=0;
+						output->output(outbuf, strlen(outbuf), output);
+						STATE_CLR(ansi_state, STATE_UBB_START);
+						continue;
+					} else {
+					UBBStrArg[0]=0;
+					if (UBBCodeLen<200)
+						sscanf(UBBCode, "URL=%s",UBBStrArg);
+					if (UBBStrArg[0]!=0) {
+						UBBCodeType=UBB_TYPE_HTTPLINK;
+						isUBBMiddleOutput=0;
+					} else {
+					UBBArg1=0;
+					UBBArg2=0;
+					sscanf(UBBCode, "flash=%d,%d",&UBBArg1,&UBBArg2);
+					if ((UBBArg1>0) && (UBBArg1<900) && (UBBArg1>0) && (UBBArg1<900)) {
+						UBBCodeType=UBB_TYPE_FLASH;
 						isUBBMiddleOutput=0;
 					} else {
 					size_t len;
@@ -2713,6 +2739,9 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 					len=(&(buf[i+1]))-ubbstart_begin;
 					print_raw_ansi(ubbstart_begin,len,output);
 					continue;
+					}
+					}
+					}
 					}
 				}
 				STATE_CLR(ansi_state, STATE_UBB_START);
@@ -2726,7 +2755,7 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 				switch (UBBCodeType){
 				case UBB_TYPE_IMG:
 					if (!strcasecmp(UBBCode,"img")){
-						output->output("<br><img src=\"images/files/img.gif\">图片：<br><IMG SRC=\"", 55, output);
+						output->output("<br><img src=\"images/files/img.gif\">图片：<br><IMG SRC=\"", 56, output);
 						len=ubbfinish_begin-ubbmiddle_begin;
 						output->output(ubbmiddle_begin, len, output);
 						output->output("\" border=0><br />", 17, output);
@@ -2736,19 +2765,19 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 				case UBB_TYPE_ATTACH:
 					if (!strcasecmp(UBBCode,"upload")){
 						if ( (UBBArg1>0) && (UBBArg1<=attachmatched)) {
-							char outbuf[256];
+							char outbuf[512];
 							switch(attachType[UBBArg1-1]) {
 							case ATTACH_IMG:
-								snprintf(outbuf, 255, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+								snprintf(outbuf, 511, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
 								break;
 							case ATTACH_FLASH:
-				                		snprintf(outbuf, 255, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+				                		snprintf(outbuf, 511, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
 								break;
 							case ATTACH_OTHERS:
-								 snprintf(outbuf, 255, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1]);
+								 snprintf(outbuf, 511, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1]);
 								 break;
 							}	
-							outbuf[255]=0;
+							outbuf[511]=0;
 							output->output(outbuf, strlen(outbuf), output);
 							attachShowed[UBBArg1-1]=1;
 							continue;							
@@ -2818,9 +2847,52 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 						continue;
 					} 
 					break;
+				case UBB_TYPE_HTTPLINK:
+					if (!strcasecmp(UBBCode,"URL")){
+						char outbuf[256];
+						snprintf(outbuf, 255, "<a href='%s' target='_blank'>", UBBStrArg);
+						outbuf[255]=0;
+						output->output(outbuf,strlen(outbuf),output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</a>", 4, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_EMAIL:
+					if (!strcasecmp(UBBCode,"email")){
+						output->output("<a href=\"mailto:", 16, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("\" target=\"_blank\">", 18, output);
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</a>", 4, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_FLASH:
+					if (!strcasecmp(UBBCode,"flash")){
+						char outbuf[512];
+						output->output("<a href=\"", 9, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						snprintf(outbuf, 511, "\" TARGET=_blank><IMG SRC=pic/swf.gif border=0 alt=点击开新窗口欣赏该FLASH动画! height=16 width=16>[全屏欣赏]</a><br><OBJECT codeBase=http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=4,0,2,0 classid=clsid:D27CDB6E-AE6D-11cf-96B8-444553540000 width='%d' height='%d'><PARAM NAME=movie VALUE=\"",UBBArg1,UBBArg2);
+						outbuf[511]=0;
+						output->output(outbuf,strlen(outbuf),output);
+
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("\"><PARAM NAME=quality VALUE=high><embed src=\"", 45, output);
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						snprintf(outbuf, 511, "\" quality=high pluginspage=\"http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash\" type=\"application/x-shockwave-flash\" width='%d' height='%d'>",UBBArg1,UBBArg2);
+						outbuf[511]=0;
+						output->output(outbuf,strlen(outbuf),output);
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</embed></OBJECT>", 17, output);
+						continue;
+					} 
+					break;
 				}
-				len=(&buf[i])-ubbfinish_begin;
-				print_raw_ansi(ubbfinish_begin,len,output);
+				STATE_SET(ansi_state, STATE_UBB_MIDDLE);
 			} 
 		}
 		if (i < (buflen - 1) && (buf[i] == 0x1b && buf[i + 1] == '[')) {
@@ -2957,19 +3029,19 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
     }
 	for ( i = 0; i<attachmatched ; i++ ){
 		if (!attachShowed[i]) { 
-			char outbuf[256];
+			char outbuf[512];
 			switch(attachType[UBBArg1-1]) {
 			case ATTACH_IMG:
-		 		snprintf(outbuf, 255, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[i], attachLen[i], attachlink, attachPos[i]);
+		 		snprintf(outbuf, 511, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[i], attachLen[i], attachlink, attachPos[i]);
 				break;
 			case ATTACH_FLASH:
-		                snprintf(outbuf, 255, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[i], attachFileName[i], attachLen[i], attachlink, attachPos[i], attachlink, attachPos[i]);
+		                snprintf(outbuf, 511, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[i], attachFileName[i], attachLen[i], attachlink, attachPos[i], attachlink, attachPos[i]);
 				break;
 			case ATTACH_OTHERS:
-				 snprintf(outbuf, 255, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[i], attachFileName[i], attachLen[i]);
+				 snprintf(outbuf, 511, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[i], attachFileName[i], attachLen[i]);
 				 break;
 			}	
-			outbuf[255]=0;
+			outbuf[511]=0;
 			output->output(outbuf, strlen(outbuf), output);
 			attachShowed[i]=1;
 		}

@@ -15,6 +15,11 @@ static unsigned char third_arg_force_ref_1111[] = { 4, BYREF_FORCE, BYREF_FORCE,
 static unsigned char third_arg_force_ref_011[] = { 3, BYREF_NONE, BYREF_FORCE, BYREF_FORCE };
 static unsigned char fourth_arg_force_ref_0001[] = { 4, BYREF_NONE, BYREF_NONE, BYREF_NONE, BYREF_FORCE };
 
+static PHP_FUNCTION(bbs_postmail);
+static PHP_FUNCTION(bbs_mailwebmsgs);
+static PHP_FUNCTION(bbs_getwebmsgs);
+static PHP_FUNCTION(bbs_get_thread_article_num);
+static PHP_FUNCTION(bbs_get_thread_articles);
 static PHP_FUNCTION(bbs_getuser);
 static PHP_FUNCTION(bbs_getonlineuser);
 static PHP_FUNCTION(bbs_getonlinenumber);
@@ -88,11 +93,23 @@ static PHP_FUNCTION(bbs_add_favboarddir);
 static PHP_FUNCTION(bbs_add_favboard);
 static PHP_FUNCTION(bbs_del_favboard);
 static PHP_FUNCTION(bbs_sysconf_str);
+static PHP_FUNCTION(bbs_printoriginfile);
+static PHP_FUNCTION(bbs_caneditfile);
+static PHP_FUNCTION(bbs_updatearticle);
+static PHP_FUNCTION(bbs_getthreadnum);
+static PHP_FUNCTION(bbs_getthreads);
 
 /*
  * define what functions can be used in the PHP embedded script
  */
 static function_entry smth_bbs_functions[] = {
+		PHP_FE(bbs_postmail, NULL)
+		PHP_FE(bbs_mailwebmsgs, NULL)
+		PHP_FE(bbs_getwebmsgs, NULL)
+		PHP_FE(bbs_get_thread_article_num,NULL)
+		PHP_FE(bbs_get_thread_articles, NULL)
+		PHP_FE(bbs_getthreads, NULL)
+		PHP_FE(bbs_getthreadnum, NULL)
         PHP_FE(bbs_getuser, NULL)
         PHP_FE(bbs_getonlineuser, NULL)
         PHP_FE(bbs_getonlinenumber, NULL)
@@ -107,9 +124,12 @@ static function_entry smth_bbs_functions[] = {
         PHP_FE(bbs_wwwlogin, NULL)
         PHP_FE(bbs_wwwlogoff, NULL)
         PHP_FE(bbs_printansifile, NULL)
+		PHP_FE(bbs_printoriginfile, NULL)
+		PHP_FE(bbs_caneditfile,NULL)
         PHP_FE(bbs_checkreadperm, NULL)
         PHP_FE(bbs_getbname, NULL)
         PHP_FE(bbs_checkpostperm, NULL)
+		PHP_FE(bbs_updatearticle, NULL)
 #ifdef HAVE_BRC_CONTROL
         PHP_FE(bbs_brcaddread, NULL)
 #endif
@@ -232,7 +252,15 @@ static void assign_user(zval * array, struct userec *user, int num)
     add_assoc_long(array, "noteline", user->noteline);
     add_assoc_long(array, "notemode", user->notemode);
 }
-
+static int foundInArray(unsigned int content, unsigned int array[], unsigned int len){
+	int i;
+	for (i=0;i<len;i++){
+		if (array[i]==content)	{
+			return 1;
+		}
+	}
+	return 0;
+}
 static void assign_userinfo(zval * array, struct user_info *uinfo, int num)
 {
     add_assoc_long(array, "index", num);
@@ -343,6 +371,7 @@ static PHP_FUNCTION(bbs_setfromhost)
     strcpy(php_fromhost, s);
     RETURN_NULL();
 }
+
 
 static PHP_FUNCTION(bbs_getuser)
 {
@@ -696,6 +725,104 @@ static PHP_FUNCTION(bbs_printansifile)
 	free_output(out);
     signal(SIGBUS, SIG_IGN);
     signal(SIGSEGV, SIG_IGN);
+    RETURN_LONG(0);
+}
+
+
+/* function bbs_caneditfile(string board, string filename);
+ * ÅÐ¶Ïµ±Ç°ÓÃ»§ÊÇ·ñÓÐÈ¨±à¼­Ä³ÎÄ¼þ
+ */
+ static PHP_FUNCTION(bbs_caneditfile)
+{
+    char *board,*filename;
+    long boardLen,filenameLen;
+	char path[512];
+    struct fileheader x;
+    bcache_t *brd;
+
+
+    getcwd(old_pwd, 1023);
+    chdir(BBSHOME);
+    old_pwd[1023] = 0;
+    if ((ZEND_NUM_ARGS() != 2) || (zend_parse_parameters(2 TSRMLS_CC, "ss", &board, &boardLen,&filename,&filenameLen) != SUCCESS)) {
+		WRONG_PARAM_COUNT;
+    } 
+    brd = getbcache(board);
+    if (brd == NULL) {
+        RETURN_LONG(-1); //ÌÖÂÛÇøÃû³Æ´íÎó
+    }
+	if (currentuser==NULL)
+		RETURN_FALSE;
+    if (!strcmp(board, "syssecurity")
+        || !strcmp(board, "junk")
+        || !strcmp(board, "deleted"))   /* Leeward : 98.01.22 */
+         RETURN_LONG(-2);  //±¾°æ²»ÄÜÐÞ¸ÄÎÄÕÂ
+    if (checkreadonly(board) == true) {
+		RETURN_LONG(-3); //±¾°æÒÑ±»ÉèÖÃÖ»¶Á
+    }
+    if (get_file_ent(board, filename, &x) == 0) {
+        RETURN_LONG(-4); //ÎÞ·¨È¡µÃÎÄ¼þ¼ÇÂ¼
+    }
+	setbfile(path, brd->filename, filename);
+    if (!HAS_PERM(currentuser, PERM_SYSOP)     /* SYSOP¡¢µ±Ç°°æÖ÷¡¢Ô­·¢ÐÅÈË ¿ÉÒÔ±à¼­ */
+        &&!chk_currBM(brd->BM, currentuser)) {
+        if (!isowner(currentuser, &x)) {
+            RETURN_LONG(-5); //²»ÄÜÐÞ¸ÄËûÈËÎÄÕÂ!
+        }
+        else if (file_time(path) < currentuser->firstlogin) {
+            RETURN_LONG(-6); //Í¬ÃûID²»ÄÜÐÞ¸ÄÀÏIDµÄÎÄÕÂ
+        }
+    }
+    /* °æÖ÷½ûÖ¹POST ¼ì²é */
+    if (deny_me(currentuser->userid, board) && !HAS_PERM(currentuser, PERM_SYSOP)) {
+        RETURN_LONG(-7); //ÄúµÄPOSTÈ¨±»·â
+    }
+    RETURN_LONG(0);
+}
+
+
+/* function bbs_printoriginfile(string board, string filename);
+ * Êä³öÔ­ÎÄÄÚÈÝ¹©±à¼­
+ */
+static PHP_FUNCTION(bbs_printoriginfile)
+{
+    char *board,*filename;
+    long boardLen,filenameLen;
+    FILE* fp;
+    const int outbuf_len = 4096;
+	char buf[512],path[512];
+    buffered_output_t *out;
+	int i;
+
+    getcwd(old_pwd, 1023);
+    chdir(BBSHOME);
+    old_pwd[1023] = 0;
+    if ((ZEND_NUM_ARGS() != 2) || (zend_parse_parameters(2 TSRMLS_CC, "ss", &board,&boardLen, &filename,&filenameLen) != SUCCESS)) {
+		WRONG_PARAM_COUNT;
+    } 
+	setbfile(path, board, filename);
+    fp = fopen(path, "r");
+    if (fp == 0)
+        RETURN_LONG(-1); //ÎÄ¼þÎÞ·¨¶ÁÈ¡
+	if ((out = alloc_output(outbuf_len)) == NULL)
+	{
+        RETURN_LONG(-2);
+	}
+	override_default_output(out, buffered_output);
+	override_default_flush(out, flush_buffer);
+    for (i = 0; i < 4; i++)
+        if (skip_attach_fgets(buf, sizeof(buf), fp)==0) break;
+    
+    while (skip_attach_fgets(buf, sizeof(buf), fp) != 0) {
+        char tmp[256];
+        if (Origin2(buf))
+            break;
+
+        if (!strcasestr(buf, "</textarea>"))
+            out->output(buf,strlen(buf),out);
+    }
+	out->flush(out);
+	free_output(out);
     RETURN_LONG(0);
 }
 
@@ -1076,6 +1203,430 @@ static PHP_FUNCTION(bbs_getarticles)
     efree(articles);
 }
 
+static PHP_FUNCTION(bbs_getwebmsgs){
+    char *user;
+    int user_len;
+    char buf[MAX_MSG_SIZE], showmsg[MAX_MSG_SIZE*2], chk[STRLEN];
+    int count,i;
+    char title[STRLEN];
+    struct msghead head;
+    char fname[STRLEN];
+	zval *element;
+
+    if (ZEND_NUM_ARGS()!=0 ) {
+        WRONG_PARAM_COUNT;
+    }
+
+
+    if(!HAS_PERM(currentuser, PERM_PAGE)) 
+		RETURN_LONG(-1);
+    if (array_init(return_value) == FAILURE) {
+        RETURN_LONG(-2);
+    }
+    count = get_msgcount(0, currentuser->userid);
+    if(count!=0) {
+  	    for(i=0;i<count;i++) {
+            load_msghead(0, currentuser->userid, i, &head);
+            load_msgtext(currentuser->userid, &head, buf);
+			MAKE_STD_ZVAL(element);
+			array_init(element);
+			add_assoc_string(element, "ID", head.id, 1);
+			add_assoc_long(element, "TIME", head.time);
+			add_assoc_string(element, "content", buf, 1);
+			add_assoc_long(element, "MODE", head.mode);
+			add_assoc_long(element, "SENT", head.sent?0:1);
+			zend_hash_index_update(Z_ARRVAL_P(return_value), i, (void *) &element, sizeof(zval *), NULL);
+        }
+    }
+}
+
+static PHP_FUNCTION(bbs_mailwebmsgs){
+    if (ZEND_NUM_ARGS()!=0 ) {
+        WRONG_PARAM_COUNT;
+    }
+	mail_msg(currentuser);
+	RETURN_TRUE;
+}
+
+/**
+ * ·´Ðò»ñÈ¡´Óstart¿ªÊ¼µÄnum¸ö°æÃæÖ÷Ìâ
+ * prototype:
+ * array bbs_getthreads(char *board, int start, int num);
+ *
+ * @return array of loaded articles on success,
+ *         FALSE on failure.
+ * @author roy
+ */
+static PHP_FUNCTION(bbs_getthreads)
+{
+    char *board;
+    int blen;
+    int start,num;
+    int total;
+    struct boardheader *bp;
+	char dirpath[STRLEN];
+    int i;
+    zval *element;
+    int is_bm;
+	unsigned int *IDList;
+    char flags[4];              /* flags[0]: flag character
+                                 * flags[1]: imported flag
+                                 * flags[2]: no reply flag
+                                 * flags[3]: attach flag
+                                 */
+    int ac = ZEND_NUM_ARGS();
+	unsigned int threadsFounded;
+	int fd;
+	struct stat buf;
+	struct flock ldata;
+	struct fileheader *ptr1;
+	char* ptr;
+
+
+    /*
+     * getting arguments 
+     */
+    if (ac != 3 || zend_parse_parameters(3 TSRMLS_CC, "sll", &board, &blen, &start, &num) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+	if (start<0){
+		RETURN_FALSE;
+	}
+	if (num<0){
+		RETURN_FALSE;
+	}
+    /*
+     * checking arguments 
+     */
+    if (currentuser == NULL) {
+        RETURN_FALSE;
+    }
+    if ((bp = getbcache(board)) == NULL) {
+        RETURN_FALSE;
+    }
+    is_bm = is_BM(bp, currentuser);
+    setbdir(DIR_MODE_NORMAL, dirpath, board);
+
+    if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
+        RETURN_LONG(-1);   
+    ldata.l_type = F_RDLCK;
+    ldata.l_whence = 0;
+    ldata.l_len = 0;
+    ldata.l_start = 0;
+    fcntl(fd, F_SETLKW, &ldata);
+	fstat(fd, &buf);
+    total = buf.st_size / sizeof(struct fileheader);
+
+    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+        if (i == 2)
+            end_mmapfile((void *) ptr, buf.st_size, -1);
+        ldata.l_type = F_UNLCK;
+        fcntl(fd, F_SETLKW, &ldata);
+        close(fd);
+        RETURN_LONG(-2);
+    }
+    ptr1 = (struct fileheader *) ptr;
+    /*
+     * fetching articles 
+     */
+    if (array_init(return_value) == FAILURE) {
+        RETURN_FALSE;
+    }
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+	IDList	= emalloc((num+start)*sizeof(long int));
+
+	bzero(IDList,(num+start)*sizeof(long int));
+
+	threadsFounded=0;
+
+
+	for (i=total-1;i>=0;i--) {
+		if (!foundInArray(ptr1[i].groupid,IDList,threadsFounded))	{
+			unsigned int low, high ,mid, found;
+			int comp;
+			low = 0;
+			high = total - 1;
+			found=-1;
+			while (low <= high) {
+				mid = (high + low) / 2;
+				comp = (ptr1[i].groupid) - (ptr1[mid].id);
+				if (comp == 0) {
+					found=mid;
+					break;
+				} else if (comp < 0)
+					high = mid - 1;
+				else
+					low = mid + 1;
+			}
+			if (found==-1) continue;
+			IDList[threadsFounded]=ptr1[i].groupid;
+			threadsFounded++;
+			if ((threadsFounded-1)>=start){
+				MAKE_STD_ZVAL(element);
+				array_init(element);
+				flags[0] = get_article_flag(ptr1+found, currentuser, board, is_bm);
+				if (is_bm && (ptr1[found].accessed[0] & FILE_IMPORTED))
+					flags[1] = 'y';
+				else
+					flags[1] = 'n';
+				if (ptr1[found].accessed[1] & FILE_READ)
+					flags[2] = 'y';
+				else
+					flags[2] = 'n';
+				if (ptr1[found].attachment)
+					flags[3] = '@';
+				else
+					flags[3] = ' ';
+				bbs_make_article_array(element, ptr1+found, flags, sizeof(flags));
+				zend_hash_index_update(Z_ARRVAL_P(return_value), threadsFounded-1-start, (void *) &element, sizeof(zval *), NULL);
+				if (threadsFounded>=num+start){
+					break;
+				}
+			}
+		}
+	}
+    end_mmapfile((void *) ptr, buf.st_size, -1);
+    ldata.l_type = F_UNLCK;
+    fcntl(fd, F_SETLKW, &ldata);        /* ÍË³ö»¥³âÇøÓò*/
+    close(fd);
+    efree(IDList);
+}
+
+/**
+ * ·´Ðò»ñÈ¡´Óstart¿ªÊ¼µÄnum¸öÍ¬Ö÷ÌâÎÄÕÂ
+ * prototype:
+ * array bbs_get_thread_articles(char *board, int groupID, int start, int num);
+ *
+ * @return array of loaded articles on success,
+ *         FALSE on failure.
+ * @author roy
+ */
+static PHP_FUNCTION(bbs_get_thread_articles)
+{
+    char *board;
+    int blen;
+    int start,num,groupid;
+    int total;
+    struct fileheader *articles;
+    struct boardheader *bp;
+	char dirpath[STRLEN];
+    int i;
+    zval *element;
+    int is_bm;
+    char flags[4];              /* flags[0]: flag character
+                                 * flags[1]: imported flag
+                                 * flags[2]: no reply flag
+                                 * flags[3]: attach flag
+                                 */
+    int ac = ZEND_NUM_ARGS();
+	unsigned int articlesFounded;
+	int fd;
+	struct stat buf;
+	struct flock ldata;
+	struct fileheader *ptr1;
+	char* ptr;
+
+
+    /*
+     * getting arguments 
+     */
+    if (ac != 4 || zend_parse_parameters(4 TSRMLS_CC, "slll", &board, &blen, &groupid, &start, &num) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+	if (start<0){
+		RETURN_LONG(-1);
+	}
+	if (num<0){
+		RETURN_LONG(-2);
+	}
+	if (groupid<0){
+		RETURN_LONG(-3);
+	}
+    /*
+     * checking arguments 
+     */
+    if (currentuser == NULL) {
+        RETURN_LONG(-4);
+    }
+    if ((bp = getbcache(board)) == NULL) {
+        RETURN_LONG(-5);
+    }
+    is_bm = is_BM(bp, currentuser);
+    setbdir(DIR_MODE_NORMAL, dirpath, board);
+
+    if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
+        RETURN_LONG(-6);   
+    ldata.l_type = F_RDLCK;
+    ldata.l_whence = 0;
+    ldata.l_len = 0;
+    ldata.l_start = 0;
+    fcntl(fd, F_SETLKW, &ldata);
+	fstat(fd, &buf);
+    total = buf.st_size / sizeof(struct fileheader);
+
+    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+        if (i == 2)
+            end_mmapfile((void *) ptr, buf.st_size, -1);
+        ldata.l_type = F_UNLCK;
+        fcntl(fd, F_SETLKW, &ldata);
+        close(fd);
+        RETURN_LONG(-7);
+    }
+    ptr1 = (struct fileheader *) ptr;
+    /*
+     * fetching articles 
+     */
+    if (array_init(return_value) == FAILURE) {
+        RETURN_LONG(-8);
+    }
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+
+	articlesFounded=0;
+
+
+	for (i=total-1;i>=0;i--) {
+		if (ptr1[i].groupid==groupid)	{
+			articlesFounded++;
+			if ((articlesFounded-1)>=start){
+				MAKE_STD_ZVAL(element);
+				array_init(element);
+				flags[0] = get_article_flag(ptr1+i, currentuser, board, is_bm);
+				if (is_bm && (ptr1[i].accessed[0] & FILE_IMPORTED))
+					flags[1] = 'y';
+				else
+					flags[1] = 'n';
+				if (ptr1[i].accessed[1] & FILE_READ)
+					flags[2] = 'y';
+				else
+					flags[2] = 'n';
+				if (ptr1[i].attachment)
+					flags[3] = '@';
+				else
+					flags[3] = ' ';
+				bbs_make_article_array(element, ptr1+i, flags, sizeof(flags));
+				zend_hash_index_update(Z_ARRVAL_P(return_value), articlesFounded-1-start, (void *) &element, sizeof(zval *), NULL);
+				if (articlesFounded>=num+start){
+					break;
+				}
+				if (ptr1[i].id==groupid) {
+					break;
+				}
+			}
+		}
+	}
+    end_mmapfile((void *) ptr, buf.st_size, -1);
+    ldata.l_type = F_UNLCK;
+    fcntl(fd, F_SETLKW, &ldata);        /* ÍË³ö»¥³âÇøÓò*/
+    close(fd);
+}
+
+/**
+ * »ñÈ¡Í¬Ö÷ÌâµÄÎÄÕÂ¸öÊý
+ * prototype:
+ * array bbs_get_thread_article_num(char *board,  int groupID);
+ *
+ * @return array of loaded articles on success,
+ *         FALSE on failure.
+ * @author roy
+ */
+static PHP_FUNCTION(bbs_get_thread_article_num)
+{
+    char *board;
+    int blen;
+    unsigned int groupid;
+    int total;
+    struct boardheader *bp;
+	char dirpath[STRLEN];
+    int i;
+    zval *element;
+    int is_bm;
+    char flags[4];              /* flags[0]: flag character
+                                 * flags[1]: imported flag
+                                 * flags[2]: no reply flag
+                                 * flags[3]: attach flag
+                                 */
+    int ac = ZEND_NUM_ARGS();
+	unsigned int articleNums;
+	int fd;
+	struct stat buf;
+	struct flock ldata;
+	struct fileheader *ptr1;
+	char* ptr;
+
+
+    /*
+     * getting arguments 
+     */
+    if (ac != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &board, &blen, &groupid) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+	if (groupid<0){
+		RETURN_LONG(-1);
+	}
+    /*
+     * checking arguments 
+     */
+    if (currentuser == NULL) {
+        RETURN_LONG(-2);
+    }
+    if ((bp = getbcache(board)) == NULL) {
+        RETURN_LONG(-3);
+    }
+    is_bm = is_BM(bp, currentuser);
+    setbdir(DIR_MODE_NORMAL, dirpath, board);
+
+    if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
+        RETURN_LONG(-4);   
+    ldata.l_type = F_RDLCK;
+    ldata.l_whence = 0;
+    ldata.l_len = 0;
+    ldata.l_start = 0;
+    fcntl(fd, F_SETLKW, &ldata);
+	fstat(fd, &buf);
+    total = buf.st_size / sizeof(struct fileheader);
+
+    if ((i = safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t*)&buf.st_size)) != 1) {
+        if (i == 2)
+            end_mmapfile((void *) ptr, buf.st_size, -1);
+        ldata.l_type = F_UNLCK;
+        fcntl(fd, F_SETLKW, &ldata);
+        close(fd);
+        RETURN_LONG(-5);
+    }
+    ptr1 = (struct fileheader *) ptr;
+    /*
+     * fetching articles 
+     */
+    if (array_init(return_value) == FAILURE) {
+        RETURN_LONG(-6);
+    }
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(currentuser->userid, board);
+#endif
+
+	articleNums=0;
+
+
+	for (i=total-1;i>=0;i--) {
+		if (ptr1[i].id==groupid) {
+			break;
+		}
+		if (ptr1[i].groupid==groupid)
+			articleNums++;
+	}
+    end_mmapfile((void *) ptr, buf.st_size, -1);
+    ldata.l_type = F_UNLCK;
+    fcntl(fd, F_SETLKW, &ldata);        /* ÍË³ö»¥³âÇøÓò*/
+    close(fd);
+	RETURN_LONG(articleNums);
+}
 /**
  * Count articles in a board with specific .DIR mode.
  * prototype:
@@ -1106,11 +1657,56 @@ static PHP_FUNCTION(bbs_countarticles)
         RETURN_LONG(-1);
     }
     setbdir(mode, dirpath, bp->filename);
+
     total = get_num_records(dirpath, sizeof(struct fileheader));
     /* add by stiger */
     sprintf(dirpath,"boards/%s/%s",bp->filename, DING_DIR);
     total += get_num_records(dirpath, sizeof(struct fileheader));
     /* add end */
+    RETURN_LONG(total);
+}
+
+
+/* long bbs_getthreadnum(long boardNum)
+ * get number of threads
+ */
+static PHP_FUNCTION(bbs_getthreadnum)
+{
+    int brdnum;
+    int mode;
+    const struct boardheader *bp = NULL;
+    char dirpath[STRLEN];
+    int total;
+    int ac = ZEND_NUM_ARGS();
+	struct stat normalStat,originStat;
+	char dirpath1[STRLEN];
+
+    getcwd(old_pwd, 1023);
+    chdir(BBSHOME);
+	old_pwd[1023]=0;
+    /*
+     * getting arguments 
+     */
+    if (ac != 1 || zend_parse_parameters(1 TSRMLS_CC, "l", &brdnum) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+    if ((bp = getboard(brdnum)) == NULL) {
+        RETURN_LONG(-1);
+    }
+    setbdir(DIR_MODE_ORIGIN, dirpath, bp->filename);
+	if (!stat(dirpath,&originStat))	{
+		setbdir(DIR_MODE_NORMAL,dirpath1,bp->filename);
+		if (!stat(dirpath1,&normalStat)){
+			if (normalStat.st_mtime>originStat.st_mtime){
+				www_generateOriginIndex(bp->filename);
+			}
+		} else {
+			www_generateOriginIndex(bp->filename);
+		}
+	} else {
+		www_generateOriginIndex(bp->filename);
+	}
+    total = get_num_records(dirpath, sizeof(struct fileheader));
     RETURN_LONG(total);
 }
 
@@ -1656,6 +2252,69 @@ static PHP_FUNCTION(bbs_postarticle)
     }
     RETURN_LONG(0);
 }
+
+/*  function bbs_updatearticle(string boardName, string filename ,string text)  
+ *  ¸üÐÂ±à¼­ÎÄÕÂ
+ *
+ */
+static PHP_FUNCTION(bbs_updatearticle)
+{
+	FILE *fp;
+	char *boardName, *filename, *content;
+	int blen, flen, clen;
+    FILE *fin;
+    FILE *fout;
+    char infile[80], outfile[80];
+    char buf2[256];
+    int i;
+    /*int filtered = 0;*/
+
+	int ac = ZEND_NUM_ARGS();
+
+    /*
+     * getting arguments 
+     */
+    
+	if (ac != 3 || zend_parse_parameters(3 TSRMLS_CC, "sss/", &boardName, &blen, &filename, &flen, &content, &clen) == FAILURE) {
+		WRONG_PARAM_COUNT;
+	} 
+
+    setbfile(infile, boardName, filename);
+    sprintf(outfile, "tmp/%s.%d.editpost", getcurruserid(), getpid());
+    if ((fin = fopen(infile, "r")) == NULL)
+        RETURN_LONG(-10);
+    if ((fout = fopen(outfile, "w")) == NULL) {
+        fclose(fin);
+        RETURN_LONG(-10);
+    }
+    for (i = 0; i < 4; i++) {
+        fgets(buf2, sizeof(buf2), fin);
+        fprintf(fout, "%s", buf2);
+    }
+    fprintf(fout, "%s", unix_string(content));
+    fprintf(fout, "[36m¡ù ÐÞ¸Ä:¡¤%s ì¶ %s ÐÞ¸Ä±¾ÎÄ¡¤[FROM: %s][m\n", currentuser->userid, wwwCTime(time(0)) + 4, fromhost);
+    while (fgets(buf2, sizeof(buf2), fin) != NULL) {
+        if (Origin2(buf2)) {
+            fprintf(fout, "%s", buf2);
+            break;
+        }
+    }
+    fclose(fin);
+    fclose(fout);
+#ifdef FILTER
+    if (check_badword(outfile) !=0) {
+		unlink(outfile);
+        RETURN_LONG(-1); //ÐÞ¸ÄÎÄÕÂÊ§°Ü£¬ÎÄÕÂ¿ÉÄÜº¬ÓÐ²»Ç¡µ±ÄÚÈÝ.
+    }
+    else {
+#endif
+       f_mv(outfile, infile);
+#ifdef FILTER
+    }
+#endif
+    RETURN_LONG(0);
+}
+
 
 static PHP_FUNCTION(bbs_wwwlogoff)
 {
@@ -2394,6 +3053,71 @@ PHP_MINFO_FUNCTION(smth_bbs)
     php_info_print_table_header(2, "smth_bbs support", "enabled");
     php_info_print_table_end();
 }
+/**
+ * Function: post a new mail
+ *  rototype:
+ * int bbs_postmail(string targetid,string title,string content,long sig, long backup);
+ *
+ *  @return the result
+ *  	0 -- success
+ *		<0 error
+ *  @author roy
+ */
+static PHP_FUNCTION(bbs_postmail){
+	char* targetID, *title, *content;
+	int  idLen, tLen,cLen, backup,sig;
+	int ac = ZEND_NUM_ARGS();
+	char filename[STRLEN+1];
+	char title2[80],title3[80];
+	int ret;
+	struct userec *u = NULL;
+	int i;
+
+    getcwd(old_pwd, 1023);
+    chdir(BBSHOME);
+    old_pwd[1023] = 0;
+    if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "ss/s/ll", &targetID, &idLen,&title,&tLen,&content,&cLen,&sig,&backup) == FAILURE)
+	{
+		WRONG_PARAM_COUNT;
+	}
+	getuser(targetID, &u);
+	if (u==NULL) 
+		RETURN_LONG(-100);//can't find user
+    for (i = 0; i < strlen(title); i++)
+        if (title[i] < 27 && title[i] >= -1)
+            title[i] = ' ';
+	if (title[0] == 0)
+        strcpy(title3,"Ã»Ö÷Ìâ");
+	else 
+		strncpy(title3,title,79);
+	title3[79]=0;
+	snprintf(filename, STRLEN, "tmp/%s.%d.tmp", targetID, getpid());
+	filename[STRLEN]=0;
+    if (f_append(filename, unix_string(content)) < 0)
+        RETURN_LONG(-1); //"ÎÞ·¨´´½¨ÁÙÊ±ÎÄ¼þ";
+    snprintf(title2,79, "{%s} %s", targetID, title);
+    title2[79] = 0;
+    
+    if ((ret=post_mail(targetID, title3, filename, currentuser->userid, currentuser->username, fromhost, sig))!=0)
+    {
+		RETURN_LONG(ret-1);
+		/*
+        case -1:
+        	http_fatal("·¢ÐÅÊ§°Ü:ÎÞ·¨´´½¨ÎÄ¼þ");
+        case -2:
+        	http_fatal("·¢ÐÅÊ§°Ü:¶Ô·½¾ÜÊÕÄãµÄÓÊ¼þ");
+        case -3:
+        	http_fatal("·¢ÐÅÊ§°Ü:¶Ô·½ÐÅÏäÂú");
+        default:
+        	http_fatal("·¢ÐÅÊ§°Ü");
+        }
+		*/
+    }
+    if (backup)
+        post_mail(currentuser->userid, title2, filename, currentuser->userid, currentuser->username, fromhost, sig);
+    unlink(filename);
+	RETURN_LONG(6);
+}
 
 /**
  * Function: Create a new user id
@@ -2609,8 +3333,9 @@ static PHP_FUNCTION(bbs_createregform)
         //¼ì²éÓÃ»§ÊÇ·ñÒÑ¾­Í¨¹ý×¢²á»òÕß»¹²»µ½Ê±¼ä(ÏÈ·Åµ½ÕâÀï,×îºÃ·Åµ½phpÀïÃæ)
 	    if(getuser(userid,&uc) == 0)RETURN_LONG(3);
 		if(HAS_PERM(uc,PERM_LOGINOK))RETURN_LONG(4);
+		/* remed by roy 2003.7.17 
 		if(time(NULL) - uc->firstlogin < REGISTER_WAIT_TIME)RETURN_LONG(5);
-
+		*/
 	    //¼ì²éÊÇ·ñµ¥×ÓÒÑ¾­Ìî¹ýÁË
 		if ((fn = fopen("new_register", "r")) != NULL) {
 			while (fgets(genbuf, STRLEN, fn) != NULL) {
