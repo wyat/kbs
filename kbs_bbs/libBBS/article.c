@@ -2024,12 +2024,12 @@ int add_top(struct fileheader* fileinfo,char* boardname,int flag)
     top.accessed[0] = flag;
     setbfile(newpath, boardname, fileinfo->filename);
     setbdir(DIR_MODE_ZHIDING,dirpath,boardname);
-    if (get_num_records(dirpath, sizeof(top)) > MAX_DIGEST) {
+    if (get_num_records(dirpath, sizeof(top)) > MAX_DING) {
         return 4;
     }
     link(newpath, path);
     append_record(dirpath, &top, sizeof(top));
-    board_update_toptitle(getbcache(boardname),1);
+    board_update_toptitle(getboardnum(boardname,NULL),true);
     return 0;
 }
 

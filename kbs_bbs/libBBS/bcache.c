@@ -199,10 +199,13 @@ void resolve_boards()
                     count=get_num_records(filename,sizeof(struct fileheader));
                     get_record(filename, &lastfh, sizeof(struct fileheader), count-1);
                     brdshm->bstatus[i].nowid=lastfh.id+1;
-					if (bcache[i].idseq>lastfh.id+1)
+                    if (bcache[i].idseq>lastfh.id+1)
                         brdshm->bstatus[i].nowid=bcache[i].idseq;
-					else
+                    else
                         brdshm->bstatus[i].nowid=lastfh.id+1;
+                    /* update top title */
+                    board_update_toptitle(i,false);
+                    
                     maxi = i;
                 }
             if (maxi != -1)
@@ -224,6 +227,8 @@ void detach_boards()
 
 struct BoardStatus *getbstatus(int index)
 {
+    if (index<=0||index>MAXBOARD)
+        return NULL;
     return &brdshm->bstatus[index-1];
 }
 int apply_boards(int (*func) (struct boardheader *, void* ),void* arg)
@@ -497,14 +502,27 @@ void board_setcurrentuser(int idx,int num)
         brdshm->bstatus[idx - 1].currentusers=0;
 }
 
-void board_update_toptitle(struct boardheader* bh,int increment)
+void board_update_toptitle(int bid,bool needlock)
 {
-    int fd=bcache_lock();
-    if (increment==0)
-      bh->toptitle=0;
-    else
-      bh->toptitle+=increment;
-    bcache_unlock(fd);
+    struct BoardStatus* bs=getbstatus(bid);
+    struct boardheader* bh;
+    char dirpath[MAXPATH];
+    if (bs==NULL)
+        return;
+    bh=bcache[bid-1];
+    if (bh->fileheader[0]==0)
+        return;
+    setbdir(DIR_MODE_ZHIDING,dirpath,bh->filename);
+    int fd;
+    if (needlock)
+        fd=bcache_lock();
+    bs->toptitle=get_num_records(dirpath, sizeof(struct boardheader));
+    if (bs->toptitle>MAX_DING) {
+        bs->toptitle=MAX_DING;
+    }
+    get_records(dirpath, bs->topfh, sizeof(struct fileheader), 0, bs->toptitle);
+    if (needlock)
+        bcache_unlock(fd);
 }
 
 void flush_bcache()
@@ -512,4 +530,5 @@ void flush_bcache()
     int i;
     for (i = 0; i < MAXBOARD; i++)
 	    bcache[i].idseq=brdshm->bstatus[i].nowid;
+    msync(bcache,MAXBOARD * sizeof(struct boardheader),MS_SYNC);
 }

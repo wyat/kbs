@@ -2163,7 +2163,7 @@ static int get_locksemid(int semnum)
 	int i;
 	static int locksemid = -1;
 	if (locksemid < 0) {
-		key_t semkey = sysconf_eval("PUBLIC_SEMID", 0x54188);
+            static key_t semkey = sysconf_eval("PUBLIC_SEMID", 0x54188);
 		locksemid =semget(semkey,SEMLOCK_COUNT,0); 
 		if (locksemid < 0) {
 			struct sembuf buf;
