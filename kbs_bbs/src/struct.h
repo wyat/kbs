@@ -78,7 +78,8 @@ struct userdata
     unsigned char education;
     char graduateschool[STRLEN];
     unsigned char character;
-
+    char photo_url[STRLEN];
+    char telephone[STRLEN];
 };
 
 struct user_info {              /* Structure used in UTMP file */
