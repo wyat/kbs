@@ -50,6 +50,11 @@ void flush_cachedata(char* userid);
 int clean_cachedata(char* userid,int unum);
 #endif
 
+#ifdef HAVE_CUSTOM_USER_TITLE
+char* get_user_title(unsigned char titleidx);
+int set_user_title(unsigned char titleidx,char* newtitle);
+#endif
+
 /* 根据tag ,生成 匹配的user id 列表 (针对所有注册用户)*/
 
 
@@ -114,6 +119,7 @@ int clean_cachedata(char* userid,int unum);
     int compute_user_value(struct userec *urec);
     void *attach_shm(char *shmstr, int defaultkey, int shmsize, int *iscreate);
     void *attach_shm1(char *shmstr, int defaultkey, int shmsize, int *iscreate, int readonly, void *shmaddr);
+    void    remove_shm(char *shmstr, int defaultkey, int shmsize);
     void attach_err(int shmkey, char *name);
     int id_invalid(char *userid);
     int addtofile(char filename[STRLEN], char str[STRLEN]);

@@ -769,7 +769,7 @@ static PHP_FUNCTION(bbs_getuserlevel){
     struct userec* u;
 	char* user;
 	int uLen;
-	char title[10];
+	char title[USER_TITLE_LEN];
     if (ZEND_NUM_ARGS() != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &user, &uLen) != SUCCESS) {
             WRONG_PARAM_COUNT;
     }
