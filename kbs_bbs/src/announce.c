@@ -242,7 +242,8 @@ MENU    *pm;
             else
                 strncpy( litem.fname, buf + 5, sizeof(litem.fname) );
             if((!strstr(litem.title,"(BM: BMS)")||HAS_PERM(PERM_BOARDS))&&
-                    (!strstr(litem.title,"(BM: SYSOPS)")||HAS_PERM(PERM_SYSOP)))
+                 (!strstr(litem.title,"(BM: SYSOPS)")||HAS_PERM(PERM_SYSOP))&&
+ 	        (!strstr(litem.title,"(BM: ZIXIAs)")||HAS_PERM(PERM_SECANC)))
             {
                 if(strstr(litem.fname,"!@#$%")) /*ȡ host & port */
                 {
@@ -1180,6 +1181,8 @@ case KEY_PGDN: case Ctrl( 'F' ): case ' ':
         case Ctrl('P'):
                         if(!HAS_PERM( PERM_POST ))
                             break;
+ 		if( !me.item[ me.now ] )
+ 			break;
             sprintf( fname, "%s/%s", path, me.item[ me.now ]->fname );
             if(!dashf(fname))
                 break;

@@ -665,7 +665,8 @@ write_posts()
     struct
     {
         char author[IDLEN + 1];
-        char board[IDLEN + 1];
+        //char board[IDLEN + 1];
+        char board[18];
         char title[66];
         time_t date;
         int number;
@@ -763,10 +764,10 @@ strncpy(uname,currentuser->username,NAMELEN) ;
         if (!strcmp(currboard,"Announce"))
             /* added By Bigman */
             fprintf(fp,"发信人: %s (%s), 信区: %s       \n","SYSOP",
-                    "System Operator",currboard) ;
+                    "强盗头",currboard) ;
         else
-            fprintf(fp,"发信人: %s (%s), 信区: %s       \n",(noname&&Anony)?"Anonymous":uid,
-                    (noname&&Anony)?"我是匿名天使":uname,currboard) ;
+            fprintf(fp,"发信人: %s (%s), 信区: %s       \n",(noname&&Anony)?"currboard":uid,
+                    (noname&&Anony)?"Do you zixia?!":uname,currboard) ;
     } /***** 该语句增加阅读次数计数项 Add by Luzi 1998/1/8 ****/
 
     fprintf(fp,"标  题: %s\n",save_title) ;
@@ -913,6 +914,8 @@ int saveheader ;
         }
         else if ( uinfo.mode == SMAIL )
             strcpy(p_buf,"(S)寄出, (A)取消, or (E)再编辑? [S]: " );
+        else if ( uinfo.mode == IMAIL )
+            strcpy(p_buf, "斧头帮 Internet 信笺：(S)寄出, (F)自动换行寄出, (A)取消, or (E)再编辑? [S]: " ); /* Leeward 98.01.17 Prompt whom you are writing to */
         /*    sprintf(p_buf,"给 %s 的信：(S)寄出, (F)自动换行寄出, (A)取消, or (E)再编辑? [S]: ", lookupuser->userid ); 
          Leeward 98.01.17 Prompt whom you are writing to */
         else
@@ -1039,12 +1042,14 @@ int saveheader ;
         if( aborted != -1 )  aborted = 1;
     }
 #endif
-    if((uinfo.mode == POSTING)&&strcmp(currboard,"test"))/*Haohmaru.99.4.02.让爱灌水的人哭去吧//grin*/ {
+    /*
+    if((uinfo.mode == POSTING)&&strcmp(currboard,"test"))//Haohmaru.99.4.02.让爱灌水的人哭去吧//grin {
         if (temp)
             temp_numposts++;
         if (temp_numposts>20)
             sleep((temp_numposts-20)*1+1);
     }
+    */
     return aborted;
 }
 

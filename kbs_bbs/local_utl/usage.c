@@ -129,15 +129,15 @@ char *argv[];
   mode=atoi(argv[1]);
   if(mode==1)
   {
-        strcpy(buf,"/home0/bbs/0Announce/bbslists/board2");
-	strcpy(buf1,"/home0/bbs/0Announce/bbslists/totaltime");
-	strcpy(buf2,"/home0/bbs/0Announce/bbslists/averagetime");
+        strcpy(buf,"/home/system/bbs/0Announce/bbslists/board2");
+	strcpy(buf1,"/home/system/bbs/0Announce/bbslists/totaltime");
+	strcpy(buf2,"/home/system/bbs/0Announce/bbslists/averagetime");
   }
   else
   {
-        strcpy(buf,"/home0/bbs/0Announce/bbslists/board1");
+        strcpy(buf,"/home/system/bbs/0Announce/bbslists/board1");
   }
-  if ((fp = fopen("/home0/bbs/use_board", "r")) == NULL)
+  if ((fp = fopen("/home/system/bbs/use_board", "r")) == NULL)
   {
     printf("cann't open use_board\n");
     return 1;

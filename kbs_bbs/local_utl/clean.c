@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "bbs.h"
+#include "/home/system/bbs/bbs_src/bbs.h"
 
 void
 main(int argc, char **argv)

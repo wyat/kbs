@@ -424,6 +424,9 @@ x_userdefine()
         clear() ;
         return 0 ;
     }
+    if( !strcmp(currentuser->userid,"guest") )
+	return 0;
+
     move(1,0);
     clrtobot();
     move(2,0);
@@ -527,6 +530,12 @@ x_edits()
         return;
 
     ch=ans[0]-'0'-1;
+    switch( ch ){
+    	case 0:
+        	modify_user_mode( EDITPLAN );
+	case 1:
+	    	modify_user_mode( EDITSIG );
+    }
     setuserfile(genbuf,e_file[ch]);
     move(3,0);
     clrtobot();

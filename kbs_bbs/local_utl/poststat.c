@@ -5,7 +5,8 @@
 /* create : 95/03/29                                     */
 /* update : 95/12/15                                     */
 /*-------------------------------------------------------
-#define DEBUG*/
+ */
+#define DEBUG
 
 #include <stdio.h>
 #include <time.h>
@@ -31,7 +32,8 @@ struct fileheader {             /* This structure is used to hold data in */
 struct postrec
 {
   char author[13];              /* author name */
-  char board[13];               /* board name */
+  //char board[13];               /* board name */
+  char board[18];               /* board name */
   char title[66];               /* title name */
   time_t date;                  /* last post's date */
   int number;                   /* post number */
@@ -43,7 +45,8 @@ struct postrec
 struct posttop
 {
   char author[13];              /* author name */
-  char board[13];               /* board name */
+  //char board[13];               /* board name */
+  char board[18];               /* board name */
   char title[66];               /* title name */
   time_t date;                  /* last post's date */
   int number;                   /* post number */
@@ -169,6 +172,8 @@ poststat(mytype)
 	int m,n;
 	char BoardName[10][13];
 	
+  //memset( top, 0, TOPCOUNT*sizeof(struct posttop) );
+
   if (mytype < 0)
   {
     /* --------------------------------------- */
@@ -208,7 +213,7 @@ poststat(mytype)
   /* sort top 100 issue and save results            */
   /* ---------------------------------------------- */
 
-  memset(top, 0, sizeof(top));
+  //memset(top, 0, sizeof(top));
   for (i = j = 0; i < HASHSIZE; i++)
   {
     for (pp = bucket[i]; pp; pp = pp->next)
@@ -291,7 +296,7 @@ poststat(mytype)
 	real++;
 #endif
       fprintf(fp,
-        "[37mµÚ[31m%3d[37m Ãû [37mÐÅÇø : [33m%-16s[37m¡¾[32m%s[37m¡¿[36m%4d [37mÈË[35m%+16s\n"
+        "[37mµÚ[31m%3d[37m Ãû [37m·Ö¶æ : [33m%-16s[37m¡¾[32m%s[37m¡¿[36m%4d [37m°ïÖÚ[35m%+16s\n"
         "     [37m±êÌâ : [44m[37m%-60.60s[40m\n"
         ,!mytype ? real : (i + 1) , top[i].board, p, top[i].number, top[i].author, top[i].title);
     }

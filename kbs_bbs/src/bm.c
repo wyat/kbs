@@ -210,7 +210,7 @@ char *uident;
     {sprintf(buffer,"[通知]");
         fprintf(fn1,"寄信人: %s \n",currentuser->userid) ;
         fprintf(fn1,"标  题: %s\n",buffer) ;
-        fprintf(fn1,"发信站: %s (%24.24s)\n","BBS 水木清华站",ctime(&now)) ;
+        fprintf(fn1,"发信站: %s (%24.24s)\n","BBS 大话西游站",ctime(&now)) ;
         fprintf(fn1,"来  源: %s \n",currentuser->lasthost) ;
         fprintf(fn1,"\n");
         fprintf(fn1,"您被站务人员 %s 解除在 %s 板的封禁\n",currentuser->userid,currboard);
@@ -220,7 +220,7 @@ char *uident;
         sprintf(buffer,"[通知]",currboard,currentuser->userid);
         fprintf(fn1,"寄信人: %s \n",currentuser->userid) ;
         fprintf(fn1,"标  题: %s\n",buffer) ;
-        fprintf(fn1,"发信站: %s (%24.24s)\n","BBS 水木清华站",ctime(&now)) ;
+        fprintf(fn1,"发信站: %s (%24.24s)\n","BBS 大话西游站",ctime(&now)) ;
         fprintf(fn1,"来  源: %s \n",currentuser->lasthost) ;
         fprintf(fn1,"\n");
         fprintf(fn1,"您被 %s 板板主 %s 解除封禁\n",currboard,currentuser->userid);
@@ -308,8 +308,8 @@ Here:
                     {	   my_flag=0;
                         fprintf(fn,"寄信人: SYSOP (System Operator) \n") ;
                         fprintf(fn,"标  题: %s\n",buffer) ;
-                        fprintf(fn,"发信站: %s (%24.24s)\n","BBS 水木清华站",ctime(&now)) ;
-                        fprintf(fn,"来  源: smth.org\n") ;
+			   fprintf(fn,"发信站: %s (%24.24s)\n","BBS 大话西游站",ctime(&now)) ;
+			   fprintf(fn,"来  源: bbs.zixia.net\n") ;
                         fprintf(fn,"\n");
                         fprintf(fn,"由于您在 \x1b[4m%s\x1b[0m 版 \x1b[4m%s\x1b[0m，我很遗憾地通知您， \n",currboard,denymsg);
                         if (denyday)
@@ -318,17 +318,17 @@ Here:
                             fprintf(fn,"您被暂时取消在该版的发文权力，到期后请回复\n");
                         fprintf(fn,"此信申请恢复权限。\n");
                         fprintf(fn,"\n");
-                        fprintf(fn,"                            水木清华站务组值班站务：\x1b[4m%s\x1b[0m\n",currentuser->userid);
+			fprintf(fn,"                            大话西游站务组值班站务：\x1b[4m%s\x1b[0m\n",currentuser->userid);
                         fprintf(fn,"                              %s\n",ctime(&now));
                         strcpy(currentuser->userid,"SYSOP");
-                        strcpy(currentuser->username,"System Operator");
-                        strcpy(currentuser->realname,"System Operator");
+			strcpy(currentuser->username,"斧头帮帮主令");
+			strcpy(currentuser->realname,"斧头帮帮主");
                     }
                     else
                     {		my_flag=1;
                         fprintf(fn,"寄信人: %s \n",currentuser->userid) ;
                         fprintf(fn,"标  题: %s\n",buffer) ;
-                        fprintf(fn,"发信站: %s (%24.24s)\n","BBS 水木清华站",ctime(&now)) ;
+			fprintf(fn,"发信站: %s (%24.24s)\n","BBS 大话西游站",ctime(&now)) ;
                         fprintf(fn,"来  源: %s \n",currentuser->lasthost) ;
                         fprintf(fn,"\n");
                         fprintf(fn,"由于您在 \x1b[4m%s\x1b[0m 版 \x1b[4m%s\x1b[0m，我很遗憾地通知您， \n",currboard,denymsg);
@@ -352,7 +352,7 @@ Here:
 
                     if (my_flag==0)
                     {
-                        fprintf(fn,"                            水木清华站务组值班站务：\x1b[4m%s\x1b[0m\n",saveuser.userid);
+			fprintf(fn,"                            大话西游站务组值班站务：\x1b[4m%s\x1b[0m\n",saveuser.userid);
                     }
                     else
                     {

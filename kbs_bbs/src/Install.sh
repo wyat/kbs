@@ -1,8 +1,8 @@
 #! /bin/sh
 
-BBS_HOME=/home/bbs
-INSTALL="//bin/install -c"
-TARGET=/home/bbs/bin
+BBS_HOME=/home/system/bbs
+INSTALL="/usr/bin/install -c"
+TARGET=/home/system/bbs/bin
 
 echo "This script will install the whole BBS to ${BBS_HOME}..."
 echo -n "Press <Enter> to continue ..."
@@ -36,10 +36,10 @@ ${INSTALL} -m 4755 -s -g bin -o root   bbsrf      ${TARGET}
 cat > ${BBS_HOME}/etc/sysconf.ini << EOF
 # comment
 
-BBSHOME         = "/home/bbs"
-BBSID           = "NoName"
-BBSNAME         = "Never Land BBS"
-BBSDOMAIN       = "some.where.on.earth"
+BBSHOME         = "/home/system/bbs"
+BBSID           = "ZIXIA"
+BBSNAME         = "大话西游"
+BBSDOMAIN       = "zixia.net"
 
 #SHOW_IDLE_TIME         = 1
 KEEP_DELETED_HEADER     = 0

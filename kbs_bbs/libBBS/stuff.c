@@ -625,7 +625,7 @@ int compute_user_value( struct userec *urec)
         return (30 * 24 * 60 - value)/(60*24);
     /* if (urec->userlevel & PERM_LONGID)
          return (667 * 24 * 60 - value)/(60*24); */
-    return (120 * 24 * 60 - value)/(60*24);
+    return (366 * 24 * 60 - value)/(60*24);
 }
 
 

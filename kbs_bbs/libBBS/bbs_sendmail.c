@@ -183,7 +183,7 @@ int isuu, isbig5, noansi;
 
     smtp_set_server (session, server);
 
-    sprintf( newbuf, "%s.bbs@%s", currentuser->userid, email_domain() );
+    sprintf( newbuf, "%s@%s", currentuser->userid, email_domain() );
     smtp_set_reverse_path (message, newbuf);
     smtp_set_header (message, "Message-Id", NULL);
     

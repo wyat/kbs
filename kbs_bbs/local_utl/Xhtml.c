@@ -19,8 +19,8 @@
 
 #define DOTNAMES ".Names"
 #define INDEXHTML "index.htm"
-#define HEADER "BBS水木清华站∶精华区"
-#define FOOTER "BBS水木清华站∶精华区"
+#define HEADER "BBS 大话西游站∶精华区"
+#define FOOTER "BBS 大话西游站∶精华区"
 #define MAXPATH 255
 #define MAXLINELEN 512
 

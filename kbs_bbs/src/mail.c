@@ -47,6 +47,7 @@ int     G_SENDMODE=NA;
 extern int     add_author_friend();
 
 int cmpinames(); /* added by Leeward 98.04.10 */
+void m_init();
 
 extern int nf;
 extern int numofsig;
@@ -471,7 +472,7 @@ char *userid, *title ;
 
     int now;	/* added by Bigman: for SYSOP mail */
 
-    if (!chkreceiver(userid,&user))
+    if ( !strchr(userid,'@') && !chkreceiver(userid,&user))
         return -4;
 
     if ((user.userlevel & PERM_SUICIDE) && ( !HAS_PERM(PERM_SYSOP) ) )
@@ -527,8 +528,9 @@ char *userid, *title ;
                 else
                         strcat(userid,".edu.tw");}*/
         internet_mail = 1;
+	modify_user_mode( IMAIL );
         buf4[0]=' ';
-        sprintf( tmp_fname, "/tmp/bbs-internet-gw-%05d", getpid() );
+        sprintf( tmp_fname, BBSHOME "/tmp/bbs-internet-gw-%05d", getpid() );
         strcpy( filepath, tmp_fname);
         goto edit_mail_file;
     }
@@ -1614,7 +1616,7 @@ int num ;
     else
         buf4[0]=' ';
 
-    sprintf( tmpfile, "tmp/bbs-gsend-%05d", getpid() );
+    sprintf( tmpfile, BBSHOME "tmp/bbs-gsend-%05d", getpid() );
     /* Leeward 98.01.17 Prompt whom you are writing to 
     if (1 == G_SENDMODE)
         strcpy(lookupuser->userid, "ºÃÓÑÃûµ¥");
@@ -1919,7 +1921,7 @@ int isuu;
     clear();
     if( address[0] == '\0' ) {
         strncpy( address, currentuser->email, STRLEN );
-        if(strstr(currentuser->email,"bbs@bbs.net.tsinghua.edu.cn") || strstr(currentuser->email,"bbs@smth.org") || strlen(currentuser->email)==0)
+        if(strstr(currentuser->email,"@bbs.zixia.net") || strstr(currentuser->email,"bbs@smth.org") || strlen(currentuser->email)==0)
         {
             strcpy(address,currentuser->userid);
         }
@@ -2010,7 +2012,7 @@ int isuu;
     { /* Leeward 98.04.27: better:-) */
         char *ptrX;
 
-        ptrX = strstr(receiver, ".bbs@smth.org");
+        ptrX = strstr(receiver, "@bbs.zixia.net");
         /*disable by KCN      if (!ptrX) ptrX = strstr(receiver, ".bbs@"); */
 
         if (ptrX)  *ptrX = 0;

@@ -1,8 +1,8 @@
 #! /bin/sh
 gcc -o repass repass.c
 gcc -o rehome rehome.c rehome.o
-cp /home/bbs/.PASSWDS /home/bbs/.PASSWDS.old
+cp /home/system/bbs/.PASSWDS /home/system/bbs/.PASSWDS.old
 repass
-cp /home/bbs/.PASSWDS.tmp /home/bbs/.PASSWDS
-chown bbs.bbs /home/bbs/.PASSWDS
+cp /home/system/bbs/.PASSWDS.tmp /home/system/bbs/.PASSWDS
+chown bbs.bbs /home/system/bbs/.PASSWDS
 rehome

@@ -17,10 +17,10 @@
 #############################################################
 
 # The home directory for the user 'bbs'
-BBSHOME=/home/bbs
+BBSHOME=/home/system/bbs
 
 # The uid for the user 'bbs'
-BBSUID=9999
+BBSUID=80
 #BBSUID=502
 
 #OS_DEF   = -DAIX -DSYSV 
@@ -28,9 +28,9 @@ OS_DEF   = -DLINUX -DSYSV
 
 CC       = gcc
 #CC       = cc
-CFLAGS   = -g -Ilibesmtp -static 
+CFLAGS   = -g -static -Ilibesmtp-0.5
 #CFLAGS   = -g -O3 -qstrict -qcompact -qarch=ppc
-LIBS     = -lbsd -lcrypt -L. -lesmtp
+LIBS     = -lbsd -lcrypt -Llibesmtp-0.5/.libs -lesmtp 
 #CFLAGS   = -O3
 #LIBS     = -ltermcap -lbsd -lcrypt
 
@@ -38,7 +38,7 @@ INSTALL  = /usr/bin/install -c
 
 BBSLIB = libBBS.a
 
-CSIE_DEF = -DSHOW_IDLE_TIME -DBBSGID=502 -D_DETAIL_UINFO_ 
+CSIE_DEF = -DSHOW_IDLE_TIME -DBBSGID=80 -D_DETAIL_UINFO_ 
 #CSIE_DEF = -DSHOW_IDLE_TIME -DBBSGID=99 -D_DETAIL_UINFO_
 #-DTALK_LOG
 ifeq (Makefile.spec ,$(wildcard Makefile.spec))
@@ -97,25 +97,40 @@ dep:
 
 $(PROGNAME): $(COBJS) $(OTHERS) 
 	$(CC) -o bbsd_single $(CFLAGS) $(COBJS) $(LIBS) -g
-#	cp -f bbsnew ../bin/bbsnew
+#	cp -f bbsnew ${BBSHOME}/bin/bbsnew
+
+mail2bbs: mail2bbs.c record.o pass.o bcache.o
+	$(CC) -g -o mail2bbs mail2bbs.c record.o pass.o bcache.o -lcrypt
+	cp -f mail2bbs ${BBSHOME}/bin/mail2bbs
 
 bbstest: $(COBJS) $(OTHERS) newmain.o newio.o newterm.o convcode.o
 	$(CC) -o bbstest $(CFLAGS) $(COBJS) $(LIBS) newmain.o newio.o newterm.o convcode.o
-	cp -f bbstest ../bin/bbstest
+	cp -f bbstest ${BBSHOME}/bin/bbstest
 
 bbspost: bbspost.o $(BBSLIB)
 	gcc -DDONT_HAVE_TM_GMTOFF $(OS_DEF) -DLEEWARD_X_RECORD -o bbspost bbspost.o $(BBSLIB)
-	cp -f bbspost ../bin
-	chmod 6755 ../bin/bbspost
+	cp -f bbspost ${BBSHOME}/bin
+	chmod 6755 ${BBSHOME}/bin/bbspost
+
+unlock_utmp: unlock_utmp.c
+	gcc -DDONT_HAVE_TM_GMTOFF $(OS_DEF) $(LIBS) -o unlock_utmp unlock_utmp.c
+	cp -f unlock_utmp ${BBSHOME}/bin
+
 
 lint: $(LNFILES)
 	lint -abh $(LNFILES)
 
-newpop3.o: newpop3.c
-	gcc -g $(SITE_DEF) $(DEFINES)  -c newpop3.c
-newpop3d: newpop3.o $(BBSLIB)
-	$(CC) $(CFLAGS) -o newpop3d $(SITE_DEF) $(DEFINES) newpop3.o $(BBSLIB)
-	cp -f newpop3d ../bin
+bbsd: bbsd.c
+	$(CC) $(CFLAGS) -o bbsd $(SITE_DEF) $(DEFINES) bbsd.c
+	cp -f bbsd ${BBSHOME}/bin
+
+bbsdt: bbsd.c
+	gcc $(CFLAGS) -o bbsdt $(SITE_DEF) $(DEFINES) -DD_TEST bbsd.c
+	cp -f bbsdt ${BBSHOME}/bin
+
+newpop3d: newpop3.c $(BBSLIB)
+	$(CC) $(CFLAGS) -o newpop3d $(SITE_DEF) $(DEFINES) newpop3.c $(BBSLIB)
+	cp -f newpop3d ${BBSHOME}/bin
 #	$(CC) $(CFLAGS) -o pop3d $(SITE_DEF) -D_BSD pop3d.c
 
 thread: thread.c record.c
@@ -131,7 +146,7 @@ $(BBSLIB) : $(patsubst %.o,%_use.o,$(BBSLIBOBJS))
 	
 chatd: station.c 
 	$(CC) -g $(CFLAGS) -o chatd $(OS_DEF) station.c $(LIBS)
-#	cp -f chatd ../bin
+#	cp -f chatd ${BBSHOME}/bin
 
 
 ve: edit.o term.o screen.o io.o editor.c

@@ -641,7 +641,7 @@ login_query()
     }*/
     /*ansimore(fname,NA); Leeward: disable the old code */
 
-    prints( "\033[1m»¶Ó­¹âÁÙ [31m%s[37m ¡ô±¾Õ¾Ê¹ÓÃÊï¹â¹«Ë¾Êï¹âÌìÑİ·şÎñÆ÷¡ô [36mÄ¿Ç°ÉÏÏßÈËÊı \033[1m%d[m", BoardName, curr_login_num);
+    prints( "\033[1m»¶Ó­¹âÁÙ [31m%s[37m ¡ô±¾Õ¾Ê¹ÓÃÒ»Ì¨X86·şÎñÆ÷¡ô [36mÄ¿Ç°ÉÏÏßÈËÊı \033[1m%d[m", BoardName, curr_login_num);
 /*{
 char ii[16];
 sprintf(ii, "%.2f", (double)curr_login_num / (double)MAXACTIVE * 100.0);

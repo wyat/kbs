@@ -311,36 +311,32 @@ chgrp()
     char            buf[STRLEN], ans[6];
 
     static char    *explain[] = {
-        "±¾Õ¾ÏµÍ³",
-        "ĞİÏĞÓéÀÖ",
+	"¸« Í· °ï",
+	"´ó»°Î÷ÓÎ",
+	"Ğ£Ïµ°à¼¶",
         "µçÄÔ¼¼Êõ",
+	"ĞİÏĞÓéÀÖ",
+	"ÎÄ»¯ÈËÎÄ",
+	"Ğ¯ÊÖ·ÉÔ¾",
         "Ñ§Êõ¿ÆÑ§",
         "ÌåÓı½¡Éí",
-        "Ì¸ÌìËµµØ",
-        "Ğ£Ô°ĞÅÏ¢",
-        "ÒÕÊõÎÄ»¯",
-        "ÈËÎÄÉç»á",
-        "ÍøÂçĞÅÏ¢",
-        "Çå»ª´óÑ§",
-        "ĞÖµÜÔºĞ£",
+	"ÖªĞÔ¸ĞĞÔ",
         "Æä  Ëû",
         NULL
     };
 
     static char    *groups[] = {
-        "system.faq",
-        "rec.faq",
-        "comp.faq",
-        "sci.faq",
-        "sport.faq",
-        "talk.faq",
-        "campus.faq",
-        "literal.faq",
-        "soc.faq",
-        "network.faq",
-        "thu.faq",
-        "univ.faq",
-        "other.faq",
+	"system.faq",
+	"zixia.faq",
+	"class.faq",
+	"comp.faq",
+	"relax.faq",
+	"soc.faq",
+	"literal.faq",
+	"sci.faq",
+	"sport.faq",
+  	"talk.faq",
+  	"other.faq",
         NULL
     };
 
@@ -353,9 +349,9 @@ chgrp()
     {
         if (explain[i] == NULL || groups[i] == NULL)
             break;
-        prints("[32m%2d[m. %-20s%-20s\n", i + 1, explain[i], groups[i]);
+        prints("[32m%2d[m. %-20s%-20s\n", i, explain[i], groups[i]);
     }
-    sprintf(buf, "ÇëÊäÈëÄãµÄÑ¡Ôñ(1~%d): ", i);
+    sprintf(buf, "ÇëÊäÈëÄãµÄÑ¡Ôñ(1~%d): ", i-1);
     while (1)
     {
         getdata(i + 3, 0, buf, ans, 4, DOECHO, NULL, YEA);
@@ -367,9 +363,9 @@ chgrp()
         else
             break;
     }
-    sprintf(cexplain, "%s", explain[ch - 1]);
+    sprintf(cexplain, "%s", explain[ch]);
 
-    return groups[ch - 1];
+    return groups[ch];
 }
 
 
@@ -934,7 +930,7 @@ char           *logfile, *regfile;
     static char    *finfo[] = {"ÕÊºÅÎ»ÖÃ", "ÉêÇë´úºÅ", "ÕæÊµĞÕÃû", "·şÎñµ¥Î»",
                                "Ä¿Ç°×¡Ö·", "Á¬Âçµç»°", "Éú    ÈÕ", NULL};
     static char    *reason[] = {
-        "ÇëÊäÈëÕæÊµĞÕÃû(¿ÉÓÃÆ´Òô).", "ÇëÏêÌîÑ§Ğ£¿ÆÏµ»ò¹¤×÷µ¥Î».",
+        "ÇëÊäÈëÕæÊµĞÕÃû(¹úÍâ¿ÉÓÃÆ´Òô).", "ÇëÏêÌîÑ§Ğ£¿ÆÏµ»ò¹¤×÷µ¥Î».",
         "ÇëÌîĞ´ÍêÕûµÄ×¡Ö·×ÊÁÏ.", "ÇëÏêÌîÁ¬Âçµç»°(ÈôÎŞ¿ÉÓÃºô»ú»òEmailµØÖ·´úÌæ).",
         "ÇëÈ·Êµ¶øÏêÏ¸µÄÌîĞ´×¢²áÉêÇë±í.", "ÇëÓÃÖĞÎÄÌîĞ´ÉêÇëµ¥.",
         "ÇëÓÃ Mail Reply ·½Ê½×¢²á", "Í¬Ò»¸öÓÃ»§×¢²áÁË¹ı¶àID",

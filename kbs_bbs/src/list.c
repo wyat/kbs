@@ -206,7 +206,7 @@ do_userlist()
     /* char online_users[STRLEN+10];
 
      if(!strcmp(currentuser->userid,"guest")){
-     fd=open("/home0/bbs/onlineulist",O_RDWR|O_TRUNC, 0600);
+     fd=open("/home/system/bbs/onlineulist",O_RDWR|O_TRUNC, 0600);
      if(fd!=-1)
      {
     flock(fd,LOCK_EX);
@@ -397,7 +397,8 @@ case 'f': case 'F':
         update_time=0;
         break;
 case 's': case 'S':
-        if(!HAS_PERM(PERM_PAGE))
+        if( strcmp(user_record[allnum]->userid,"guest") && 
+		!HAS_PERM(PERM_PAGE))
             return 1;
         if(!canmsg(user_record[allnum]))
         {
@@ -729,7 +730,7 @@ t_friends()
     if ((fp = fopen(genbuf, "r")) == NULL) {
         move( 1, 0 );
         clrtobot();
-        prints("你尚未利用 Info -> Override 设定好友名单，所以...\n");
+        prints("你尚未利用 Talk -> Override 设定好友名单，所以...\n");
         pressanykey();
         return 0;
     }

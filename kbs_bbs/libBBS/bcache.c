@@ -40,6 +40,10 @@ fillbcache(struct boardheader *fptr,char* arg)/*fill board cache */
 
     if( numboards >= MAXBOARD )
         return 0;
+    /*
+    if( fptr->filename[0]==0 )
+	return 0;
+	*/
     bptr = &bcache[ numboards++ ];
     memcpy( bptr, fptr, sizeof( struct shortfile ) );
     return 0 ;
@@ -183,6 +187,7 @@ char *bname;
         return 0;
 #endif
     /*    if( strcmp( bname, DEFAULTBOARD ) == 0 )  return 1; change by KCN 2000.09.01 */
+    if( strcmp( bname, "sysop" ) == 0 )  return 1; 
     if ((i = getbnum(bname)) == 0) return 0;
     if (HAS_PERM(PERM_DENYPOST))
         /*if(!strcmp(bname, "sysop"))

@@ -1,3 +1,4 @@
+#include "../bbs.h"
 struct userec2 {                  /* Structure used to hold information in */
         char            userid[IDLEN+2];   /* PASSFILE */
         char            fill[30];
@@ -6,7 +7,7 @@ struct userec2 {                  /* Structure used to hold information in */
         unsigned int    numlogins;
         unsigned int    numposts;
         char            flags[2];
-        char            passwd[PASSLEN];
+        char            passwd[OLDPASSLEN];
         char            username[NAMELEN];
         char            ident[NAMELEN];
         char            termtype[STRLEN];

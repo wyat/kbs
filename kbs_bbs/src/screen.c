@@ -818,7 +818,7 @@ lock_monitor() /* Leeward 98.03.01 */
       prints("[3%dmÎÒÊÇ %12s[m",c,currentuser->userid);
     else
       prints("[3%dmÎÒÊÇ %12s[m",c,currentuser->username);*/
-    prints("[1m[3%dmBBS Ë®Ä¾Çå»ªÕ¾[0m[0m", c);
+    prints("[1m[3%dmBBS ´ó»°Î÷ÓÎÕ¾[0m[0m", c);
     signal(SIGALRM,lock_monitor);
     alarm(1);
     move(cy,cx);
@@ -842,7 +842,7 @@ lock_scr() /* Leeward 98.02.22 */
     {
         move(19,32);
         clrtobot();
-        prints("[1m[32mBBSË®Ä¾Çå»ªÕ¾[m");
+        prints("[1m[32mBBS ´ó»°Î÷ÓÎÕ¾[m");
         move(21,0);
         clrtobot();
         getdata(21, 0, "ÆÁÄ»ÏÖÔÚÒÑ¾­Ëø¶¨£¬Òª½â³ıËø¶¨£¬ÇëÊäÈëÃÜÂë£º", passbuf, 39, NOECHO, NULL ,YEA);

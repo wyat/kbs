@@ -73,7 +73,7 @@ extern int errno ;
 #define DOECHO (1)     /* Flags to getdata input function */
 #define NOECHO (0)
 
-char *strdup() ;       /* External function declarations */
+//char *strdup() ;       /* External function declarations */
 char *bfile() ;
 
 extern FILE *ufp ;     /* External variable declarations */
@@ -84,7 +84,7 @@ extern long ti ;
 #define MAXFRIENDS (400)
 #define NUMPERMS (30)
 
-#define FILE_BUFSIZE      160   /* max. length of a file in SHM*/
+#define FILE_BUFSIZE      260   /* max. length of a file in SHM*/
 #define FILE_MAXLINE      24    /* max. line of a file in SHM */
 #define MAX_GOODBYE       5     /* 离站画面数 */
 #define MAX_ISSUE         5     /* 最大进站数 */
@@ -93,8 +93,8 @@ extern long ti ;
 
 #define MORE_BUFSIZE    4096
 #define MAXnettyLN      5     /* lines of  activity board  */        
-#define ACBOARD_BUFSIZE      150   /* max. length of each line for activity board  */
-#define ACBOARD_MAXLINE      80    /* max. lines of  activity board  */
+#define ACBOARD_BUFSIZE      200   /* max. length of each line for activity board  */
+#define ACBOARD_MAXLINE      300    /* max. lines of  activity board  */
 #define STRLEN   80    /* Length of most string data */
 #define NAMELEN  40    /* Length of username/realname */
 #define IDLEN    12    /* Length of userids */

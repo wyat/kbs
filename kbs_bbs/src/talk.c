@@ -327,8 +327,17 @@ char q_id[IDLEN];
                   cperf(perf),compute_user_value(lookupuser),
                (lookupuser->userlevel & PERM_SUICIDE)?" (вти╠жп)":" ");
     */
-    uleveltochar(&permstr,lookupuser->userlevel);
+    if( !strcmp(lookupuser->userid,"SYSOP") )
+	    strcpy( permstr, "г©╣ам╥" );
+    else if( !strcmp(lookupuser->userid,"zixia") )
+	    strcpy( permstr, "мЗ╡ф" );
+    else if( !strcmp(lookupuser->userid,"guest") )
+	    strcpy( permstr, "фоля" );
+    else
+	    uleveltochar(&permstr,lookupuser->userlevel);
+
     prints("пеоДё╨[[5m%2s[m] иЗцЭа╕ё╨[%d] ╣х╪╤: [%s]%s\n",
+
            (check_query_mail(qry_mail_dir)==1)? "пе":"  ",
            compute_user_value(lookupuser),
            permstr,(lookupuser->userlevel & PERM_SUICIDE)?" (вти╠жп)":"║ё");

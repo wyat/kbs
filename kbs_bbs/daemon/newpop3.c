@@ -39,9 +39,12 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#define BBSUID 80
+#define BBSGID 80
 #define BUFSIZE         1024
-#define BBSNAME ".bbs@smth.org"
-#define POP3PORT 110
+#define BBSHOME "/home/system/bbs"
+#define BBSNAME "@bbs.zixia.net"
+#define POP3PORT 3110
 #define BADLOGINFILE "logins.bad"
 
 struct fileheader currentmail;
@@ -476,6 +479,7 @@ char **argv;
 
     if (0 == portnum) portnum = POP3PORT;
 
+
     if(fork())
         exit(0);
     for (n = 0; n<10; n++)
@@ -507,12 +511,6 @@ char **argv;
     signal(SIGTERM,(void *)dokill);
 
     listen(msock,QLEN);
-
-        setgid(BBSGID);
-        setuid(BBSUID);
-        setreuid(BBSUID,BBSUID);
-        setregid(BBSGID,BBSGID);
-        chdir(BBSHOME);
 
 	resolve_ucache();
     while (1) {
@@ -546,8 +544,10 @@ char **argv;
             cfp = fdopen(sock, "r+");
             setbuf(cfp, (char *) 0);
 
-            sprintf(genbuf, "+OK FireBird BBS Pop3 server at %s starting.", strchr(BBSNAME, '@') + 1);
+            sprintf(genbuf, "+OK Pandora BBS Pop3 server at %s starting.", strchr(BBSNAME, '@') + 1);
             outs(genbuf);
+
+            chdir(BBSHOME);
 
             log_usies("CONNECT");
             alarm(0);
@@ -622,11 +622,10 @@ char *user;
 {
 	int uid;
 	uid = getuser(user,&currentuser);
-	if (uid) { 
-		alluser=*currentuser;
-		currentuser=&alluser;
+	if (uid) 
 		return 1;
-	}
+	alluser=*currentuser;
+	currentuser=&alluser;
 	return -1;
 /*    FILE *rec;
     int found=0;
@@ -672,6 +671,7 @@ User()
         outs("-ERR Too few arguments for the user command.");
         return;
     }
+    /*
     if (strstr(cmd, ".bbs") == NULL) {
         sprintf(genbuf, "-ERR Unknown user: \"%s\".", cmd);
         outs(genbuf);
@@ -680,10 +680,11 @@ User()
 
     ptr = strchr(cmd, '.');
     *ptr = '\0';
+    */
     if(get_userdata(cmd)==1)
     {
         strcpy(LowUserid, currentuser->userid);
-        sprintf(genbuf, "+OK Password required for %s.bbs.", cmd);
+        sprintf(genbuf, "+OK Password required for %s.", cmd);
         outs(genbuf);
     }else
     {
@@ -976,7 +977,7 @@ Pass()
     }
 
     if (!checkpasswd2(cmd, currentuser)) {
-        sprintf(genbuf, "-ERR Password supplied for \"%s.bbs\" is incorrect.", LowUserid);
+        sprintf(genbuf, "-ERR Password supplied for \"%s\" is incorrect.", LowUserid);
         outs(genbuf);
         LowUserid[0] = '\0';
         log_usies("ERROR PASSWD");
@@ -1088,7 +1089,7 @@ Quit()
         if (markdel) do_delete();
     }
     log_usies("EXIT");
-    sprintf(genbuf, "+OK FireBird BBS Pop3 server at %s signing off.", strchr(BBSNAME, '@') + 1);
+    sprintf(genbuf, "+OK Pandora BBS Pop3 server at %s signing off.", strchr(BBSNAME, '@') + 1);
     outs(genbuf);
     fclose(cfp);
     close(sock);

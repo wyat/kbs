@@ -176,8 +176,7 @@ new_register()
     }
     newuser.userlevel = PERM_BASIC;
     newuser.userdefine=-1;
-    newuser.userdefine&=~DEF_MAILMSG;
-    newuser.userdefine&=~DEF_EDITMSG;
+    newuser.userdefine &= ~DEF_NOTMSGFRIEND;
     if (convcode)
         newuser.userdefine&=~DEF_USEGB;
 
@@ -258,7 +257,7 @@ int     msize;
             unlink(fname);
             strncpy( email, genbuf, msize );
             move( 10, 0 );
-            prints( "¹§ºØÄú!! ÄúÒÑÍ¨¹ýÉí·ÝÑéÖ¤, ³ÉÎª±¾Õ¾¹«Ãñ. \n" );
+            prints( "¹§ºØÄú!! ÄúÒÑÍ¨¹ýÉí·ÝÑéÖ¤, ³ÉÎª¸«Í·°ïÖÚ. \n" );
             prints( "         ±¾Õ¾ÎªÄúËùÌá¹©µÄ¶îÍâ·þÎñ, \n" );
             prints( "         °üÀ¨Mail,Post,Message,Talk µÈ. \n" );
             prints( "  \n" );
@@ -293,7 +292,7 @@ check_register_info()
 
     /*    if( sysconf_str( "IDENTFILE" ) != NULL ) {  commented out by netty to save time */
     while ( strlen( currentuser->username ) < 2 ) {
-        getdata( 2, 0, "ÇëÊäÈëÄúµÄêÇ³Æ:(ÀýÈç,ÎÒ°®XXX) << ", buf, NAMELEN,DOECHO,NULL ,YEA);
+        getdata( 2, 0, "ÇëÊäÈëÄúµÄêÇ³Æ:(ÀýÈç,Íú²Æ) << ", buf, NAMELEN,DOECHO,NULL ,YEA);
         strcpy(currentuser->username,buf);
         strcpy(uinfo.username,buf);
         UPDATE_UTMP_STR(username,uinfo);
@@ -328,15 +327,15 @@ check_register_info()
                         strncpy( urec->email, genbuf, STRLEN);
                     }
         alex, ÒòÎªÈ¡ÏûÁËemail¹¦ÄÜ , 97.7 */
-        prints( "³ÉÎª±¾Õ¾ºÏ·¨¹«ÃñµÄ·½·¨ÈçÏÂ£º\n\n" );
-        prints( "ÄãµÄÕÊºÅµÄµÚÒ»´ÎµÇÂ¼ºóµÄ 72 Ð¡Ê±ÄÚ£¨[1m[33m²»ÊÇÖ¸ÉÏ BBS 72Ð¡Ê±[m£©£¬\n");
+        prints( "³ÉÎª±¾Õ¾ºÏ·¨°ïÖÚµÄ·½·¨ÈçÏÂ£º\n\n" );
+        prints( "ÄãµÄÕÊºÅµÄµÚÒ»´ÎµÇÂ¼ºóµÄ 30 ·ÖÖÓÄÚ£¨[1m[33m²»ÊÇÖ¸ÉÏ BBS 30 ·ÖÖÓ[m£©£¬\n");
         prints( "    Äã´¦ÓÚÐÂÊÖÉÏÂ·ÆÚ¼ä, ÇëËÄ´¦²Î¹ÛÑ§Ï°ÍøÂçÊ¹ÓÃ·½·¨ºÍ¸÷ÖÖÀñÒÇ¡£\n");
         prints( "    ÔÚ´ËÆÚ¼ä£¬²»ÄÜ×¢²á³ÉÎªºÏ·¨¹«Ãñ¡£\n\n");
-        prints( "¹ýÁËÕâ¿ªÊ¼µÄ 72 Ð¡Ê±, Äã¾Í¿ÉÒÔÔÚ½øÈë±¾Õ¾ÒÔºó£¬\n" );
+        prints( "¹ýÁËÕâ¿ªÊ¼µÄ 30 ·ÖÖÓ, Äã¾Í¿ÉÒÔÔÚ½øÈë±¾Õ¾ÒÔºó£¬\n" );
         prints( "    ÔÚ¡®¸öÈË¹¤¾ßÏä¡¯ÄÚÏêÏ¸×¢²áÕæÊµÉí·Ý£¬\n" );
         prints( "    SYSOPs »á¾¡¿ì¼ì²é²¢È·ÈÏÄãµÄ×¢²áµ¥¡£\n\n" );
         /* Leeward adds below 98.04.26 */
-        prints( "[1m[33mÈç¹ûÄãÒÑ¾­Í¨¹ýÁË×¢²á£¬³ÉÎªÁËºÏ·¨¹«Ãñ£¬È´ÒÀÈ»»¹ÊÇ¿´µ½ÁË±¾ÐÅÏ¢£¬\nÄÇÊÇÒòÎªÄãÃ»ÓÐÔÚ¡®¸öÈË¹¤¾ßÏä¡¯ÄÚÉè¶¨¡®µç×ÓÓÊ¼þÐÅÏä¡¯¡£[m\nÇë´Ó¡®Ö÷Ñ¡µ¥¡¯½øÈë¡®¸öÈË¹¤¾ßÏä¡¯ÄÚ£¬ÔÙ½øÈë¡®Éè¶¨¸öÈË×ÊÁÏ¡¯Ò»Ïî½øÐÐÉè¶¨¡£\nÈç¹ûÄãÊµÔÚÃ»ÓÐÈÎºÎ¿ÉÓÃµÄ¡®µç×ÓÓÊ¼þÐÅÏä¡¯¿ÉÒÔÉè¶¨£¬ÓÖ²»Ô¸Òâ¿´µ½±¾ÐÅÏ¢£¬\n¿ÉÒÔÊ¹ÓÃ [1m[33m%s.bbs@smth.org[m ½øÐÐÉè¶¨¡£\n×¢Òâ¡ÃÉÏÃæ¸ø³öµÄµç×ÓÓÊ¼þÐÅÏä²»ÄÜ½ÓÊÕµç×ÓÓÊ¼þ£¬½ö½öÊÇÓÃÀ´Ê¹ÏµÍ³²»ÔÙÏÔÊ¾±¾ÐÅÏ¢¡£", currentuser->userid);
+        prints( "[1m[33mÈç¹ûÄãÒÑ¾­Í¨¹ýÁË×¢²á£¬³ÉÎªÁËºÏ·¨¹«Ãñ£¬È´ÒÀÈ»»¹ÊÇ¿´µ½ÁË±¾ÐÅÏ¢£¬\nÄÇÊÇÒòÎªÄãÃ»ÓÐÔÚ¡®¸öÈË¹¤¾ßÏä¡¯ÄÚÉè¶¨¡®µç×ÓÓÊ¼þÐÅÏä¡¯¡£[m\nÇë´Ó¡®Ö÷Ñ¡µ¥¡¯½øÈë¡®¸öÈË¹¤¾ßÏä¡¯ÄÚ£¬ÔÙ½øÈë¡®Éè¶¨¸öÈË×ÊÁÏ¡¯Ò»Ïî½øÐÐÉè¶¨¡£\nÈç¹ûÄãÊµÔÚÃ»ÓÐÈÎºÎ¿ÉÓÃµÄ¡®µç×ÓÓÊ¼þÐÅÏä¡¯¿ÉÒÔÉè¶¨£¬ÓÖ²»Ô¸Òâ¿´µ½±¾ÐÅÏ¢£¬\n¿ÉÒÔÊ¹ÓÃ [1m[33m%s@bbs.zixia.net[m ½øÐÐÉè¶¨¡£\n×¢Òâ¡ÃÉÏÃæ¸ø³öµÄµç×ÓÓÊ¼þÐÅÏä²»ÄÜ½ÓÊÕµç×ÓÓÊ¼þ£¬½ö½öÊÇÓÃÀ´Ê¹ÏµÍ³²»ÔÙÏÔÊ¾±¾ÐÅÏ¢¡£", currentuser->userid);
         pressreturn();
     }
     if(!strcmp(currentuser->userid,"SYSOP"))
@@ -432,7 +431,7 @@ check_register_info()
         /*  above lines added by netty...  */
     }
     newregfile = sysconf_str( "NEWREGFILE" );
-    if( currentuser->lastlogin - currentuser->firstlogin < 3*86400 &&
+    if( currentuser->lastlogin - currentuser->firstlogin < 3*1800 &&
             !HAS_PERM( PERM_SYSOP) && newregfile != NULL ) {
         currentuser->userlevel &= ~(perm);
         ansimore( newregfile, YEA );
