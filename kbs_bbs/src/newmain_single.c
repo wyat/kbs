@@ -181,7 +181,7 @@ void u_enter()
         exit(-1);
     }
 
-    getfriendstr(getCurrentUser(),get_utmpent(utmpent));
+    getfriendstr(getCurrentUser(),get_utmpent(utmpent), getSession());
     listmode = 0;
 }
 
@@ -222,7 +222,7 @@ void u_exit()
         setflags(CLOAK_FLAG, uinfo.invisible);
 
 #ifdef HAVE_BRC_CONTROL
-    brc_update(getCurrentUser()->userid);
+    brc_update(getCurrentUser()->userid, getSession());
 #endif
 
     if (utmpent > 0)
@@ -765,7 +765,7 @@ void notepad_init()
                 else {
                     sprintf(notetitle, "[%.10s] %s", ctime(&now), ntitle);
                     if (dashf(fname)) {
-                        post_file(getCurrentUser(), "", fname, bname, notetitle, 0, 1);
+                        post_file(getCurrentUser(), "", fname, bname, notetitle, 0, 1, getSession());
                         sprintf(tmp, "%s 自动张贴", ntitle);
                         bbslog("user","%s",tmp);
                     }
@@ -775,7 +775,7 @@ void notepad_init()
         }
         sprintf(notetitle, "[%.10s] 留言板记录", ctime(&now));
         if (dashf("etc/notepad")) {
-            post_file(getCurrentUser(), "", "etc/notepad", "notepad", notetitle, 0, 1);
+            post_file(getCurrentUser(), "", "etc/notepad", "notepad", notetitle, 0, 1, getSession());
             unlink("etc/notepad");
         }
         bbslog("user","%s","自动发信时间更改");
@@ -1011,7 +1011,7 @@ void main_bbs(int convit, char *argv)
     initscr();
 
     convcode = convit;
-    conv_init();                /* KCN,99.09.05 */
+    conv_init(getSession());                /* KCN,99.09.05 */
 
     system_init();
     if (setjmp(byebye)) {
@@ -1236,7 +1236,7 @@ void showtitle( char *title, char*mid)
         if (currboard==NULL)
             currboardent=0;
 #ifdef HAVE_BRC_CONTROL
-        brc_initial(getCurrentUser()->userid, DEFAULTBOARD);
+        brc_initial(getCurrentUser()->userid, DEFAULTBOARD, getSession());
 #endif
         if (currboardent) {
             selboard = 1;

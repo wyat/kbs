@@ -118,7 +118,7 @@ char *str;
     if ((se = fopen(fname, "w")) != NULL) {
         fprintf(se, "%s\n", str);
         fclose(se);
-        post_file(getCurrentUser(), "", fname, currboard->filename, title, 0, 2);
+        post_file(getCurrentUser(), "", fname, currboard->filename, title, 0, 2, getSession());
         unlink(fname);
         modify_user_mode(savemode);
     }
@@ -168,7 +168,7 @@ void securityreport(char *str, struct userec *lookupuser, char fdata[7][STRLEN])
                  * getuinfo(se, getCurrentUser());rem by Haohmaru.99.4.16 
                  */
                 fclose(se);
-                post_file(getCurrentUser(), "", fname, "Registry", str, 0, 2);
+                post_file(getCurrentUser(), "", fname, "Registry", str, 0, 2, getSession());
             } else if (strstr(str, "删除使用者：")) {
                 fprintf(se, "系统安全记录系统\n\033[32m原因：%s\033[m\n", str);
                 fprintf(se, "以下是被删者个人资料");
@@ -176,7 +176,7 @@ void securityreport(char *str, struct userec *lookupuser, char fdata[7][STRLEN])
                 fprintf(se, "\n以下是删除者个人资料");
                 getuinfo(se, getCurrentUser());
                 fclose(se);
-                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2);
+                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2, getSession());
             } else if ((ptr = strstr(str, "的权限XPERM")) != NULL) {
                 int oldXPERM, newXPERM;
                 int num;
@@ -214,14 +214,14 @@ void securityreport(char *str, struct userec *lookupuser, char fdata[7][STRLEN])
                 fprintf(se, "\n以下是修改者个人资料");
                 getuinfo(se, getCurrentUser());
                 fclose(se);
-                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2);
+                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2, getSession());
             } else {            /* Modified for change id by Bigman 2001.5.25 */
 
                 fprintf(se, "系统安全记录系统\x1b[32m原因：%s\x1b[m\n", str);
                 fprintf(se, "以下是个人资料");
                 getuinfo(se, lookupuser);
                 fclose(se);
-                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2);
+                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2, getSession());
             }
         } else {
             fprintf(se, "系统安全记录系统\n\033[32m原因：%s\033[m\n", str);
@@ -229,9 +229,9 @@ void securityreport(char *str, struct userec *lookupuser, char fdata[7][STRLEN])
             getuinfo(se, getCurrentUser());
             fclose(se);
             if (strstr(str, "设定使用者注册资料"))      /* Leeward 98.03.29 */
-                post_file(getCurrentUser(), "", fname, "Registry", str, 0, 2);
+                post_file(getCurrentUser(), "", fname, "Registry", str, 0, 2, getSession());
             else
-                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2);
+                post_file(getCurrentUser(), "", fname, "syssecurity", str, 0, 2, getSession());
         }
         unlink(fname);
         modify_user_mode(savemode);
@@ -393,7 +393,7 @@ int m_newbrd()
         else
             sprintf(vbuf, "%-38.38s", newboard.title + 13);
 
-        if (add_grp(group, newboard.filename, vbuf, cexplain) == -1)
+        if (add_grp(group, newboard.filename, vbuf, cexplain, getSession()) == -1)
             prints("\n成立精华区失败....\n");
         else
             prints("已经置入精华区...\n");
@@ -717,7 +717,7 @@ int m_editbrd()
                         else
                             sprintf(vbuf, "%-38.38s", newfh.title + 13);
 
-                        if (add_grp(group, newfh.filename, vbuf, cexplain) == -1)
+                        if (add_grp(group, newfh.filename, vbuf, cexplain, getSession()) == -1)
                             prints("\n成立精华区失败....\n");
                         else
                             prints("已经置入精华区...\n");

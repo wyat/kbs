@@ -569,7 +569,7 @@ int do_send(char *userid, char *title, char *q_file)
                 /*
                  * res = bbs_sendmail( tmp_fname, title, userid );  
                  */
-                res = bbs_sendmail(tmp_fname, title, userid, isuu, isbig5, noansi);
+                res = bbs_sendmail(tmp_fname, title, userid, isuu, isbig5, noansi,getSession());
 
                 newbbslog(BBSLOG_USER, "mailed %s %s", userid, title);
                 break;
@@ -1190,7 +1190,7 @@ static int mail_edit(struct _select_def* conf, struct fileheader *fileinfo,void*
     if (vedit_post(genbuf, false, &eff_size,&attachpos) != -1) {
         fileinfo->eff_size = eff_size;
         if (ADD_EDITMARK)
-            add_edit_mark(genbuf, 1, /*NULL*/ fileinfo->title);
+            add_edit_mark(genbuf, 1, /*NULL*/ fileinfo->title,getSession());
         if (attachpos!=fileinfo->attachment) {
             fileinfo->attachment=attachpos;
             substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
@@ -1229,7 +1229,7 @@ static int mail_edit_title(struct _select_def* conf, struct fileheader *fileinfo
 		strcpy(tmp,arg->direct);
 		if((t = strrchr(tmp,'/')) != NULL)*t='\0';
 		sprintf(genbuf,"%s/%s",tmp,fileinfo->filename);
-		add_edit_mark(genbuf,3,buf); /* 3 means edit mail and title */
+		add_edit_mark(genbuf,3,buf,getSession()); /* 3 means edit mail and title */
 		substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
 	    newbbslog(BBSLOG_USER, "edited mail '%s' ", fileinfo->title);
 	}
@@ -2122,7 +2122,7 @@ int doforward(char *direct, struct fileheader *fh, int isuu)
 		modify_user_mode(SMAIL);
         if (vedit(fname, false, NULL, &fh->attachment) != -1) {
             if (ADD_EDITMARK)
-                add_edit_mark(fname, 1, fh->title);
+                add_edit_mark(fname, 1, fh->title,getSession());
         }
 		modify_user_mode(oldmode);
         y = 2;
@@ -2217,7 +2217,7 @@ int doforward(char *direct, struct fileheader *fh, int isuu)
          * return_no = bbs_sendmail(fname, title, receiver); 
          */
 
-        return_no = bbs_sendmail(fname, title, receiver, isuu, isbig5, noansi);
+        return_no = bbs_sendmail(fname, title, receiver, isuu, isbig5, noansi,getSession());
     }
     if (return_no==0)
         newbbslog(BBSLOG_USER, "forwarded file to %s", receiver);
@@ -2263,7 +2263,7 @@ static int m_clean()
         struct write_dir_arg dirarg;
         init_write_dir_arg(&dirarg);
         dirarg.filename=buf;
-        delete_range(&dirarg, 1, num, 1, DIR_MODE_MAIL,NULL);
+        delete_range(&dirarg, 1, num, 1, DIR_MODE_MAIL,NULL,getSession());
     }
     move(0, 0);
     setmailfile(buf, getCurrentUser()->userid, mail_sysbox[2]);
@@ -2272,7 +2272,7 @@ static int m_clean()
         struct write_dir_arg dirarg;
         init_write_dir_arg(&dirarg);
         dirarg.filename=buf;
-        delete_range(&dirarg, 1, num, 1, DIR_MODE_MAIL,NULL);
+        delete_range(&dirarg, 1, num, 1, DIR_MODE_MAIL,NULL,getSession());
     }
 	/*
     if (user_mail_list.mail_list_t) {
@@ -2549,7 +2549,7 @@ static int maillist_key(struct _select_def *conf, int command)
         f_touch(buf);
         strncpy(user_mail_list.mail_list[user_mail_list.mail_list_t] + 30, bname, 9);
         user_mail_list.mail_list_t++;
-        save_mail_list(&user_mail_list);
+        save_mail_list(&user_mail_list,getSession());
         x = 0;
 
         y = 3 + (20 - user_mail_list.mail_list_t) / 2;
@@ -2580,7 +2580,7 @@ static int maillist_key(struct _select_def *conf, int command)
             for (j = p; j < user_mail_list.mail_list_t - 1; j++)
                 memcpy(user_mail_list.mail_list[j], user_mail_list.mail_list[j + 1], sizeof(user_mail_list.mail_list[j]));
             user_mail_list.mail_list_t--;
-            save_mail_list(&user_mail_list);
+            save_mail_list(&user_mail_list,getSession());
             y = 3 + (20 - user_mail_list.mail_list_t) / 2;
             arg->numbers--;
             conf->item_count = arg->numbers;
@@ -2610,7 +2610,7 @@ static int maillist_key(struct _select_def *conf, int command)
         getdata(0, 0, "输入信箱中文名: ", bname, 30, DOECHO, NULL, false);
         if (bname[0]) {
             strcpy(user_mail_list.mail_list[i], bname);
-            save_mail_list(&user_mail_list);
+            save_mail_list(&user_mail_list,getSession());
             return SHOW_REFRESH;
         }
         return SHOW_REFRESH;
@@ -3148,7 +3148,7 @@ static int set_mailgroup_list_key(struct _select_def *conf, int key)
             if (ans[0] == 'Y' || ans[0] == 'y') {
                 delete_mailgroup_item(getCurrentUser()->userid, &(arg->mail_group), conf->pos - 1);
                 if (conf->item_count == 0) {
-                    add_default_mailgroup_item(getCurrentUser()->userid, &(arg->mail_group));
+                    add_default_mailgroup_item(getCurrentUser()->userid, &(arg->mail_group),getSession());
                 }
             }
             return SHOW_DIRCHANGE;
@@ -3288,7 +3288,7 @@ static int init_mailgroup_list(mailgroup_list_t * mgl)
         }
     }
     if (initialized == 0) {
-        add_default_mailgroup_item(getCurrentUser()->userid, mgl);
+        add_default_mailgroup_item(getCurrentUser()->userid, mgl,getSession());
         initialized++;
     }
     move(y, 0);

@@ -108,7 +108,7 @@ int find_nextnew(struct _select_def* conf,int begin)
             nowFh=pFh+begin-1;
             found=false;
             for (i=begin-1;i<size/sizeof(struct fileheader);i++,nowFh++) {
-                if (brc_unread(nowFh->id)) {
+                if (brc_unread(nowFh->id, getSession())) {
                     found=true;
                     break;
                 }
@@ -143,7 +143,7 @@ int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int e
                     return APPLY_QUIT;
                 }
             } else {
-            if (brc_unread(fh->id)) {
+            if (brc_unread(fh->id, getSession())) {
                 conf->new_pos=ent;
 				if (mode==SR_FIRSTNEW)
                     return APPLY_CONTINUE;

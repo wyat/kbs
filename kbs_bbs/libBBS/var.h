@@ -104,4 +104,8 @@ typedef struct {
 
 	int utmpent;
 } session_t;
+
+#ifndef THREADSAFE
+#define getCurrentUser() (g_session.currentuser)
+#endif
 #endif

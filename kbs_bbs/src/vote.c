@@ -265,12 +265,12 @@ int b_jury_edit(struct _select_def* conf,struct fileheader *fileinfo,void* extra
         if (aborted == 111) {
             sprintf(secu, "删除 %s 版的仲裁委员名单", currboard->filename);
             securityreport(secu, NULL, NULL);
-            post_file(getCurrentUser(), "", buf, "JuryMail", secu, 0, 2);
+            post_file(getCurrentUser(), "", buf, "JuryMail", secu, 0, 2, getSession());
         } else {
             sprintf(secu, "修改 %s 版的仲裁委员名单", currboard->filename);
             securityreport(secu, NULL, NULL);
-            post_file(getCurrentUser(), "", buf, "syssecurity", secu, 0, 2);
-            post_file(getCurrentUser(), "", buf, "JuryMail", secu, 0, 2);
+            post_file(getCurrentUser(), "", buf, "syssecurity", secu, 0, 2, getSession());
+            post_file(getCurrentUser(), "", buf, "JuryMail", secu, 0, 2, getSession());
         }
         setvfile(buf, currboard->filename, "juryrec");
         my_unlink(buf);
@@ -496,9 +496,9 @@ static int mk_result(int num)
     if (normal_board(currboard->filename))
 #endif
     {
-        post_file(getCurrentUser(), "", nname, "vote", title, 0, 1);
+        post_file(getCurrentUser(), "", nname, "vote", title, 0, 1, getSession());
     }
-    post_file(getCurrentUser(), "", nname, currboard->filename, title, 0, 1);
+    post_file(getCurrentUser(), "", nname, currboard->filename, title, 0, 1, getSession());
     dele_vote(num);
     return 0;
 }
@@ -778,9 +778,9 @@ char *bname;
             post_file(getCurrentUser(), "", votename, "vote", buf, 0, 1);
 #else
             if (!normal_board(bname)) {
-                post_file(getCurrentUser(), "", votename, bname, buf, 0, 1);
+                post_file(getCurrentUser(), "", votename, bname, buf, 0, 1, getSession());
             } else {
-                post_file(getCurrentUser(), "", votename, "vote", buf, 0, 1);
+                post_file(getCurrentUser(), "", votename, "vote", buf, 0, 1, getSession());
             }
 #endif
             unlink(votename);

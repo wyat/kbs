@@ -43,7 +43,6 @@ void a_report();                /*Haohmaru.99.12.06.版主精华区操作记录，作为考查
 extern void a_prompt();         /* added by netty */
 int t_search_down();
 int t_search_up();
-int a_loadnames(MENU * pm);     /* 装入 .Names */
 #define BLK_SIZ 10240
 
 static char *import_path[ANNPATH_NUM];  /*多丝路 */
@@ -170,7 +169,7 @@ static int a_select_path_key(struct _select_def *conf, int key)
     case 'R':
     case 'r':
         free_import_path(import_path,import_title,&import_path_time);
-        load_import_path(import_path,import_title,&import_path_time,&import_path_select);
+        load_import_path(import_path,import_title,&import_path_time,&import_path_select, getSession());
         return SHOW_DIRCHANGE;
     case 'a':
     case 'A':
@@ -189,7 +188,7 @@ static int a_select_path_key(struct _select_def *conf, int key)
                 new_title[STRLEN - 1] = 0;
                 import_title[conf->pos - 1] = (char *) malloc(strlen(new_title) + 1);
                 strcpy(import_title[conf->pos - 1], new_title);
-        		save_import_path(import_path,import_title,&import_path_time);
+        		save_import_path(import_path,import_title,&import_path_time, getSession());
                 return SHOW_DIRCHANGE;
             }
             return SHOW_REFRESH;
@@ -205,7 +204,7 @@ static int a_select_path_key(struct _select_def *conf, int key)
                 free(import_title[conf->pos - 1]);
                 import_title[conf->pos - 1] = (char *) malloc(1);
                 import_title[conf->pos - 1][0] = 0;
-        		save_import_path(import_path,import_title,&import_path_time);
+        		save_import_path(import_path,import_title,&import_path_time, getSession());
                 return SHOW_DIRCHANGE;
             }
             return SHOW_REFRESH;
@@ -230,7 +229,7 @@ static int a_select_path_key(struct _select_def *conf, int key)
                     tmp = import_path[conf->pos - 1];
                     import_path[conf->pos - 1] = import_path[new_pos - 1];
                     import_path[new_pos - 1] = tmp;
-        			save_import_path(import_path,import_title,&import_path_time);
+        			save_import_path(import_path,import_title,&import_path_time, getSession());
                     conf->pos = new_pos;
                     return SHOW_DIRCHANGE;
                 }
@@ -292,7 +291,7 @@ static int a_select_path(bool save_mode)
     a_select_path_arg arg;
 
     clear();
-    load_import_path(import_path,import_title,&import_path_time,&import_path_select);
+    load_import_path(import_path,import_title,&import_path_time,&import_path_select, getSession());
     arg.save_mode = save_mode;
     arg.show_path = false;
     pts = (POINT *) malloc(sizeof(POINT) * ANNPATH_NUM);
@@ -682,7 +681,7 @@ int ent;
          * }
          */
 
-        a_loadnames(&pm);
+        a_loadnames(&pm, getSession());
         ann_get_postfilename(fname, fileinfo, &pm);
         sprintf(bname, "%s/%s", pm.path, fname);
         sprintf(buf, "%-38.38s %s ", fileinfo->title, getCurrentUser()->userid);
@@ -916,13 +915,13 @@ int mode;
                 bmlog(getCurrentUser()->userid, currboard->filename, 13, 1);
         } else {
             //retry
-            a_loadnames(pm);
+            a_loadnames(pm, getSession());
             a_additem(pm, buf, fname, NULL, 0, attachpos);
             if (a_savenames(pm) != 0) {
                 sprintf(buf, " 整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
                 a_prompt(-1, buf, ans);
             }
-            a_loadnames(pm);
+            a_loadnames(pm, getSession());
         }
     }
 }
@@ -961,7 +960,7 @@ MENU *pm;
 
         sprintf(buf, " 整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
         a_prompt(-1, buf, ans);
-        a_loadnames(pm);
+        a_loadnames(pm, getSession());
     }
 }
 
@@ -1119,7 +1118,7 @@ int paste;
                     }
 
                     pm2.path = uppath;
-                    a_loadnames(&pm2);
+                    a_loadnames(&pm2, getSession());
 
                     for (k = 0; k < pm2.num; k++)
                         if (!strcmp(pm2.item[k]->fname, filename))
@@ -1148,13 +1147,13 @@ int paste;
                     a_report(buf);
                 } else {
                     //retry
-                    a_loadnames(pm);
+                    a_loadnames(pm, getSession());
                     a_additem(pm, title, filename, NULL, 0, attachpos);
                     if (a_savenames(pm) != 0) {
                         sprintf(buf, " 整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
                         a_prompt(-1, buf, ans);
                     }
-                    a_loadnames(pm);
+                    a_loadnames(pm, getSession());
                 }
             } else if ((ans[0] == 'L' || ans[0] == 'l') && (iscut == 0)) {
                 char buf[256];
@@ -1172,13 +1171,13 @@ int paste;
                     a_report(buf);
                 } else {
                     //retry
-                    a_loadnames(pm);
+                    a_loadnames(pm, getSession());
                     a_additem(pm, title, filename, NULL, 0, attachpos);
                     if (a_savenames(pm) != 0) {
                         sprintf(buf, " 整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
                         a_prompt(-1, buf, ans);
                     }
-                    a_loadnames(pm);
+                    a_loadnames(pm, getSession());
                 }
             }
         }
@@ -1251,7 +1250,7 @@ MENU *pm;
 
         sprintf(buf, " 删除失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
         a_prompt(-1, buf, ans);
-        a_loadnames(pm);
+        a_loadnames(pm, getSession());
     }
 }
 
@@ -1288,7 +1287,7 @@ MENU *pm;
 
             sprintf(buf, "整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
             a_prompt(-1, buf, ans);
-            a_loadnames(pm);
+            a_loadnames(pm, getSession());
         }
         mesg = "文件名更改失败 !!";
     }
@@ -1379,7 +1378,7 @@ void a_manager(MENU *pm,int ch)
             getdata(t_lines - 2, 0, "设定丝路名:", ans, STRLEN - 1, DOECHO, NULL, false);
             import_title[i] = malloc(strlen(ans) + 1);
             strcpy(import_title[i], ans);
-        	save_import_path(import_path,import_title,&import_path_time);
+        	save_import_path(import_path,import_title,&import_path_time, getSession());
         }
         break;
 	/* add by stiger,20030502 */
@@ -1479,7 +1478,7 @@ void a_manager(MENU *pm,int ch)
 
                     sprintf(genbuf, "整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
                     a_prompt(-1, genbuf, ans);
-                    a_loadnames(pm);
+                    a_loadnames(pm, getSession());
                 }
             }
             pm->page = 9999;
@@ -1498,7 +1497,7 @@ void a_manager(MENU *pm,int ch)
                         ITEM saveitem;
                         saveitem=*item;
                         /* retry */
-                        a_loadnames(pm);
+                        a_loadnames(pm, getSession());
                         for (i=0;i<pm->num;i++) {
                             if (!strcmp(pm->item[i]->fname,saveitem.fname)) {
                                 pm->item[i]->attachpos=attachpos;
@@ -1570,7 +1569,7 @@ int lastlevel, lastbmonly;
     strcpy(me.mtitle, maintitle);
     me.level = lastlevel;
     bmonly = lastbmonly;
-    a_loadnames(&me);           /* Load .Names */
+    a_loadnames(&me, getSession());           /* Load .Names */
 
     strcpy(buf, me.mtitle);
     bmstr = strstr(buf, "(BM:");
@@ -1684,7 +1683,7 @@ int lastlevel, lastbmonly;
                     }
                     sprintf(tmp, "你确定要转贴到 %s 版吗", bname);
                     if (askyn(tmp, 0) == 1) {
-                        post_file(getCurrentUser(), "", fname, bname, me.item[me.now]->title, 0, 2);
+                        post_file(getCurrentUser(), "", fname, bname, me.item[me.now]->title, 0, 2, getSession());
                         move(2, 0);
                         sprintf(tmp, "\033[1m已经帮你转贴至 %s 版了\033[m", bname);
                         prints(tmp);
@@ -1757,7 +1756,7 @@ int lastlevel, lastbmonly;
                     }
                 } else if (dashd(fname)) {
                     a_menu(me.item[me.now]->title, fname, me.level, bmonly);
-                    a_loadnames(&me);   /* added by bad 03-2-10 */
+                    a_loadnames(&me, getSession());   /* added by bad 03-2-10 */
                 }
                 me.page = 9999;
             }
@@ -1867,7 +1866,7 @@ char bname[STRLEN], title[STRLEN];
     my_f_rm(bpath);
 
     pm.path = gpath;
-    a_loadnames(&pm);
+    a_loadnames(&pm, getSession());
     for (i = 0; i < pm.num; i++) {
         strcpy(buf2, pm.item[i]->title);
         strcpy(check, strtok(pm.item[i]->fname, "/~\n\b"));
@@ -1881,7 +1880,7 @@ char bname[STRLEN], title[STRLEN];
 
                 sprintf(buf, "整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
                 a_prompt(-1, buf, ans);
-                a_loadnames(&pm);
+                a_loadnames(&pm, getSession());
             }
             break;
         }
@@ -1917,7 +1916,7 @@ int edit_grp(char bname[STRLEN], char title[STRLEN], char newtitle[100])
     *ptr = '\0';
 
     pm.path = gpath;
-    a_loadnames(&pm);
+    a_loadnames(&pm, getSession());
     for (i = 0; i < pm.num; i++) {
         strcpy(buf2, pm.item[i]->title);
         if (strstr(buf2, title) && strstr(pm.item[i]->fname, bname)) {
@@ -1930,17 +1929,17 @@ int edit_grp(char bname[STRLEN], char title[STRLEN], char newtitle[100])
 
         sprintf(buf, "整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
         a_prompt(-1, buf, ans);
-        a_loadnames(&pm);
+        a_loadnames(&pm, getSession());
     }
     pm.path = bpath;
-    a_loadnames(&pm);
+    a_loadnames(&pm, getSession());
     strncpy(pm.mtitle, newtitle, STRLEN);
     if (a_savenames(&pm) != 0) {
         char buf[80], ans[40];
 
         sprintf(buf, "整理精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
         a_prompt(-1, buf, ans);
-        a_loadnames(&pm);
+        a_loadnames(&pm, getSession());
     }
 
     a_freenames(&pm);

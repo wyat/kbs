@@ -30,7 +30,7 @@
 #include <sys/sem.h>
 
 extern char *getenv();
-static const char *invalid[] = {
+static const char *const invalid[] = {
    /* "unknown@",*/
     "root@",
     "gopher@",

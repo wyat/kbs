@@ -161,7 +161,7 @@ int mode;
     /*
      * try to send the msg 
      */
-    result = sendmsgfunc(uin, msgstr, mode);
+    result = sendmsgfunc(uin, msgstr, mode, getSession());
 
     switch (result) {
     case 1:                    /* success */
@@ -204,7 +204,7 @@ int mode;
     /*
      * resend the message 
      */
-    result = sendmsgfunc(uin, buf, mode);
+    result = sendmsgfunc(uin, buf, mode, getSession());
 
     switch (result) {
     case 1:                    /* success */
@@ -267,14 +267,14 @@ int show_allmsgs()
             i = page;
             load_msghead(all?2:0, getCurrentUser()->userid, i, &head);
             load_msgtext(getCurrentUser()->userid, &head, buf);
-            j = translate_msg(buf, &head, showmsg);
+            j = translate_msg(buf, &head, showmsg, getSession());
             while(y<=t_lines-1) {
                 y+=j; i++;
                 prints("%s", showmsg);
                 if(i>=count) break;
                 load_msghead(all?2:0, getCurrentUser()->userid, i, &head);
                 load_msgtext(getCurrentUser()->userid, &head, buf);
-                j = translate_msg(buf, &head, showmsg);
+                j = translate_msg(buf, &head, showmsg, getSession());
             }
         }
         move(t_lines-1,0);
@@ -369,7 +369,7 @@ reenter:
                 break;
             case 'm':
             case 'M':
-                if(count!=0)mail_msg(getCurrentUser());
+                if(count!=0)mail_msg(getCurrentUser(), getSession());
                 goto outofhere;
             default:
                 goto reenter;
@@ -519,7 +519,7 @@ void r_msg()
         int reg=0;
         load_msghead(1, getCurrentUser()->userid, now, &head);
         load_msgtext(getCurrentUser()->userid, &head, buf);
-        translate_msg(buf, &head, outmsg);
+        translate_msg(buf, &head, outmsg, getSession());
         
         if (first&&hasnewmsg&&DEFINE(getCurrentUser(), DEF_SOUNDMSG)&&(head.mode!=6))
             bell();
@@ -637,7 +637,7 @@ void r_msg()
                             }
                             else
 #endif
-                                i = sendmsgfunc(uin, buf, 4);
+                                i = sendmsgfunc(uin, buf, 4, getSession());
                         }
                         buf[0]=0;
                         if(i==1) strcpy(buf, "\033[1m帮你送出讯息了\033[m");
@@ -702,7 +702,7 @@ int myfriend_wall(struct user_info *uin, char *buf, int i)
 {
     if ((uin->pid - uinfo.pid == 0) || !uin->active || !uin->pid || !canmsg(getCurrentUser(), uin))
         return -1;
-    if (myfriend(uin->uid, NULL)) {
+    if (myfriend(uin->uid, NULL, getSession())) {
         move(1, 0);
         clrtoeol();
         prints("\x1b[1;32m正在送讯息给 %s...  \x1b[m", uin->userid);

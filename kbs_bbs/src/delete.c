@@ -59,7 +59,7 @@ int d_board()
     if (genbuf[0] == '\0')
         return 0;
     strcpy(bname, genbuf);
-    if (delete_board(bname, title) != 0)
+    if (delete_board(bname, title,getSession()) != 0)
         return 0;
     if (seek_in_file("0Announce/.Search", bname)) {
 #ifdef BBSMAIN
@@ -161,7 +161,7 @@ void suicide()
         fprintf(fn, "\n                      \033[1m 系统自动发信系统留\033[m\n");
         fclose(fn);
         sprintf(buf, "%s 的自杀通知", getCurrentUser()->userid);
-        post_file(getCurrentUser(), "", filename, "Goodbye", buf, 0, 1);
+        post_file(getCurrentUser(), "", filename, "Goodbye", buf, 0, 1,getSession());
         unlink(filename);
 
         /*kick_user(&uinfo);

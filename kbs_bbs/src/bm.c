@@ -303,7 +303,7 @@ int addtodeny(char *uident)
         }
         fprintf(fn, "                              %s\n", ctime(&now));
         fclose(fn);
-        post_file(getCurrentUser(), "", filename, currboard->filename, buffer, 0, 2);
+        post_file(getCurrentUser(), "", filename, currboard->filename, buffer, 0, 2, getSession());
         /*
          * unlink(filename); 
          */
@@ -316,7 +316,7 @@ int addtodeny(char *uident)
             sprintf(buffer, "%s 封某版" NAME_BM " %s 在 %s", getCurrentUser()->userid, uident, currboard->filename);
         else
             sprintf(buffer, "%s 封 %s 在 %s", getCurrentUser()->userid, uident, currboard->filename);
-        post_file(getCurrentUser(), "", filename, "denypost", buffer, 0, 8);
+        post_file(getCurrentUser(), "", filename, "denypost", buffer, 0, 8, getSession());
         unlink(filename);
         bmlog(getCurrentUser()->userid, currboard->filename, 10, 1);
     }
@@ -442,7 +442,7 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             move(1, 0);
             clrtoeol();
             if (uident[0] != '\0') {
-                if (deldeny(getCurrentUser(), currboard->filename, uident, 0)) {
+                if (deldeny(getCurrentUser(), currboard->filename, uident, 0, getSession())) {
                 }
             }
         } else if (count > 20 && isdigit(ans[0])) {
@@ -612,7 +612,7 @@ int clubmember(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
                     sprintf(tempbuf,"附加说明:%s",comment);
                     sprintf(genbuf, "%s 由 %s 授予 %s 俱乐部权力", uident, getCurrentUser()->userid, currboard->filename);
                     /*securityreport(genbuf, NULL, NULL);*/
-                    mail_buf(getCurrentUser(), tempbuf, uident, genbuf);
+                    mail_buf(getCurrentUser(), tempbuf, uident, genbuf, getSession());
                     deliverreport(genbuf, tempbuf);
                 }
             }
@@ -636,7 +636,7 @@ int clubmember(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
 
 	                     sprintf(genbuf, " %s 被 %s 取消 %s 俱乐部权力", uident, getCurrentUser()->userid, currboard->filename);
 	                     /*securityreport(genbuf, NULL, NULL);*/
-	                    	mail_buf(getCurrentUser(), tempbuf, uident, genbuf);
+	                    	mail_buf(getCurrentUser(), tempbuf, uident, genbuf, getSession());
 	                    	deliverreport(genbuf, tempbuf);
                     }
             }

@@ -160,7 +160,7 @@ char userid[IDLEN];
 }
 int t_printstatus(struct user_info *uentp, int *arg, int pos)
 {
-    char buf[80],buf2[20];
+    char buf[80],buf2[20],buf3[80];
     char* p;
     if (uentp->invisible == 1) {
         if (!HAS_PERM(getCurrentUser(), PERM_SEECLOAK))
@@ -170,10 +170,10 @@ int t_printstatus(struct user_info *uentp, int *arg, int pos)
     if (*arg == 1)
         strcpy(genbuf, "目前在站上，状态如下：\n");
 
-    p = idle_str(uentp);
+    p = idle_str(buf3,uentp);
     if(p[0]==' '&&p[1]==' ') buf2[0]=0;
     else sprintf(buf2, "[%s]", p);
-    sprintf(buf, "%s\033[1m%s\033[m%s ", uentp->invisible?"\033[32m":"", modestring(uentp->mode, uentp->destuid, 0,   /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
+    sprintf(buf, "%s\033[1m%s\033[m%s ", uentp->invisible?"\033[32m":"", modestring(buf3,uentp->mode, uentp->destuid, 0,   /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
                                           (uentp->in_chat ? uentp->chatid : NULL)), buf2);
     strcat(genbuf, buf);
 
@@ -190,12 +190,12 @@ struct _tag_talk_showstatus {
 };
 int talk_showstatus(struct user_info *uentp, struct _tag_talk_showstatus *arg, int pos)
 {
-    char buf[80];
+    char buf[80],buf2[80];
 
     if (uentp->invisible && !HAS_PERM(getCurrentUser(), PERM_SEECLOAK))
         return 0;
     arg->pos[arg->count++] = pos;
-    sprintf(buf, "(%d) 目前状态: %s, 来自: %s \n", arg->count, modestring(uentp->mode, uentp->destuid, 0,       /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
+    sprintf(buf, "(%d) 目前状态: %s, 来自: %s \n", arg->count, modestring(buf2,uentp->mode, uentp->destuid, 0,       /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
                                                                           uentp->in_chat ? uentp->chatid : NULL), uentp->from);
     strcat(genbuf, buf);
     return COUNT;
@@ -434,7 +434,7 @@ int alcounter(struct user_info *uentp, char *arg, int pos)
     if (!uentp->active || !uentp->pid)
         return 0;
     canseecloak = (!HAS_PERM(getCurrentUser(), PERM_SEECLOAK) && uentp->invisible) ? 0 : 1;
-    if (myfriend(uentp->uid, NULL)) {
+    if (myfriend(uentp->uid, NULL,getSession())) {
         count_friends++;
         if (!canseecloak)
             count_friends--;
@@ -1306,8 +1306,7 @@ struct user_info *uentp;
     int pageusers = 60;
     extern struct user_info *user_record[];
     extern int range;
-
-    fill_userlist();
+	char buf[80];
     if (ulistpage > ((range - 1) / pageusers))
         ulistpage = 0;
     if (ulistpage < 0)
@@ -1327,7 +1326,7 @@ struct user_info *uentp;
         else
             ovv = false;
         sprintf(ubuf, "%s%-12.12s %s%-10.10s\033[m", (ovv) ? "\033[32m．" : "  ", user_record[i]->userid, (user_record[i]->invisible == true) ? "\033[34m" : "",
-                modestring(user_record[i]->mode, user_record[i]->destuid, 0, NULL));
+                modestring(buf,user_record[i]->mode, user_record[i]->destuid, 0, NULL));
         prints("%s", ubuf);
         if ((i + 1) % 3 == 0)
             prints("\n");
@@ -1630,7 +1629,7 @@ char *uident;
         clrtoeol();
         return -1;
     }
-    if (myfriend(searchuser(uident), NULL))
+    if (myfriend(searchuser(uident), NULL,getSession()))
         return -1;
     if (uinfo.mode != LUSERS && uinfo.mode != LAUSERS && uinfo.mode != FRIEND) {
         strcpy(tmp.id, uident);
@@ -1648,7 +1647,7 @@ char *uident;
     sethomefile(genbuf, getCurrentUser()->userid, "friends");
     n = append_record(genbuf, &tmp, sizeof(struct friends));
     if (n != -1)
-        getfriendstr(getCurrentUser(),get_utmpent(utmpent));
+        getfriendstr(getCurrentUser(),get_utmpent(utmpent),getSession());
     else
         bbslog("user","%s","append friendfile error");
     return n;
@@ -1662,7 +1661,7 @@ int deleteoverride(char *uident)
     deleted = search_record(genbuf, &fh, sizeof(fh), (RECORD_FUNC_ARG) cmpfnames, uident);
     if (deleted > 0) {
         if (delete_record(genbuf, sizeof(fh), deleted, NULL, NULL) == 0)
-            getfriendstr(getCurrentUser(),get_utmpent(utmpent));
+            getfriendstr(getCurrentUser(),get_utmpent(utmpent),getSession());
         else {
             deleted = -1;
             bbslog("user","%s","delete friend error");

@@ -36,8 +36,8 @@ char *cmd;
 static int clear_all_board_read_flag_func(struct boardheader *bh,void* arg)
 {
 #ifdef HAVE_BRC_CONTROL
-    if (brc_initial(getCurrentUser()->userid, bh->filename) != 0)
-        brc_clear();
+    if (brc_initial(getCurrentUser()->userid, bh->filename, getSession()) != 0)
+        brc_clear(getSession());
 #endif
     return 0;
 }
@@ -81,7 +81,7 @@ struct newpostdata *ptr;
 
     num = ptr->total + 1;
     if (ptr->unread && (fd = open(dirfile, O_RDWR)) > 0) {
-        if (!brc_initial(getCurrentUser()->userid, ptr->name)) {
+        if (!brc_initial(getCurrentUser()->userid, ptr->name, getSession())) {
             num = 1;
         } else {
             offset = (int) ((char *) &(fh.id) - (char *) &(fh));
@@ -89,7 +89,7 @@ struct newpostdata *ptr;
             step = 4;
             while (num > 0) {
                 lseek(fd, offset + num * sizeof(fh), SEEK_SET);
-                if (read(fd, &id, sizeof(unsigned int)) <= 0 || !brc_unread(id))
+                if (read(fd, &id, sizeof(unsigned int)) <= 0 || !brc_unread(id, getSession()))
                     break;
                 num -= step;
                 if (step < 32)
@@ -99,7 +99,7 @@ struct newpostdata *ptr;
                 num = 0;
             while (num < ptr->total) {
                 lseek(fd, offset + num * sizeof(fh), SEEK_SET);
-                if (read(fd, &id, sizeof(unsigned int)) <= 0 || brc_unread(id))
+                if (read(fd, &id, sizeof(unsigned int)) <= 0 || brc_unread(id, getSession()))
                     break;
                 num++;
             }
@@ -215,10 +215,10 @@ static int check_newpost(struct newpostdata *ptr)
     ptr->currentusers = bptr->currentusers;
 
 #ifdef HAVE_BRC_CONTROL
-    if (!brc_initial(getCurrentUser()->userid, ptr->name)) {
+    if (!brc_initial(getCurrentUser()->userid, ptr->name, getSession())) {
         ptr->unread = 1;
     } else {
-        if (brc_unread(bptr->lastpost)) {
+        if (brc_unread(bptr->lastpost, getSession())) {
             ptr->unread = 1;
         }
     }
@@ -556,7 +556,7 @@ static int fav_onselect(struct _select_def *conf)
             currboard=(struct boardheader*)getboard(bid);
 
 #ifdef HAVE_BRC_CONTROL
-            brc_initial(getCurrentUser()->userid, ptr->name);
+            brc_initial(getCurrentUser()->userid, ptr->name, getSession());
 #endif
             memcpy(currBM, ptr->BM, BM_LEN - 1);
             if (DEFINE(getCurrentUser(), DEF_FIRSTNEW)&&(getPos(DIR_MODE_NORMAL,currboard->filename,currboard)==0)) {
@@ -783,7 +783,7 @@ static int fav_key(struct _select_def *conf, int command)
             newlevel = setperms(oldlevel, 0, "权限", NUMPERMS, showperminfo, NULL);
 			if( newlevel != oldlevel){
 				favbrd_list[ptr->tag].level = newlevel;
-				save_favboard(2);
+				save_favboard(2, getSession());
 				return SHOW_DIRCHANGE;
 			}else
 				return SHOW_REFRESH;
@@ -825,14 +825,14 @@ static int fav_key(struct _select_def *conf, int command)
                 int k;
 
                // if (favbrd_list_t <= 0)
-                    load_favboard(0,1);
+                    load_favboard(0,1, getSession());
 
                 i=getboardnum(ptr->name, &bh);
                 if (i<=0)
                     return SHOW_REFRESH;
                 if(favbrd_list_t < 2) {
-                    SetFav(0);
-                    if (IsFavBoard(i - 1)) {
+                    SetFav(0, getSession());
+                    if (IsFavBoard(i - 1, getSession())) {
                         move(2, 0); 
                         clrtoeol();
                         prints("已存在该讨论区.");
@@ -871,24 +871,24 @@ static int fav_key(struct _select_def *conf, int command)
                     k = simple_select_loop(sel, SIF_NUMBERKEY | SIF_SINGLE | SIF_ESCQUIT, 0, 6, NULL) - 1;
                     free(sel);
                     if(k>=0&&k<favbrd_list_t) {
-                        SetFav(k);
+                        SetFav(k, getSession());
                     }
                     else
                         return SHOW_REFRESH;
                 }
             }
-            if (i > 0 && !IsFavBoard(i - 1)) {
-                addFavBoard(i - 1);
+            if (i > 0 && !IsFavBoard(i - 1, getSession())) {
+                addFavBoard(i - 1, getSession());
             	if (BOARD_FAV == arg->yank_flag)
-					save_favboard(arg->favmode);
+					save_favboard(arg->favmode, getSession());
 				else
-                	save_favboard(1);
+                	save_favboard(1, getSession());
                 arg->reloaddata=true;
                 if (BOARD_FAV == arg->yank_flag)
                     return SHOW_DIRCHANGE;
                 else
                     return SHOW_REFRESH;
-            } else if (IsFavBoard(i - 1)) {
+            } else if (IsFavBoard(i - 1, getSession())) {
                 move(2, 0);
                 prints("已存在该讨论区.");
                 clrtoeol();
@@ -922,8 +922,8 @@ static int fav_key(struct _select_def *conf, int command)
             clrtoeol();
             getdata(0, 0, "输入讨论区目录名: ", bname, 41, DOECHO, NULL, true);
             if (bname[0]) {
-                addFavBoardDir(bname);
-                save_favboard(arg->favmode);
+                addFavBoardDir(bname, getSession());
+                save_favboard(arg->favmode, getSession());
                 arg->reloaddata=true;
                 return SHOW_DIRCHANGE;
             }
@@ -944,8 +944,8 @@ static int fav_key(struct _select_def *conf, int command)
                 clrtoeol();
                 getdata(0, 0, "输入讨论区英文目录名(用于s选择): ", bname, 19, DOECHO, NULL, true);
                 if (bname[0]) {
-                    changeFavBoardDirEname(ptr->tag, bname);
-                    save_favboard(arg->favmode);
+                    changeFavBoardDirEname(ptr->tag, bname, getSession());
+                    save_favboard(arg->favmode, getSession());
                     return SHOW_REFRESH;
                 }
             }
@@ -964,8 +964,8 @@ static int fav_key(struct _select_def *conf, int command)
                 clrtoeol();
                 getdata(0, 0, "输入讨论区目录名: ", bname, 41, DOECHO, NULL, true);
                 if (bname[0]) {
-                    changeFavBoardDir(ptr->tag, bname);
-                    save_favboard(arg->favmode);
+                    changeFavBoardDir(ptr->tag, bname, getSession());
+                    save_favboard(arg->favmode, getSession());
                     return SHOW_REFRESH;
                 }
             }
@@ -1000,8 +1000,8 @@ static int fav_key(struct _select_def *conf, int command)
                         prints("非法的移动位置！");
                         pressreturn();
                     } else {
-                        arg->father=MoveFavBoard(p, q);
-                        save_favboard(arg->favmode);
+                        arg->father=MoveFavBoard(p, q, getSession());
+                        save_favboard(arg->favmode, getSession());
                         arg->reloaddata=true;
                         return SHOW_DIRCHANGE;
                     }
@@ -1021,10 +1021,10 @@ static int fav_key(struct _select_def *conf, int command)
                 if( ! askyn("确认删除吗？", 0) )
 					return SHOW_REFRESH;
 				if(ptr->dir)
-					DelFavBoardDir(ptr->pos,favnow);
+					DelFavBoardDir(ptr->pos,favnow, getSession());
 				else
-                	DelFavBoard(ptr->pos);
-                save_favboard(arg->favmode);
+                	DelFavBoard(ptr->pos, getSession());
+                save_favboard(arg->favmode, getSession());
                 arg->father=favnow;
                 arg->reloaddata=true;
                 return SHOW_DIRCHANGE;
@@ -1124,9 +1124,9 @@ static int fav_getdata(struct _select_def *conf, int pos, int len)
     	}
     }
     if (pos==-1) 
-        fav_loaddata(NULL, arg->father,1, conf->item_count,getCurrentUser()->flags & BRDSORT_FLAG,arg->namelist);
+        fav_loaddata(NULL, arg->father,1, conf->item_count,getCurrentUser()->flags & BRDSORT_FLAG,arg->namelist, getSession());
     else
-        conf->item_count = fav_loaddata(arg->nbrd, arg->father,pos, len,getCurrentUser()->flags & BRDSORT_FLAG,NULL);
+        conf->item_count = fav_loaddata(arg->nbrd, arg->father,pos, len,getCurrentUser()->flags & BRDSORT_FLAG,NULL, getSession());
     return SHOW_CONTINUE;
 }
 
@@ -1142,9 +1142,9 @@ static int boards_getdata(struct _select_def *conf, int pos, int len)
     	}
     }
     if (pos==-1) 
-         load_boards(NULL, arg->boardprefix,arg->father,1, conf->item_count,getCurrentUser()->flags & BRDSORT_FLAG,arg->yank_flag,arg->namelist);
+         load_boards(NULL, arg->boardprefix,arg->father,1, conf->item_count,getCurrentUser()->flags & BRDSORT_FLAG,arg->yank_flag,arg->namelist, getSession());
     else
-         conf->item_count = load_boards(arg->nbrd, arg->boardprefix,arg->father,pos, len,getCurrentUser()->flags & BRDSORT_FLAG,arg->yank_flag,NULL);
+         conf->item_count = load_boards(arg->nbrd, arg->boardprefix,arg->father,pos, len,getCurrentUser()->flags & BRDSORT_FLAG,arg->yank_flag,NULL, getSession());
     return SHOW_CONTINUE;
 }
 int choose_board(int newflag, char *boardprefix,int group,int favmode)
@@ -1209,7 +1209,7 @@ int choose_board(int newflag, char *boardprefix,int group,int favmode)
         arg.loop_mode = 0;
 		arg.select_group =0;
 		if (favmode != 0 && lastloadfavmode != favmode){
- 			load_favboard(1,favmode);
+ 			load_favboard(1,favmode, getSession());
 			lastloadfavmode = favmode;
 		}
 		arg.favmode = favmode;
@@ -1337,7 +1337,7 @@ int choose_board(int newflag, char *boardprefix,int group,int favmode)
     	free(arg.namelist);
     	arg.namelist=NULL;
     }
-    save_zapbuf();
+    save_zapbuf(getSession());
     modify_user_mode(oldmode);
     return 0;
 }
@@ -1346,18 +1346,18 @@ extern int mybrd_list_t;
 
 void FavBoard()
 {
- 	load_favboard(1,1);
+ 	load_favboard(1,1, getSession());
     choose_board(1, NULL,0,1);
 }
 
 void AllBoard()
 {
-	load_favboard(1,2);
+	load_favboard(1,2, getSession());
 	choose_board(1, NULL,0,2);
 }
 
 void WwwBoard()
 {
-	load_favboard(1,3);
+	load_favboard(1,3, getSession());
 	choose_board(1, NULL,0,3);
 }

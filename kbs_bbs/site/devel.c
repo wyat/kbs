@@ -14,10 +14,10 @@ int auto_register(char *userid, char *email, int msize, session_t* session)
     FILE *fout;
     int n;
     struct userec deliveruser;
-    static const char *finfo[] = { "帐号位置", "申请代号", "真实姓名", "服务单位",
+    static const char * const finfo[] = { "帐号位置", "申请代号", "真实姓名", "服务单位",
         "目前住址", "连络电话", "生    日", NULL
     };
-    static const char *field[] = { "usernum", "userid", "realname", "career",
+    static const char *const field[] = { "usernum", "userid", "realname", "career",
         "addr", "phone", "birth", NULL
     };
 

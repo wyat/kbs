@@ -932,9 +932,9 @@ int write_file(char* filename,int saveheader,long* effsize,long* pattachpos, lon
     /* 增加转信标记 czz 020819 */
         if (saveheader) {
             if (local_article == 1)
-                write_header(fp, getCurrentUser(), in_mail, quote_board, quote_title, Anony, 0);
+                write_header(fp, getCurrentUser(), in_mail, quote_board, quote_title, Anony, 0, getSession());
             else
-                write_header(fp, getCurrentUser(), in_mail, quote_board, quote_title, Anony, 2);
+                write_header(fp, getCurrentUser(), in_mail, quote_board, quote_title, Anony, 2, getSession());
         }
     }
     if (effsize)

@@ -273,7 +273,7 @@ int getbnum(const char *bname)
 
     for (i = 0; i < brdshm->numboards; i++)
 #ifdef BBSMAIN
-        if (check_read_perm(session->currentuser,&bcache[i]))
+        if (check_read_perm(getCurrentUser(),&bcache[i]))
 #endif
             if (!strncasecmp(bname, bcache[i].filename, STRLEN))
                 return i + 1;

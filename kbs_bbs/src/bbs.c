@@ -397,7 +397,7 @@ int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long f
     }
     if (ptr->action!=0) {
         ret=change_post_flag(&dirarg, arg->mode, currboard,  
-            fileinfo,flag, &data,isbm);
+            fileinfo,flag, &data,isbm,getSession());
         if (ret==0) {
 //prompt...
             ret=DIRCHANGED;
@@ -599,7 +599,7 @@ int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         if (post_cross(getCurrentUser(), bname, currboard->filename, 
             quote_title, q_file, Anony, 
             arg->mode==DIR_MODE_MAIL?1:0, 
-            ispost[0], 0) == -1) { /* 转贴 */
+            ispost[0], 0, getSession()) == -1) { /* 转贴 */
             pressreturn();
             move(2, 0);
             return FULLUPDATE;
@@ -781,7 +781,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 
     manager = chk_currBM(currBM, getCurrentUser());
 
-    type = get_article_flag(ent, getCurrentUser(), currboard->filename, manager);
+    type = get_article_flag(ent, getCurrentUser(), currboard->filename, manager,getSession());
     if (manager && (ent->accessed[0] & FILE_IMPORTED)) {        /* 文件已经被收入精华区 */
         if (type == ' ') {
             typeprefix = "\x1b[42m";
@@ -1049,7 +1049,7 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 #endif
     register_attach_link(NULL,NULL);
 #ifdef HAVE_BRC_CONTROL
-    brc_add_read(fileinfo->id);
+    brc_add_read(fileinfo->id,getSession());
 #endif
 #ifndef NOREPLY
     move(t_lines - 1, 0);
@@ -1268,7 +1268,7 @@ reget:
 int skip_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
 #ifdef HAVE_BRC_CONTROL
-    brc_add_read(fileinfo->id);
+    brc_add_read(fileinfo->id,getSession());
 #endif
     return GOTO_NEXT;
 }
@@ -1411,7 +1411,7 @@ int super_select_board(char *bname)
     	getdata(1, 0, "搜索版面关键字: ", searchname, STRLEN-1, DOECHO, NULL, false);
 		if (searchname[0] == '\0' || searchname[0]=='\n')
 			return 0;
-		if( ( super_board_count = fill_super_board (searchname, result, MAXBOARDSEARCH) ) <= 0 ){
+		if( ( super_board_count = fill_super_board (getCurrentUser(),searchname, result, MAXBOARDSEARCH) ) <= 0 ){
 			move(5,0);
 			prints("没有找到任何相关版面\n");
 			pressanykey();
@@ -1466,7 +1466,7 @@ int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     	return FULLUPDATE;
 
 	if(addfav){
-		bid = EnameInFav(bname);
+		bid = EnameInFav(bname,getSession());
 
 		if(bid){
 			*((int *)extraarg) = bid;
@@ -1507,7 +1507,7 @@ int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     currboard=(struct boardheader*)getboard(bid);
 
 #ifdef HAVE_BRC_CONTROL
-    brc_initial(getCurrentUser()->userid, bname);
+    brc_initial(getCurrentUser()->userid, bname,getSession());
 #endif
 
     move(0, 0);
@@ -2548,7 +2548,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 						post_file.title[ARTICLE_TITLE_LEN - 1] = '\0';
 					}
 
-					write_header(fp, getCurrentUser(), 0, currboard->filename, post_file.title, Anony, 0);
+					write_header(fp, getCurrentUser(), 0, currboard->filename, post_file.title, Anony, 0,getSession());
 					while(fgets(buff,255,fp1))
 						fprintf(fp,"%s",buff);
 					fclose(fp);
@@ -2583,7 +2583,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 
     post_file.eff_size = eff_size;
 
-    add_loginfo(filepath, getCurrentUser(), currboard->filename, Anony);       /*添加最后一行 */
+    add_loginfo(filepath, getCurrentUser(), currboard->filename, Anony,getSession());       /*添加最后一行 */
 
     strncpy(post_file.title, save_title, ARTICLE_TITLE_LEN - 1);
 	post_file.title[ARTICLE_TITLE_LEN - 1] = '\0';
@@ -2593,7 +2593,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     } else if (aborted == 0) {
         post_file.innflag[1] = 'S';
         post_file.innflag[0] = 'S';
-        outgo_post(&post_file, currboard->filename, save_title);
+        outgo_post(&post_file, currboard->filename, save_title,getSession());
     }
     Anony = 0;                  /*Inital For ShowOut Signature */
 
@@ -2614,7 +2614,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 #ifdef FILTER
     returnvalue =
 #endif
-        after_post(getCurrentUser(), &post_file, currboard->filename, re_file, !(Anony && anonyboard));
+        after_post(getCurrentUser(), &post_file, currboard->filename, re_file, !(Anony && anonyboard),getSession());
 
     if(upload) {
         char sbuf[PATHLEN];
@@ -2721,7 +2721,7 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
                 //fileinfo, direct, FILE_EFFSIZE_FLAG, 0);
 		}
         if (ADD_EDITMARK)
-            add_edit_mark(buf, 0, /*NULL*/ fileinfo->title);
+            add_edit_mark(buf, 0, /*NULL*/ fileinfo->title,getSession());
         if (attachpos!=fileinfo->attachment) {
             struct write_dir_arg dirarg;
             fileinfo->attachment=attachpos;
@@ -2729,7 +2729,7 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             dirarg.fd=arg->fd;
             dirarg.ent = conf->pos;
             change_post_flag(&dirarg, arg->mode, currboard,  
-                fileinfo,FILE_ATTACHPOS_FLAG|FILE_EFFSIZE_FLAG, fileinfo,dobmlog);
+                fileinfo,FILE_ATTACHPOS_FLAG|FILE_EFFSIZE_FLAG, fileinfo,dobmlog,getSession());
         }
     }
     newbbslog(BBSLOG_USER, "edited post '%s' on %s", fileinfo->title, currboard->filename);
@@ -2808,7 +2808,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
             *t = '\0';
         sprintf(genbuf, "%s/%s", tmp, fileinfo->filename);
 
-        if(strcmp(tmp2,buf)) add_edit_mark(genbuf, 2, buf);
+        if(strcmp(tmp2,buf)) add_edit_mark(genbuf, 2, buf,getSession());
         /*
          * Leeward 99.07.12 added below to fix a big bug
          */
@@ -3047,7 +3047,7 @@ int del_range(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         init_write_dir_arg(&dirarg);
         dirarg.fd=arg->fd;
         dirarg.filename=arg->direct;
-        result = delete_range(&dirarg, inum1, inum2, idel_mode,arg->mode,currboard);
+        result = delete_range(&dirarg, inum1, inum2, idel_mode,arg->mode,currboard,getSession());
         /* todo 修正conf的pos
         if (inum1 != 0)
             fixkeep(arg->direct, inum1, inum2);
@@ -3121,10 +3121,10 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             delarg.fd=arg->fd;
             delarg.ent=conf->pos;
         }
-        ret=do_del_post(getCurrentUser(), &delarg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
+        ret=do_del_post(getCurrentUser(), &delarg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG,getSession());
         free_write_dir_arg(&delarg);
     } else
-        ret=do_del_post(getCurrentUser(), arg->writearg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG);
+        ret=do_del_post(getCurrentUser(), arg->writearg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG,getSession());
     if (ret != 0) {
         if (!(flag&ARG_NOPROMPT_FLAG)) {
             move(2, 0);
@@ -3174,7 +3174,7 @@ int Save_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             arg->mode,
             currboard, 
             fileinfo, 
-            FILE_IMPORT_FLAG, &data, true);
+            FILE_IMPORT_FLAG, &data, true,getSession());
         free_write_dir_arg(&dirarg);
 	return DIRCHANGED;
     }
@@ -3201,7 +3201,7 @@ int Semi_save(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             arg->mode,
             currboard, 
             fileinfo, 
-            FILE_IMPORT_FLAG, &data, true);
+            FILE_IMPORT_FLAG, &data, true,getSession());
         free_write_dir_arg(&dirarg);
     }
     return ret;
@@ -3318,8 +3318,8 @@ int clear_new_flag(struct _select_def* conf,struct fileheader *fileinfo,void* ex
     struct read_arg* arg=conf->arg;
     /* add by stiger */
     if (conf->pos>arg->filecount)
-        brc_clear();
-    else brc_clear_new_flag(fileinfo->id);
+        brc_clear(getSession());
+    else brc_clear_new_flag(fileinfo->id,getSession());
 #endif
     return PARTUPDATE;
 }
@@ -3327,7 +3327,7 @@ int clear_new_flag(struct _select_def* conf,struct fileheader *fileinfo,void* ex
 int clear_all_new_flag(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
 #ifdef HAVE_BRC_CONTROL
-    brc_clear();
+    brc_clear(getSession());
 #endif
     return FULLUPDATE;
 }
@@ -3402,7 +3402,7 @@ int range_flag(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
             arg->mode,
             currboard, 
             dirarg.fileptr+(i-1), 
-            fflag, &data, true);
+            fflag, &data, true,getSession());
         flock(arg->fd,LOCK_UN);
         free_write_dir_arg(&dirarg);
     }
@@ -3540,7 +3540,7 @@ void notepad()
                             fprintf(in, "\033[31m│\033[m%-74.74s\033[31m│\033[m\n", note[t]);
 			fclose(in);
 
-                        post_file(getCurrentUser(), "", tmpname, FILTER_BOARD, "---留言版过滤器---", 0, 2);
+                        post_file(getCurrentUser(), "", tmpname, FILTER_BOARD, "---留言版过滤器---", 0, 2,getSession());
 
 			unlink(tmpname);
 			return;
@@ -3834,7 +3834,7 @@ int Goodbye()
 
 //        sethomefile(fname, getCurrentUser()->userid, "msgfile");
         if (DEFINE(getCurrentUser(), DEF_MAILMSG /*离站时寄回所有信息 */ ) && (get_msgcount(0, getCurrentUser()->userid))) {
-                mail_msg(getCurrentUser());
+                mail_msg(getCurrentUser(),getSession());
 /*    #ifdef NINE_BUILD
             time_t now, timeout;
             char ans[3];
@@ -5196,7 +5196,7 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
             data.accessed[0] = FILE_DIGEST;
             change_post_flag(arg->writearg,
                     arg->mode, currboard, 
-                    fh, FILE_DIGEST, &data, true);
+                    fh, FILE_DIGEST, &data, true,getSession());
             }
             break;
         case BM_MARKDEL:
@@ -5394,7 +5394,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         if(strlen(buf) >= STRLEN )buf[STRLEN-1] = 0;
         strcpy(title,buf);
         //post file to the board
-        if(post_file(getCurrentUser(),"",annpath,currboard->filename,title,0,2) < 0) {//fail
+        if(post_file(getCurrentUser(),"",annpath,currboard->filename,title,0,2,getSession()) < 0) {//fail
             sprintf(buf,"发表文章到版面出错!请按任意键退出 << ");
             a_prompt(-1,buf,annpath); //annpath no use
             saveline(t_lines - 2, 1, NULL);
@@ -5548,7 +5548,7 @@ int Read()
 
     if (currboard->flag&BOARD_GROUP) return -2;
 #ifdef HAVE_BRC_CONTROL
-    brc_initial(getCurrentUser()->userid, currboard->filename);
+    brc_initial(getCurrentUser()->userid, currboard->filename,getSession());
 #endif
 
     setbdir(DIR_MODE_NORMAL, buf, currboard->filename);

@@ -484,7 +484,7 @@ int super_filter(struct _select_def* conf,struct fileheader* fileinfo,void* extr
         set_vars(fvars+fget_var("fname"), ptr1->filename); set_vars(fvars+fget_var("文件名"), ptr1->filename);
         set_vard(fvars+fget_var("my"), !strcmp(ptr1->owner,getCurrentUser()->userid)); set_vard(fvars+fget_var("我的"), !strcmp(ptr1->owner,getCurrentUser()->userid));
 #ifdef HAVE_BRC_CONTROL
-        set_vard(fvars+fget_var("unread"), brc_unread(ptr1->id)); set_vard(fvars+fget_var("未读"), brc_unread(ptr1->id));
+        set_vard(fvars+fget_var("unread"), brc_unread(ptr1->id, getSession())); set_vard(fvars+fget_var("未读"), brc_unread(ptr1->id, getSession()));
 #endif
         setbfile(ffn, currboard->filename, ptr1->filename);
         set_vard(fvars+fget_var("ftime"), get_posttime(ptr1)); set_vard(fvars+fget_var("时间"), get_posttime(ptr1));

@@ -236,7 +236,7 @@ int invalid_realmail(userid, email, msize)
 		now = time(NULL);
 		if(now - uc->firstlogin >= REGISTER_TSINGHUA_WAIT_TIME)
 		{
-	 		if(auto_register(userid,email,msize) < 0) // 完成自动注册
+	 		if(auto_register(userid,email,msize,getSession()) < 0) // 完成自动注册
 				return 1;
 			else
 				return 0;     //success
@@ -629,7 +629,7 @@ void ConveyID()
 			fprintf(fn, "\n                     \033[1m 系统自动发信系统留\033[m\n");
 			fclose(fn);
 			sprintf(buf, "%s 转让ID的备份资料", getCurrentUser()->userid);
-			post_file(getCurrentUser(), "", filename, "Registry", buf, 0, 1);
+			post_file(getCurrentUser(), "", filename, "Registry", buf, 0, 1,getSession());
 			unlink(filename);
 		}
 		else{

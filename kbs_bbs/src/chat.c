@@ -738,7 +738,7 @@ int printuserent(chatcontext * pthis, struct user_info *uentp)
 */
 int print_friend_ent(struct user_info *uentp, chatcontext * pthis, int pos)
 {                               /* print one user & status if he is a friend */
-    char pline[50];
+    char pline[50],buf[80];
 
     if (!uentp->active || !uentp->pid)
         return 0;
@@ -749,10 +749,10 @@ int print_friend_ent(struct user_info *uentp, chatcontext * pthis, int pos)
         return 0;
 #endif                          /* 
                                  */
-    if (!myfriend(uentp->uid, NULL))
+    if (!myfriend(uentp->uid, NULL,getSession()))
         return 0;
     sprintf(pline, " %-13s%c%-10s", uentp->userid,
-            uentp->invisible ? '#' : ' ', modestring(uentp->mode,
+            uentp->invisible ? '#' : ' ', modestring(buf,uentp->mode,
                                                      uentp->destuid, 0,
                                                      NULL));
     if (pthis->apply_count < 2)
@@ -923,7 +923,7 @@ int c_cmpuids(int uid, struct user_info *up)
 }
 int chat_status(struct user_info *uentp, chatcontext * pthis)
 {
-    char tmpstr[31];
+    char tmpstr[31],buf[80],buf2[80];
     char *lpTmp;
 
     if (strlen(genbuf)>t_columns) 
@@ -934,7 +934,7 @@ int chat_status(struct user_info *uentp, chatcontext * pthis)
         } else
             return 0;
     }
-    lpTmp = (char *) idle_str(uentp);
+    lpTmp = (char *) idle_str(buf,uentp);
     if (uentp->in_chat) {       /* add by Luzi 1997.11.18 */
         int res;
 
@@ -954,7 +954,7 @@ int chat_status(struct user_info *uentp, chatcontext * pthis)
             return COUNT;
         }
     }
-    sprintf(genbuf, "%s%-8s", genbuf, modestring(uentp->mode, uentp->destuid, 0,        /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
+    sprintf(genbuf, "%s%-8s", genbuf, modestring(buf2,uentp->mode, uentp->destuid, 0,        /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
                                                  (uentp->in_chat ? uentp->
                                                   chatid : NULL)));
     if (lpTmp[0] != ' ')
@@ -1440,7 +1440,7 @@ void chat_show_allmsgs(chatcontext * pthis, const char *arg)
         j++;
         load_msghead(0, getCurrentUser()->userid, i, &head);
         load_msgtext(getCurrentUser()->userid, &head, buf);
-        translate_msg(buf, &head, showmsg);
+        translate_msg(buf, &head, showmsg,getSession());
         fprintf(fp, "%s", showmsg);
     }
     fclose(fp);

@@ -121,7 +121,7 @@ int full_utmp(struct user_info *uentp, int *count)
     if (!HAS_PERM(getCurrentUser(), PERM_SEECLOAK) && uentp->invisible && strcmp(uentp->userid, getCurrentUser()->userid)) {      /*Haohmaru.99.4.24.让隐身者能看见自己 */
         return 0;
     }
-    if (friendmode && !myfriend(uentp->uid, NULL)) {
+    if (friendmode && !myfriend(uentp->uid, NULL, getSession())) {
         return 0;
     }
     user_record[*count] = uentp;
@@ -230,6 +230,7 @@ int do_userlist()
     int i,y,x;
     char user_info_str[256 /*STRLEN*2 */ ], pagec;
     char tbuf[80];
+	char modebuf[80],idlebuf[10];
     int override;
     extern bool disable_move;
     extern bool disable_color;
@@ -308,7 +309,7 @@ int do_userlist()
             override = myfriend(uentp.uid, fexp);
 #else
             if ((i + page < numf) || friendmode)
-                override = myfriend(uentp.uid, fexp);
+                override = myfriend(uentp.uid, fexp, getSession());
             else
                 override = false;
 #endif
@@ -347,10 +348,10 @@ int do_userlist()
         sprintf(user_info_str, " %-16.16s %c %c %s%-16.16s\033[m%5.5s\n",  
                 (HAS_PERM(getCurrentUser(), PERM_SYSOP))? uentp.from : ( (pagec == ' ' || pagec == 'O')  ? SHOW_USERIP(lookupuser, uentp.from) : FROMSTR ),
                 pagec, msgchar(&uentp, &isfriend), 
-                (uentp.invisible == true)? "\033[34m" : "", modestring(uentp.mode, uentp.destuid, 0,        /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
+                (uentp.invisible == true)? "\033[34m" : "", modestring(modebuf,uentp.mode, uentp.destuid, 0,        /* 1->0 不显示聊天对象等 modified by dong 1996.10.26 */
                                            (uentp.in_chat ? uentp.chatid : NULL)),            
 #ifdef SHOW_IDLE_TIME
-                idle_str(&uentp));
+                idle_str(idlebuf,&uentp));
 
 #else                           /*  */
                 "");
@@ -712,7 +713,7 @@ int printuent(struct userec *uentp, char *arg)
     }
     uleveltochar(permstr, uentp);
     user_data[i - page] = *uentp;
-    override = myfriend(searchuser(uentp->userid), fexp);
+    override = myfriend(searchuser(uentp->userid), fexp, getSession());
 
     /*---	modified by period	2000-11-02	hide posts/logins	---*/
 #ifdef _DETAIL_UINFO_
