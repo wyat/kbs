@@ -3,12 +3,15 @@
 INNPROGS="innbbsd makedbz mkhistory dbzserver bbsnnrp ctlinnbbsd dbz_query_sample bbslink"
 LN_S="@LN_S@"
 
-if test ! -e @prefix@/innd ; then
+# Because of the buggy /bin/sh in Solaris, we can not use 'test -e'.
+if test ! -d @prefix@/innd ; then
 	mkdir @prefix@/innd
 fi
 
 for innprog in $INNPROGS ; do
-	if test -e @prefix@/innd/$innprog; then
+	if test -f @prefix@/innd/$innprog; then
+		rm -f @prefix@/innd/$innprog
+	elif test -h @prefix@/innd/$innprog; then
 		rm -f @prefix@/innd/$innprog
 	fi
 	$LN_S @prefix@/bin/$innprog @prefix@/innd
