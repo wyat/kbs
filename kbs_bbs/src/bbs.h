@@ -289,18 +289,15 @@ typedef size_t socklen_t;
 #define BBS_PAGESIZE    (t_lines - 4)
 #endif
 
-#define BRC_MAXSIZE     32768
-#define BRC_MAXNUM      60
-#define BRC_STRLEN      15
-#define BRC_ITEMSIZE    (BRC_STRLEN + 1 + BRC_MAXNUM * sizeof( int ))
-#define UNREAD_TIME     (login_start_time - 30 * 86400)
-/* added period 2000-09-11	4 FavBoard */
-#define FAVBOARDNUM     20
-
 
 #include "system.h"
 #include "vars.h"
 #include "func.h"
+
+
+#ifndef MAX_PATH
+#define MAX_PATH 255
+#endif
 
 #define system my_system
 

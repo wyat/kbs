@@ -23,10 +23,28 @@
 
 #include "bbs.h"
 
-char    brc_buf[ BRC_MAXSIZE ];
-int     brc_size, brc_changed = 0;
-char    brc_name[ BRC_STRLEN ];
-int     brc_list[ BRC_MAXNUM ], brc_num;
+#define BRC_MAXNUM      50
+#define BRC_STRLEN      8
+#define BRC_ITEMSIZE    (BRC_STRLEN  + BRC_MAXNUM * sizeof( int ))
+#define BRC_MAXBOARD	200  /*最大保存多少个板的未读标记*/
+#define BRC_FILESIZE BRC_ITEMSIZE*BRC_MAXBOARD
+/* added period 2000-09-11	4 FavBoard */
+#define FAVBOARDNUM     20
+
+#define BRC_CACHE_NUM 20 /* 未读标记cache 20个板*/
+
+static struct brc_cache_entry {
+	int id;
+	int list[ BRC_MAXNUM ];
+	int changed;
+} brc_cache_entry[BRC_CACHE_NUM];
+
+struct brc_struct {
+	int bid;
+	char boardname[BRC_STRLEN];
+	int list[BRC_MAXNUM];
+};
+
 /* added period 2000-09-11	4 FavBoard */
 int     favbrd_list[FAVBOARDNUM+1];
 
@@ -216,48 +234,6 @@ load_boards()
     return 0;
 }
 
-
-char *
-brc_getrecord( ptr, name, pnum, list ) /*取出一个版的brclist*/
-char    *ptr, *name;
-int     *pnum, *list;
-{
-    int         num;
-    char        *tmp;
-
-    strncpy( name, ptr, BRC_STRLEN );
-    ptr += BRC_STRLEN;
-    num = (*ptr++) & 0xff;
-    tmp = ptr + num * sizeof( int );
-    if( num > BRC_MAXNUM ) {
-        num = BRC_MAXNUM;
-    }
-    *pnum = num;
-    memcpy( list, ptr, num * sizeof( int ) );
-    return tmp;
-}
-
-char *
-brc_putrecord( ptr, name, num, list ) /* 保存一个版的brclist*/
-char    *ptr, *name;
-int     num, *list;
-{
-    if( num > 0 /*&& list[0] > UNREAD_TIME */) {
-        if( num > BRC_MAXNUM ) {
-            num = BRC_MAXNUM;
-        }
-        /*        while( num > 1 && list[num-1] < UNREAD_TIME ) {
-                    num--;
-                }*/
-        strncpy( ptr, name, BRC_STRLEN );
-        ptr += BRC_STRLEN;
-        *ptr++ = num;
-        memcpy( ptr, list, num * sizeof( int ) );
-        ptr += num * sizeof( int );
-    }
-    return ptr;
-}
-
 void brc_update(char *userid, char *board) {
         char    dirfile[STRLEN], *ptr;
         char    tmp_buf[BRC_MAXSIZE - BRC_ITEMSIZE], *tmp;
@@ -297,81 +273,74 @@ void brc_update(char *userid, char *board) {
 	brc_changed = 0;
 }
 
-int
-brc_initial(char *userid, char *boardname ) /* 读取用户.boardrc文件，取出保存的当前版的brc_list */
-{
-    char        dirfile[ STRLEN ], *ptr;
-    int         fd;
 
-#ifdef BBSMAIN
-    if( strcmp( currboard, boardname ) == 0 ) {
-        return brc_num;
-    }
-    brc_update(currentuser->userid,currboard); /*先保存当前的brc_list*/
-    strcpy( currboard, boardname );
-    if( brc_buf[0] == '\0' ) {
-#endif
-        sethomefile( dirfile, userid, ".boardrc" );
-        if( (fd = open( dirfile, O_RDONLY )) != -1 ) {
-            brc_size = read( fd, brc_buf, sizeof( brc_buf ) );
+#define BRC_OLD_MAXSIZE     32768
+#define BRC_OLD_MAXNUM      60
+#define BRC_OLD_STRLEN      15
+#define BRC_OLD_ITEMSIZE    (BRC_OLD_STRLEN + 1 + BRC_OLD_MAXNUM * sizeof( int ))
+
+static int brc_convert_struct(char* data,int size) /* 把旧的broardrc文件格式转换成新的*/
+{
+	struct brc_struct brc;
+	char* ptr,*newptr;
+	newptr=ptr = data;
+	while( ptr < &data[ size ] && (*ptr >= ' ' && *ptr <= 'z') ) {
+	    int num;
+	    char* tmp;
+	    strncpy(brc.boardname,*ptr,BRC_STRLEN);
+           brc.bid=getbnum(boardname);
+           ptr+=BRC_OLD_STRLEN;
+           num=(*ptr++) & 0xff;
+           tmp=ptr;
+    	    ptr+=sizeof(int)*num;
+    	    if( num > BRC_MAXNUM ) { 
+        		num = BRC_MAXNUM;
+    	    }
+    	    memcpy( brc.list, tmp, num * sizeof( int ) );
+    	    if (newptr==data) {
+    	    	*newptr=0; /*赋上新的结构版本号:PPP*/
+    	    	newptr++;
+    	    }
+    	    memcpy(newptr,&brc,sizeof(brc));
+    	    newptr+=sizeof(brc);/* 因为新的结构小*/
+	}
+	return newptr-data;
+}
+
+int brc_initial(char *userid, char *boardname ) /* 读取用户.boardrc文件，取出保存的当前版的brc_list */
+{
+    int i;
+    char dirfile[MAX_PATH];
+    char brc_buffer[BRC_FILESIZE];
+    int brc_size;
+    int bid=getbnum(boardname);
+    int fd;
+    for (i=0;i<BRC_CACHE_NUM;i++) 
+    	if (brc_cache_entry[i].brd_id==bid)
+    		return 1; /* cache 中有*/
+
+    sethomefile( dirfile, userid, ".boardrc" );
+    if( (fd = open( dirfile, O_RDONLY )) != -1 ) {
+            brc_size = read( fd, brc_buffer, sizeof( brc_buffer) );
             close( fd );
         } else {
             brc_size = 0;
         }
-#ifdef BBSMAIN
+
+    if ((brc_size)&&(brc_buffer[0])) { /* 老版的boardrc*/
+    	brc_size=brc_convert_struct(brc_buffer, brc_size);
+    	if( (fd = open( dirfile, O_WRONLY )) != -1 ) {
+            brc_size = write( fd, brc_buffer, brc_size);
+            close( fd );
+    	}
     }
-#endif
-    ptr = brc_buf;
-    while( ptr < &brc_buf[ brc_size ] && (*ptr >= ' ' && *ptr <= 'z') ) {
-        ptr = brc_getrecord( ptr, brc_name, &brc_num, brc_list );
-        if( strncmp( brc_name, boardname , BRC_STRLEN ) == 0 ) {
-            return brc_num;
-        }
-    }
-    strncpy( brc_name, boardname, BRC_STRLEN );
-    brc_list[0] = 1;
-    brc_num = 1;
+
+    for (i=0;i<BRC_MAXBOARD;i++)
     return 0;
 }
 
 
-void
-brc_addlist( filename )/*  BRClist 按顺序插入 filetime (filetime=filename) */
-char    *filename;
-{
-    int         ftime, n, i;
-
-    if(!strcmp(currentuser->userid,"guest"))
-        return;
-    ftime = atoi( &filename[2] );
-    if( (filename[0] != 'M'&&filename[0] != 'G') || filename[1] != '.' ) {
-        return;
-    }
-    if( brc_num <= 0 ) {
-        brc_list[ brc_num++ ] = ftime;
-        brc_changed = 1;
-        return;
-    }
-    for( n = 0; n < brc_num; n++ ) {
-        if( ftime == brc_list[n] ) {
-            return;
-        } else if( ftime > brc_list[n] ) {
-            if( brc_num < BRC_MAXNUM )  brc_num++;
-            for( i = brc_num - 1; i > n; i-- ) {
-                brc_list[ i ] = brc_list[ i - 1 ];
-            }
-            brc_list[ n ] = ftime;
-            brc_changed = 1;
-            return;
-        }
-    }
-    if( brc_num < BRC_MAXNUM ) {
-        brc_list[ brc_num++ ] = ftime;
-        brc_changed = 1;
-    }
-}
-
-int brc_unread_t( int ftime) 
+int brc_unread( int ftime) 
 {
     int         n;
 
@@ -387,22 +356,11 @@ int brc_unread_t( int ftime)
     return 0;
 }
 
-int
-brc_unread( filename ) /*如果file比brc list中的都新，则 未读 */
-char    *filename;
-{
-    int         ftime, n;
-
-    ftime = atoi( &filename[2] );
-    if( (filename[0] != 'M'&&filename[0] != 'G') || filename[1] != '.' /*|| ftime <= UNREAD_TIME*/ ) {
-        return 0;
-    }
-    return brc_unread_t(ftime);
-}
-
+/*
 int brc_has_read(char *file) {
-	return !brc_unread(file);
+	return !brc_unread(FILENAME2POSTTIME( file));
 }
+*/
 
 int brc_add_read(char *filename) {
         int     ftime, n, i;
