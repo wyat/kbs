@@ -368,6 +368,7 @@ int add_board(struct boardheader *newboard)
 {
     int bid = 0;
     int fd;
+    int ret=-1;
 
     fd = bcache_lock();
     if ((bid = getbnum("")) <= 0)
@@ -378,11 +379,10 @@ int add_board(struct boardheader *newboard)
         memcpy(&bcache[bid - 1], newboard, sizeof(struct boardheader));
         if (bid > brdshm->numboards)
             brdshm->numboards = bid;
-        bcache_unlock(fd);
-        return 0;
+        ret=0;
     }
     bcache_unlock(fd);
-    return -1;
+    return ret;
 }
 
 static int clearclubreadright(struct userec* user,struct boardheader* bh)
