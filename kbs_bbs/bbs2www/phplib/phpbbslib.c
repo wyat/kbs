@@ -98,6 +98,7 @@ static PHP_FUNCTION(bbs_checkreadperm);
 static PHP_FUNCTION(bbs_getbname);
 static PHP_FUNCTION(bbs_checkpostperm);
 static PHP_FUNCTION(bbs_postarticle);
+static PHP_FUNCTION(bbs_getattachtmppath);
 #ifdef HAVE_BRC_CONTROL
 static PHP_FUNCTION(bbs_brcaddread);
 #endif
@@ -280,6 +281,7 @@ static function_entry smth_bbs_functions[] = {
 #endif
         PHP_FE(bbs_getboard, NULL)
 		PHP_FE(bbs_postarticle,NULL)
+		PHP_FE(bbs_getattachtmppath, NULL)
         PHP_FE(bbs_ann_traverse_check, NULL)
         PHP_FE(bbs_ann_get_board, NULL)
         PHP_FE(bbs_getboards, NULL)
@@ -571,6 +573,19 @@ static PHP_FUNCTION(bbs_alter_yank){
 static inline int getcurrentuinfo_num()
 {
     return currentuinfonum;
+}
+
+static int getattachtmppath(char *buf, size_t buf_len)
+{
+#if USE_TMPFS==1 && ! defined(FREE)
+    /* setcachehomefile() 不接受 buf_len 参数，先直接这么写吧 */
+    snprintf(buf,buf_len,"%s/home/%c/%s/%d/upload",TMPFSROOT,toupper(currentuser->userid[0]),
+			getCurrentUser()->userid,getcurrentuinfo_num());
+#else
+    snprintf(buf,buf_len,"%s/%s_%d",ATTACHTMPPATH,currentuser->userid,getcurrentuinfo_num());
+#endif
+    buf[buf_len-1] = '\0';
+    return 0;
 }
 
 /*
@@ -3834,6 +3849,18 @@ static PHP_FUNCTION(bbs_checkpostperm)
 }
 
 
+static PHP_FUNCTION(bbs_getattachtmppath)
+{
+    char buf[MAXPATH];
+    if (getCurrentUser() == NULL) {
+        RETURN_FALSE;
+        //用户未初始化
+    }
+    getattachtmppath(buf, MAXPATH);
+    RETURN_STRING(buf, 1);
+}
+
+
 /*  function bbs_postarticle(string boardName, string title,string text, long signature, long reid, long outgo,long anony)  
  *
  *
@@ -3937,12 +3964,7 @@ static PHP_FUNCTION(bbs_postarticle)
     else
         local = 1;
     if (brd->flag&BOARD_ATTACH) {
-#if USE_TMPFS==1
-        snprintf(buf,MAXPATH,"%s/home/%c/%s/%d/upload",TMPFSROOT,toupper(currentuser->userid[0]),
-			currentuser->userid,getcurrentuinfo_num());
-#else
-        snprintf(buf,MAXPATH,"%s/%s_%d",ATTACHTMPPATH,currentuser->userid,getcurrentuinfo_num());
-#endif
+        getattachtmppath(buf, MAXPATH);
         if (!sigsetjmp(bus_jump, 1)) {
             signal(SIGBUS, sigbus);
             signal(SIGSEGV, sigbus);
