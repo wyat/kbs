@@ -148,7 +148,7 @@ struct boardheader {            /* This structure is used to hold data in */
     char BM[BM_LEN];
     char title[STRLEN];
     unsigned level;
-    unsigned int nowid;
+    unsigned int unused;
     unsigned int clubnum; /*如果是俱乐部，这个是俱乐部序号*/
     unsigned int flag;
     union {
@@ -197,6 +197,7 @@ struct BoardStatus {            /* use this to speed up board list */
     bool updatetitle;
     bool updateorigin;
     int currentusers;
+    int nowid;
 #ifdef HAVE_WFORUM
 	int todaynum;
 #endif

@@ -440,6 +440,9 @@ typedef size_t socklen_t;
 
 #define SEMLOCK_COUNT 20
 #define UCACHE_SEMLOCK 0
+#define UTMP_SEMLOCK 1
+#define BCACHE_SEMLOCK 2
+#define BSTATUS_SEMLOCK 3
 
 /**
  * Enumeration values for the so-called board .DIR file.

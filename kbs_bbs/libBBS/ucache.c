@@ -361,7 +361,6 @@ int resolve_ucache()
     int iscreate;
     int fd;
 
-    fd=ucache_lock();
     iscreate = 0;
     if (uidshm == NULL) {
         uidshm = (struct UCACHE *) attach_shm("UCACHE_SHMKEY", 3696, sizeof(*uidshm), &iscreate);
@@ -369,13 +368,11 @@ int resolve_ucache()
         if (iscreate) {         /* shouldn't load passwd file in this place */
             bbslog("4system", "passwd daemon havn't startup");
             remove_shm("UCACHE_SHMKEY",3696,sizeof(*uidshm));
-            ucache_unlock(fd);
             return -1;
         }
         
     }
-    ucache_unlock(fd);
-	return 0;
+    return 0;
 }
 
 void detach_ucache()

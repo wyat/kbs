@@ -64,23 +64,25 @@ static int utmp_lock()
 {
     signal(SIGALRM, longlock);
     alarm(10);
-    lock_sem(UCACHE_SEMLOCK);
+    lock_sem(UTMP_SEMLOCK);
     signal(SIGALRM, SIG_IGN);
     return 0;
 }
 
 static void utmp_unlock(int fd)
 {
-	unlock_sem_check(UCACHE_SEMLOCK);
+	unlock_sem_check(UTMP_SEMLOCK);
 }
 
 #endif 
 static void utmp_setreadonly(int readonly)
 {
+/* ulock remove this protected
     int iscreate;
 
     shmdt(utmphead);
-    utmphead = (struct UTMPHEAD *) attach_shm1(NULL, 3698, sizeof(struct UTMPHEAD), &iscreate, readonly, utmphead);     /*attach user tmp head */
+    utmphead = (struct UTMPHEAD *) attach_shm1(NULL, 3698, sizeof(struct UTMPHEAD), &iscreate, readonly, utmphead);    
+*/
 }
 
 void detach_utmp()
@@ -659,6 +661,8 @@ void clear_utmp(int uent, int useridx, int pid)
 {
     int lockfd;
 
+/* ulock todo: use user lock
+*/
     lockfd = utmp_lock();
     utmp_setreadonly(0);
 
