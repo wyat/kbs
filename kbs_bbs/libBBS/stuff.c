@@ -2198,7 +2198,6 @@ void lock_sem(int lockid)
 	buf.sem_op = -1;
 	buf.sem_flg = SEM_UNDO;
 	semid = get_locksemid(lockid);
-	bbslog("3system","try lock %d",lockid);
 	if (semop(semid,&buf,1) <0) {
 		bbslog("3system","semop -1 error with semid %d, semnum %d",semid, lockid);
 		exit(-1);
@@ -2213,7 +2212,6 @@ void unlock_sem(int lockid)
 	buf.sem_op = 1;
 	buf.sem_flg = SEM_UNDO;
 	semid = get_locksemid(lockid);
-	bbslog("3system","try unlock %d",lockid);
 	if (semop(semid,&buf,1) <0) {
 		bbslog("3system","semop +1 error with semid %d, semnum %d",semid, lockid);
 		exit(-1);
@@ -2227,10 +2225,9 @@ void unlock_sem_check(int lockid)
 	buf.sem_num =lockid;
 	buf.sem_op = 1;
 	buf.sem_flg = SEM_UNDO;
-	bbslog("3system","try unlock %d",lockid);
 	if (semctl(semid,lockid,GETVAL) != 0) {
 	    bbslog("3system","check lock %d error",lockid);
-		return;
+	    return;
 	}
 	if (semop(semid,&buf,1) <0) {
 		bbslog("3system","semop +1 error with semid %d, semnum %d",semid, lockid);
