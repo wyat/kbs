@@ -6,7 +6,7 @@
 /* update : 95/12/15                                     */
 /*-------------------------------------------------------
  */
-#define DEBUG
+//#define DEBUG
 
 #include <stdio.h>
 #include <time.h>

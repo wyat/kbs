@@ -331,6 +331,11 @@ char q_id[IDLEN];
 	    strcpy( permstr, "Ç¿µÁÍ·" );
     else if( !strcmp(lookupuser->userid,"zixia") )
 	    strcpy( permstr, "Íú²Æ" );
+    else if( !strcmp(lookupuser->userid,"halen") )
+	    strcpy( permstr, "Ğ¡Æ¤¿¨Çï" );
+    else if( !strcmp(lookupuser->userid,"cityhunter") || 
+		    !strcmp(lookupuser->userid,"soso") )
+	    strcpy( permstr, "Å£Ä§Íõ" );
     else if( !strcmp(lookupuser->userid,"guest") )
 	    strcpy( permstr, "ÆÏÌÑ" );
     else

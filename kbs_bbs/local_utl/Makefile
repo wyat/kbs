@@ -1,9 +1,9 @@
 # Modified by Leeward 1997.11 1998.04-05
 # The home directory for the user 'bbs'
-BBSHOME=/home/bbs
+BBSHOME=/home/system/bbs
 
 # The uid for the user 'bbs'
-BBSUID=9999
+BBSUID=80
 #BBSUID=502
 
 
@@ -12,9 +12,9 @@ BBSUID=9999
 #CC       = cc -g -DLINUX -DSYSV -DLEEWARD_X_RECORD -I../include -I..
 #CPP       = gcc -g -DLINUX -DSYSV -DLEEWARD_X_RECORD -I../include -I..
 OS_DEF   = -DLINUX -DSYSV 
-CSIE_DEF = -DSHOW_IDLE_TIME -DBBSGID=502 -D_DETAIL_UINFO_ 
+CSIE_DEF = -DSHOW_IDLE_TIME -DBBSGID=80 -D_DETAIL_UINFO_ 
 
-include ../Makefile.spec
+#include ../Makefile.spec
 
 CPP=$(CC)
 

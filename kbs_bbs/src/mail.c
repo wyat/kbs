@@ -66,10 +66,11 @@ int chkreceiver(char* userid,struct userec* lookupuser)
     struct userec* user;
 
     if (!getuser(userid,&user))
-        return 0;
+      	return 0;
 
-	if (lookupuser)
-		*lookupuser=*user;
+    if (lookupuser)
+	*lookupuser=*user;
+
     /* Bigman 2000.9.8 : 修正没有用户的话,返回0 */
     /* 修正PERM_SYSOP给自杀用户发信后的错误*/
 
@@ -1616,7 +1617,7 @@ int num ;
     else
         buf4[0]=' ';
 
-    sprintf( tmpfile, BBSHOME "tmp/bbs-gsend-%05d", getpid() );
+    sprintf( tmpfile, BBSHOME "/tmp/bbs-gsend/%05d", getpid() );
     /* Leeward 98.01.17 Prompt whom you are writing to 
     if (1 == G_SENDMODE)
         strcpy(lookupuser->userid, "好友名单");
@@ -1995,7 +1996,7 @@ int isuu;
             return -22;
         }
 
-    sprintf(fname,"/tmp/.forward.%s.%05d",currentuser->userid,currentuser->userid,getpid());
+    sprintf(fname, BBSHOME "/tmp/forward/%s.%05d",currentuser->userid,currentuser->userid,getpid());
     sprintf( tmp_buf, "cp %s/%s %s",
              direct, fh->filename, fname);
     system( tmp_buf );
@@ -2034,7 +2035,7 @@ int isuu;
             strncpy(receiver, lookupuser->userid, IDLEN+1);
             receiver[IDLEN] = 0;
 
-            if(!chkreceiver(receiver,NULL))/*Haohamru.99.4.05*/
+            if(!chkreceiver(receiver,lookupuser))/*Haohamru.99.4.05*/
             {
                 prints("%s 信箱已满,无法收信\n",receiver);
                 return -4;

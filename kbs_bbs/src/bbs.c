@@ -733,7 +733,7 @@ unsigned lvl;
      // buf[10], buf ×î¶à 4 ¸öºº×Ö + 1 byte £¨\0½áÎ²£©
       if( lvl & PERM_SYSOP ) strcpy(buf,"°ïÖ÷");
       else if( lvl & PERM_MM ) strcpy(buf,"¹ÛÒô½ã½ã");
-      else  if( lvl & PERM_CHATCLOAK ) strcpy(buf,"Å£Ä§Íõ");
+      else  if( lvl & PERM_CHATCLOAK ) strcpy(buf,"ÎŞµĞÅ£Ê­");
       else if  ( lvl & PERM_BOARDS ) strcpy(buf,"¶şµ±¼ÒµÄ");
       else if ( lvl & PERM_DENYPOST ) strcpy( buf, "ÑÆ°Í" ); 
       else if ( ! (lvl & PERM_BASIC) ) strcpy( buf, "Ï¹×Ó" ); 
@@ -2237,7 +2237,7 @@ char *filepath;
     if (!strcmp(currboard,"Announce"))
         fprintf(fp, "[m[%2dm¡ù À´Ô´:¡¤%s %s¡¤[FROM: %s][m\n"
                 ,color,BoardName,email_domain(),
-                "´ó»°Î÷ÓÎBBSÕ¾");
+                "´ó»°Î÷ÓÎ BBSÕ¾");
     else
         fprintf(fp, "\n[m[%2dm¡ù À´Ô´:¡¤%s %s¡¤[FROM: %s][m\n"
                 ,color,BoardName,email_domain(),(noidboard)?"Ë®Á±¶´":currentuser->lasthost);
@@ -2386,7 +2386,7 @@ post_article()                         /*ÓÃ»§ POST ÎÄÕÂ */
         move(t_lines-1,0);
         clrtoeol();
         /* Leeward 98.09.24 add: viewing signature(s) while setting post head */
-        sprintf(buf2,"Çë°´ [1;32m0[m~[1;32m%d V[m Ñ¡/¿´Ç©Ãûµµ%s£¬[1;32mT[m ¸Ä±êÌâ£¬%s[1;32mEnter[m ½ÓÊÜËùÓĞÉè¶¨: ",numofsig,(replymode) ? "£¬[1;32mS/Y[m/[1;32mN[m/[1;32mR[m/[1;32mA[m ¸ÄÒıÑÔÄ£Ê½" : "",(anonyboard)?"[1;32mS[m ÄäÃû£¬":"");
+        sprintf(buf2,"Çë°´ [1;32m0[m~[1;32m%d V[m Ñ¡/¿´Ç©Ãûµµ%s£¬[1;32mT[m ¸Ä±êÌâ£¬%s[1;32mEnter[m ½ÓÊÜËùÓĞÉè¶¨: ",numofsig,(replymode) ? "£¬[1;32mS/Y[m/[1;32mN[m/[1;32mR[m/[1;32mA[m ¸ÄÒıÑÔÄ£Ê½" : "",(anonyboard)?"[1;32mM[m ÄäÃû£¬":"");
         getdata(t_lines-1,0,buf2,ans,3,DOECHO,NULL,YEA);
         ans[0] = toupper(ans[0]); /* Leeward 98.09.24 add; delete below toupper */
         if((ans[0]-'0')>=0&&ans[0]-'0'<=9)
@@ -3440,7 +3440,13 @@ struct fileheader *fileinfo;
 char *direct;
 {
     if( strcmp( "guest", currentuser->userid) == 0 )
-        return DONOTHING;
+    {
+        clear();
+        move(3,10);
+        prints("ºÜ±§Ç¸,Ïë×ª¼ÄÎÄÕÂÇëÉêÇëÕıÊ½ID!");
+        pressreturn();
+        return FULLUPDATE;
+    }
 
     /* ·â½ûMail Bigman:2000.8.22 */
     if (HAS_PERM(PERM_DENYMAIL))

@@ -766,7 +766,7 @@ strncpy(uname,currentuser->username,NAMELEN) ;
             fprintf(fp,"发信人: %s (%s), 信区: %s       \n","SYSOP",
                     "强盗头",currboard) ;
         else
-            fprintf(fp,"发信人: %s (%s), 信区: %s       \n",(noname&&Anony)?"currboard":uid,
+            fprintf(fp,"发信人: %s (%s), 信区: %s       \n",(noname&&Anony)?currboard:uid,
                     (noname&&Anony)?"Do you zixia?!":uname,currboard) ;
     } /***** 该语句增加阅读次数计数项 Add by Luzi 1998/1/8 ****/
 
