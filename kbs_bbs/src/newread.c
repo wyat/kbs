@@ -3,6 +3,7 @@
   * 先实现mail
   */
 #include "bbs.h"
+#include "read.h"
 
 
 static int read_key(struct _select_def *conf, int command)
@@ -155,12 +156,12 @@ static int read_onsize(struct _select_def* conf)
     return SHOW_DIRCHANGE;
 }
 
-int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct one_key *rcmdlist, int ssize)
+int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct key_command *rcmdlist, int ssize)
 {
     struct _select_def read_conf;
     struct read_arg arg;
     int i;
-    const struct key_translate ktab[]= {
+    const static struct key_translate ktab[]= {
             {'\n','r'},
             {'\r','r'},
             {KEY_RIGHT,'r'},
@@ -200,7 +201,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
         read_conf.show_title = read_title;
         read_conf.show_endline= read_endline;
         read_conf.on_size= read_onsize;
-        read_conf.key_table = &(ktab[0]);
+        read_conf.key_table = &ktab[0];
 
         read_getdata(&read_conf,read_conf.pos,read_conf.item_per_page);
 
@@ -214,7 +215,6 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
             prints("没有任何信件...");
             pressreturn();
             clear();
-
     }
 }
 
@@ -225,7 +225,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
  *            1 :  FULLUPDATE
  *            0 :  DONOTHING
  */
-static int read_search_articles(struct _select_def* conf, char *query, int offset, int aflag)
+static int read_search_articles(struct _select_def* conf, char *query, bool up, int aflag)
 {
     char ptr[STRLEN];
     int now, match = 0;
@@ -261,7 +261,7 @@ static int read_search_articles(struct _select_def* conf, char *query, int offse
 /*    refresh();*/
     match = 0;
     BBS_TRY {
-        if (safe_mmapfile_handle(arg->fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &pFh, &size, NULL) == 0)
+        if (safe_mmapfile_handle(arg->fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &pFh, &size) == 0)
             BBS_RETURN(0);
         if(now > arg->filecount){
 	/*在置顶文章前搜索*/
@@ -270,7 +270,7 @@ static int read_search_articles(struct _select_def* conf, char *query, int offse
         if (now <= arg->filecount) {
             pFh1 = pFh + now - 1;
             while (1) {
-                if (offset > 0) {
+                if (!up) {
                     if (++now > arg->filecount)
                         break;
                     pFh1++;
@@ -279,7 +279,7 @@ static int read_search_articles(struct _select_def* conf, char *query, int offse
                         break;
                     pFh1--;
                 }
-                if (now == arg->filecount)
+                if (now > arg->filecount)
                     break;
                 if (aflag == -1) { /*内容检索*/
                     char p_name[256];
@@ -351,7 +351,7 @@ int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     bool up=(bool)extraarg;
     
     strncpy(currauth, fh->owner, STRLEN);
-    snprintf(pmt, STRLEN, "%s的文章搜寻作者 [%s]: ", offset > 0 ? "往后来" : "往先前", currauth);
+    snprintf(pmt, STRLEN, "%s的文章搜寻作者 [%s]: ", up ? "往先前" : "往后来", currauth);
     move(t_lines - 1, 0);
     clrtoeol();
     getdata(t_lines - 1, 0, pmt, ans, IDLEN + 1, DOECHO, NULL, true);   /*Haohmaru.98.09.29.修正作者查找只能11位ID的错误 */
@@ -364,7 +364,7 @@ int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
         case 1:
             return PARTUPDATE;
         default:
-            conf->show_endline();
+            conf->show_endline(conf);
     }
     return DONOTHING;
 }

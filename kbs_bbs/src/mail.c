@@ -811,7 +811,7 @@ int read_new_mail(struct fileheader *fptr, int idc, void *arg)
 
             conf.pos=idc;
             readarg.direct=currdirect;
-            mail_reply(&conf, fptr);
+            mail_reply(&conf, fptr,NULL);
             /*
              * substitute_record(currmaildir, fptr, sizeof(*fptr), dc);
              */
@@ -1015,7 +1015,7 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo)
                 break;
             }
             replied = true;
-            mail_reply(conf, fileinfo);
+            mail_reply(conf, fileinfo,NULL);
             break;
         case ' ':
         case 'j':
@@ -1044,7 +1044,7 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo)
         }
     }
     if (delete_it)
-        return mail_del(conf, fileinfo);
+        return mail_del(conf, fileinfo,NULL);
     else if ((fileinfo->accessed[0] & FILE_READ) != FILE_READ)
 	{
         fileinfo->accessed[0] |= FILE_READ;
@@ -1173,7 +1173,7 @@ static int mail_edit(struct _select_def* conf, struct fileheader *fileinfo,void*
             add_edit_mark(genbuf, 1, /*NULL*/ fileinfo->title);
         if (attachpos!=fileinfo->attachment) {
             fileinfo->attachment=attachpos;
-            substitute_record(direct, fileinfo, sizeof(*fileinfo), ent);
+            substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
         }
     }
     if(stat(genbuf,&st) != -1) currentuser->usedspace -= (before - st.st_size);
@@ -1412,7 +1412,7 @@ int mail_move(struct _select_def* conf, struct fileheader *fileinfo,void* extraa
             strcpy(t, "DIR");
         else if (i == 1)
             strcpy(t, "DELETED");
-        if (strcmp(buf, direct))
+        if (strcmp(buf, arg->direct))
             if (!delete_record(arg->direct, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename)) {
                 append_record(buf, fileinfo, sizeof(*fileinfo));
             }
@@ -1429,25 +1429,25 @@ int mailreadhelp(struct _select_def* conf,void* data,void* extraarg)
 
 
 struct key_command mail_comms[] = {
-    {'d', mail_del,NULL},
-    {'D', mail_del_range,NULL},
+    {'d', (READ_KEY_FUNC)mail_del,NULL},
+    {'D', (READ_KEY_FUNC)mail_del_range,NULL},
 //added by bad 03-2-10
-    {'E', mail_edit,NULL},
-	{'T', mail_edit_title,NULL},
-    {'r', mail_read,NULL},
-    {'R', mail_reply,NULL},
-    {'m', mail_mark,NULL},
-    {'M', mail_move,NULL},
-    {'i', mail_to_tmp,NULL},
+    {'E', (READ_KEY_FUNC)mail_edit,NULL},
+	{'T', (READ_KEY_FUNC)mail_edit_title,NULL},
+    {'r', (READ_KEY_FUNC)mail_read,NULL},
+    {'R', (READ_KEY_FUNC)mail_reply,NULL},
+    {'m', (READ_KEY_FUNC)mail_mark,NULL},
+    {'M', (READ_KEY_FUNC)mail_move,NULL},
+    {'i', (READ_KEY_FUNC)mail_to_tmp,NULL},
 #ifdef INTERNET_EMAIL
-    {'F', mail_forward,NULL},
-    {'U', mail_uforward,NULL},
+    {'F', (READ_KEY_FUNC)mail_forward,NULL},
+    {'U', (READ_KEY_FUNC)mail_uforward,NULL},
 #endif
     /*
      * Added by ming, 96.10.9
      */
-    {'a', auth_search,(void*)false},
-    {'A', auth_search,(void*)true},
+    {'a', (READ_KEY_FUNC)auth_search,(void*)false},
+    {'A', (READ_KEY_FUNC)auth_search,(void*)true},
 /*  TODO:
     {'/', t_search_down,NULL},
     {'?', t_search_up,NULL},
@@ -1469,8 +1469,8 @@ struct key_command mail_comms[] = {
     {Ctrl('Y'), zsend_post,NULL},
     {Ctrl('C'), do_cross,NULL}, */
     
-    {'h', mailreadhelp,NULL},
-    {Ctrl('J'), mailreadhelp,NULL},
+    {'h', (READ_KEY_FUNC)mailreadhelp,NULL},
+    {Ctrl('J'), (READ_KEY_FUNC)mailreadhelp,NULL},
     
     {'\0', NULL},
 };
