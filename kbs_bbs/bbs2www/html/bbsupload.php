@@ -8,7 +8,7 @@
 	global $errno;
 	@$action=$_GET["act"];
     	$totalsize=0;
-    $allnames="";
+	$allnames="";
 	require("funcs.php");
 	if ($loginok !=1 )
 		html_nologin();
@@ -18,7 +18,22 @@
 		$attachdir=ATTACHTMPPATH . "/" . $currentuser["userid"] . "_" . $utmpnum;
 		if ($action=="delete") {
 			@$act_attachname=$_GET["attachname"];
-			@unlink($attachdir . "/" . "$act_attachname");
+			$fp1=fopen($attachdir . "/.index","r");
+			if ($fp1!=FALSE) {
+				$fp2=fopen($attachdir . "/.index2","w");
+				while (!feof($fp1)) {
+					$buf=fgets($fp1);
+					if (FALSE==($pos=strpos($buf," " . $act_attachname . "\n"))) {
+						fputs($fp2,$buf);
+					} else {
+						@unlink($attachdir . "/" . substr($buf, 0 ,$pos-1));
+					}
+				}
+				fclose($fp1);
+				fclose($fp2);
+				@unlink($attachdir . "/.index");
+				@rename($attachdir . "/.index2",$attachdir . "/.index");
+			}
 		} else if ($action=="add") {
 			@$errno=$_FILES['attachfile']['error'];
 			if ($errno==UPLOAD_ERR_OK) {
@@ -31,13 +46,16 @@
     					$tok = strtok("/\\");
 				}
 				$act_attachname=strtr($act_attachname,$filename_trans);
+				$act_attachname=substr($act_attachname,-60);
 				if ($act_attachname!="") {
 			        	if ($_FILES['attachfile']['size']<=ATTACHMAXSIZE) {
 						@mkdir($attachdir);
+						$tmpfilename=tempnam($attachdir);
 						if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
 				    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
-				        			$attachdir . "/" . $act_attachname);
-						}
+				        			$attachdir . "/" . $tmpfilename);
+						} else
+							$errno=100;
 					} else
 						$errno=UPLOAD_ERR_FORM_SIZE;
 				} else
@@ -45,6 +63,7 @@
 			}
 		}
 		$filecount=0;
+		/*
 		if ($handle = @opendir($attachdir)) {
                     while (false != ($file = readdir($handle))) { 
                         if ($file[0]=='.')
@@ -53,9 +72,25 @@
                     	$filesizes[] = filesize($attachdir . "/" . $file);
                     	$totalsize+=$filesizes[$filecount];
                     	$filecount++;
-			            $allnames = $allnames . $file . ";";
+			$allnames = $allnames . $file . ";";
                     }
                     closedir($handle);
+                }*/
+                if (($fp=fopen($attachdir . "/.index","r"))!=FALSE) {
+                	while (!feof($fp)) {
+	                	$buf=fgets($fp);
+	                	$buf=substr($buf,0,-1); //remove "\n"
+	                	if ($file=="")
+	                		continue;
+	                	$file=substr($buf,0,strpos(' '));
+	                	$name=strstr($buf,' ');
+                    		$filenames[] = $name;
+	                	$filesizes[$name] = filesize($attachdir . "/" . $file);
+                    		$totalsize+=$filesizes[$filecount];
+                    		$filecount++;
+	                	$allnames = $allnames . $name . ";";
+	                }
+			fclose($fp);
                 }
 ?>
 <script language="JavaScript">
@@ -82,6 +117,52 @@ a:hover {  color: #FF0000; text-decoration: none}
 .title01 { font-family: "黑体"; font-size: 16px; color: #770260 ; letter-spacing: 5px}
 </style>
 
+<body bgcolor="#FFFFFF"  background="/images/rback.gif">
+<?php
+                if ($action=="add") {
+                	if ($_FILES['attachfile']['size']+$totalsize>ATTACHMAXSIZE) {
+                		unlink($attachdir . "/" . $act_attachname);
+                		unset($filenames,$act_attachname);
+                		$errno=UPLOAD_ERR_FORM_SIZE;
+                	}
+                	if ($filecount>ATTACHMAXCOUNT) {
+                		echo "附件个数超过规定！";
+                		break;
+					} else
+                	switch ($errno) {
+                	case UPLOAD_ERR_OK:
+                		/* 填写 .index*/
+				if (($fp=fopen($attachdir . "/.index", "a")==FALSE) {
+                			unlink($attachdir . "/" . $act_attachname);
+                		} else {
+                			fputs($fp,$tmpfilename . " " . $act_attachname . "\n");
+                			fclose($fp);
+                			echo "文件上载成功！";
+	                    		$filenames[] = $act_attachname;
+		                	$filesizes[$act_attachname] = filesize($attachdir . "/" . $tmpfilename);
+	                    		$totalsize+=$filesizes[$filecount];
+	                    		$filecount++;
+		                	$allnames = $allnames . $act_attachname . ";";
+                			break;
+                		}
+                	case UPLOAD_ERR_INI_SIZE:
+                	case UPLOAD_ERR_FORM_SIZE:
+                		echo "文件超过预定的大小" . sizestr(ATTACHMAXSIZE) . "字节";
+                		break;
+                	case UPLOAD_ERR_PARTIAL:
+                		echo "文件传输出错！";
+                		break;
+                	case UPLOAD_ERR_NO_FILE:
+                		echo "没有文件上传！";
+                		break;
+                	case 100:
+                		echo "无效的文件名！";
+                	default:
+                		echo "未知错误";
+                	}
+                	echo "<br />";
+                }
+?>
 <script language=javascript>
 function addsubmit() {
   var e1,e3;
@@ -113,39 +194,6 @@ function clickclose() {
         opener.document.forms["postform"].elements["attachname"].value = <?php echo "\"$allnames\""; ?>;
 //-->
 </script>
-<body bgcolor="#FFFFFF"  background="/images/rback.gif">
-<?php
-                if ($action=="add") {
-                	if ($_FILES['attachfile']['size']+$totalsize>ATTACHMAXSIZE) {
-                		unlink($attachdir . "/" . $act_attachname);
-                		$errno=UPLOAD_ERR_FORM_SIZE;
-                	}
-                	if ($filecount>ATTACHMAXCOUNT) {
-                		echo "附件个数超过规定！";
-                		break;
-					} else
-                	switch ($errno) {
-                	case UPLOAD_ERR_OK:
-                		echo "文件上载成功！";
-                		break;
-                	case UPLOAD_ERR_INI_SIZE:
-                	case UPLOAD_ERR_FORM_SIZE:
-                		echo "文件超过预定的大小" . sizestr(ATTACHMAXSIZE) . "字节";
-                		break;
-                	case UPLOAD_ERR_PARTIAL:
-                		echo "文件传输出错！";
-                		break;
-                	case UPLOAD_ERR_NO_FILE:
-                		echo "没有文件上传！";
-                		break;
-                	case 100:
-                		echo "无效的文件名！";
-                	default:
-                		echo "未知错误";
-                	}
-                	echo "<br />";
-                }
-?>
 <form name="addattach" method="post" ENCTYPE="multipart/form-data" align="left" action="">
   <table border="0" cellspacing="2" class="txt-b03">
     <tr> 

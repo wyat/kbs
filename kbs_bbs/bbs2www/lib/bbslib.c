@@ -795,15 +795,18 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     }
 
     if (attach_dir!=NULL) {
-        DIR* attach_tmp_dir;
-        if (NULL!=(attach_tmp_dir=opendir(attach_dir))) {
-    		struct dirent* dirp;
-    		while (NULL!=(dirp=readdir(attach_tmp_dir))) {
-                    int fd;
-                    char* ptr;
-                    long begin,size,save_size;
-                    if (dirp->d_name[0]=='.') continue;
-                    snprintf(filepath,MAXPATH, "%s/%s",attach_dir,dirp->d_name);
+        snprintf(filepath,MAXPATH, "%s/.index",attach_dir);
+        if ((fp2=fopen(filepath,"r"))!=NULL) {
+            while (!feof(fp2)) {
+                char* name;
+                fgets(buf,256,fp2);
+                name=strchr(buf,' ');
+                if (name==NULL)
+                    continue;
+                *name=0;
+                name++;
+                
+                    snprintf(filepath,MAXPATH, "%s/%s",attach_dir,buf);
                     if (-1==(fd=open(filepath,O_RDONLY)))
                         continue;
                     if (post_file.attachment==0) {
@@ -811,7 +814,7 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
                         post_file.attachment=ftell(fp)+1;
                     }
                     fwrite(ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1,1,fp);
-                    fwrite(dirp->d_name,strlen(dirp->d_name)+1,1,fp);
+                    fwrite(dirp->d_name,strlen(name)+1,1,fp);
                     BBS_TRY {
                         if (safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & size) == 0) {
                             size=0;
