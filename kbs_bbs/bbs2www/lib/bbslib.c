@@ -2552,6 +2552,7 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 	long attachLen[MAXATTACHMENTCOUNT];
 	char* attachFileName[MAXATTACHMENTCOUNT];
 	enum ATTACHMENTTYPE attachType[MAXATTACHMENTCOUNT];
+	int attachShowed[MAXATTACHMENTCOUNT];
 	char UBBCode[256];	
 	int UBBCodeLen;
 	enum UBBTYPE UBBCodeType;
@@ -2564,6 +2565,7 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
         return;
     STATE_ZERO(ansi_state);
     bzero(ansi_val, sizeof(ansi_val));
+    bzero(attachShowed, sizeof(attachShowed));
     attachmatched = 0;
 	for (i = 0; i < buflen ; i++ ){
         long attach_len;
@@ -2737,16 +2739,18 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 							char outbuf[256];
 							switch(attachType[UBBArg1-1]) {
 							case ATTACH_IMG:
-								snprintf(outbuf, 255, "<br>图片:%s(%d)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+								snprintf(outbuf, 255, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
 								break;
 							case ATTACH_FLASH:
-				                snprintf(outbuf, 255, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+				                		snprintf(outbuf, 255, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+								break;
 							case ATTACH_OTHERS:
 								 snprintf(outbuf, 255, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1]);
 								 break;
 							}	
 							outbuf[255]=0;
 							output->output(outbuf, strlen(outbuf), output);
+							attachShowed[UBBArg1-1]=1;
 							continue;							
 						}	
 					} 
@@ -2947,15 +2951,32 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
                 print_raw_ansi(&buf[i], 1, output);
         }
     }
+	for ( i = 0; i<attachmatched ; i++ ){
+		if (!attachShowed[i]) { 
+			char outbuf[256];
+			switch(attachType[UBBArg1-1]) {
+			case ATTACH_IMG:
+		 		snprintf(outbuf, 255, "<br>图片:%s(%d 字节)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[i], attachLen[i], attachlink, attachPos[i]);
+				break;
+			case ATTACH_FLASH:
+		                snprintf(outbuf, 255, "<br>Flash动画: " "<a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[i], attachFileName[i], attachLen[i], attachlink, attachPos[i], attachlink, attachPos[i]);
+				break;
+			case ATTACH_OTHERS:
+				 snprintf(outbuf, 255, "<br>附件: <a href='%s&amp;ap=%d'>%s</a> (%d 字节)<br />\n", attachlink, attachPos[i], attachFileName[i], attachLen[i]);
+				 break;
+			}	
+			outbuf[255]=0;
+			output->output(outbuf, strlen(outbuf), output);
+			attachShowed[i]=1;
+		}
+		free(attachFileName[i]);
+	}
     if (STATE_ISSET(ansi_state, STATE_FONT_SET)) {
         output->output("</font>", 7, output);
         STATE_CLR(ansi_state, STATE_FONT_SET);
     }
     output->flush(output);
 
-	for ( i = 0; i<attachmatched ; i++ ){
-		free(attachFileName[i]);
-	}
 }
 
 /* ent 是 1-based 的*/
