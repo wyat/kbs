@@ -702,19 +702,6 @@ char *readdoent(char *buf, int num, struct fileheader *ent)
     return buf;
 }
 
-int add_author_friend(int ent, struct fileheader *fileinfo, char *direct)
-{
-    if (!strcmp("guest", currentuser->userid))
-        return DONOTHING;;
-
-    if (!strcmp(fileinfo->owner, "Anonymous") || !strcmp(fileinfo->owner, "deliver"))
-        return DONOTHING;
-    else {
-        clear();
-        addtooverride(fileinfo->owner);
-    }
-    return FULLUPDATE;
-}
 extern int zsend_file(char *filename, char *title);
 int zsend_post(int ent, struct fileheader *fileinfo, char *direct)
 {

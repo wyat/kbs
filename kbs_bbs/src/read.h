@@ -9,19 +9,30 @@ struct key_command {                /* Used to pass commands to the readmenu */
     void* arg;
 };
 
+enum {
+    READ_NORMAL,
+    READ_THREAD
+};
+
 struct read_arg {
-  /* save argument */
-  enum BBS_DIR_MODE mode;
-  char* direct;
-  void (*dotitle) ();
-  READ_FUNC doentry;
-  struct key_command *rcmdlist;
-  int ssize;
+    /* save argument */
+    enum BBS_DIR_MODE mode;
+    char* direct;
+    void (*dotitle) ();
+    READ_FUNC doentry;
+    struct key_command *rcmdlist;
+    int ssize;
 
-  void* data; //readed data
-  int fd; //filehandle,open always
+    /*用于确定当前的阅读模式，如果是
+    READ_NORMAL  正常的顺序阅读
+    READ_THREAD  正在主题阅读
+    */
+    int readmode; 
 
-  int filecount; //the item count of file
+    void* data; //readed data
+    int fd; //filehandle,open always
+
+    int filecount; //the item count of file
 };
 
 enum {
@@ -62,7 +73,21 @@ int thread_search(struct _select_def* conf, struct fileheader* fh, void* extraar
 #define SR_FIRSTNEW     0
 #define SR_FIRST            1
 #define SR_LAST             2
+#define SR_NEXT             3
+#define SR_PREV             4
 #define SR_FIRSTNEWDOWNSEARCH 100
 
 int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+
+int read_sendmsgtoauthor(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int read_showauthor(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int read_showauthorinfo(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int read_cross(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int read_zsend(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int read_addauthorfriend(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+int read_showauthorBM(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+
+#ifdef PERSONAL_CORP
+int read_importpc(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+#endif
 #endif  //__READ_H__

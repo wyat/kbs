@@ -1456,18 +1456,20 @@ struct key_command mail_comms[] = {
     {Ctrl('N'), (READ_KEY_FUNC)thread_read,(void*)SR_FIRSTNEW},
     {'\\', (READ_KEY_FUNC)thread_read,(void*)SR_LAST},
     {'=', (READ_KEY_FUNC)thread_read,(void*)SR_FIRST},
-/*  TODO:
-    {'z', sendmsgtoauthor,NULL},
-    {Ctrl('A'), show_author,NULL},
-    {Ctrl('Q'), show_authorinfo,NULL},     
-    {Ctrl('W'), show_authorBM,NULL}, 
+    {'z', (READ_KEY_FUNC)read_sendmsgtoauthor,NULL},
+    
+    {Ctrl('A'), (READ_KEY_FUNC)read_showauthor,NULL},
+    {Ctrl('Q'), (READ_KEY_FUNC)read_showauthorinfo,NULL},     
+    {Ctrl('W'), (READ_KEY_FUNC)read_showauthorBM,NULL}, 
+    {Ctrl('O'), (READ_KEY_FUNC)read_addauthorfriend,NULL},
+
+    {Ctrl('Y'), (READ_KEY_FUNC)read_zsend,NULL},
+    {Ctrl('C'), (READ_KEY_FUNC)read_cross,NULL}, */
 
 #ifdef PERSONAL_CORP
-	{'y', import_to_pc,NULL},
+	{'y', (READ_KEY_FUNC)read_importpc,NULL},
 #endif
-    {Ctrl('O'), add_author_friend,NULL},
-    {Ctrl('Y'), zsend_post,NULL},
-    {Ctrl('C'), do_cross,NULL}, */
+    {Ctrl('C'), (READ_KEY_FUNC)read_cross,NULL}, 
     
     {'h', (READ_KEY_FUNC)mailreadhelp,NULL},
     {Ctrl('J'), (READ_KEY_FUNC)mailreadhelp,NULL},
@@ -1481,7 +1483,7 @@ int m_read()
 
     setmailfile(curmaildir, currentuser->userid, DOT_DIR);
     in_mail = true;
-    new_i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+    new_i_read(DIR_MODE_MAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
     in_mail = false;
 	setmailcheck(currentuser->userid);
     return FULLUPDATE /* 0 */ ;
@@ -2349,7 +2351,7 @@ static int maillist_onselect(struct _select_def *conf)
         sel = conf->pos - arg->cmdnum - 1;
         setmailfile(curmaildir,currentuser->userid, mail_sysbox[sel]);
         in_mail = true;
-        new_i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+        new_i_read(DIR_MODE_MAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
         in_mail = false;
         /*
          * œµÕ≥” œ‰

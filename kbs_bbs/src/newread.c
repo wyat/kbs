@@ -5,6 +5,38 @@
 #include "bbs.h"
 #include "read.h"
 
+/*用于apply_record的回调函数*/
+static int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
+{
+    int mode=(int)extraarg;
+    switch (mode) {
+        case SR_FIRSTNEWDOWNSEARCH:
+#ifdef HAVE_BRC_CONTROL
+            if (brc_unread(fh->id)) {
+                conf->new_pos=ent;
+            }
+#endif
+            break;
+        case SR_FIRSTNEW:
+#ifdef HAVE_BRC_CONTROL
+            if (brc_unread(fh->id)) {
+                conf->new_pos=ent;
+                return APPLY_CONTINUE;
+            }
+            break;
+#endif
+        case SR_FIRST:
+        case SR_LAST:
+            conf->new_pos=ent;
+            return APPLY_CONTINUE;/*继续查到底*/
+        case SR_NEXT:
+        case SR_PREV:
+            conf->new_pos=ent;
+            return APPLY_QUIT;
+    }
+    return APPLY_QUIT;
+}
+
 
 static int read_key(struct _select_def *conf, int command)
 {
@@ -70,23 +102,51 @@ static int read_key(struct _select_def *conf, int command)
             ret=SHOW_QUIT;
             break;
         case READ_NEXT:
-            if (conf->pos<conf->item_count) {
-                conf->new_pos = conf->pos + 1;
-                list_select_add_key(conf,'r'); //SEL change的下一条指令是read
-                ret=SHOW_SELCHANGE;
-            } else ret=SHOW_REFRESH;
+            if (arg->readmoe==READ_NORMAL) {
+                if (conf->pos<conf->item_count) {
+                    conf->new_pos = conf->pos + 1;
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    ret=SHOW_SELCHANGE;
+                } else ret=SHOW_REFRESH;
+            } else  { /* 处理同主题阅读*/
+                apply_thread(conf,
+                    arg->data+(conf->pos - conf->page_pos) * arg->ssize,
+                    fileheader_thread_read,
+                    true,
+                    (void*)SR_NEXT);
+                if (conf->newpos!=0) {
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    ret=SHOW_SELCHANGE;
+                }
+                else ret=SHOW_REFRESH;
+            }
             break;
         case READ_PREV:
-            if (conf->pos>1) {
-                conf->new_pos = conf->pos - 1;
-                list_select_add_key(conf,'r'); //SEL change的下一条指令是read
-                ret=SHOW_SELCHANGE;
-            } else ret= SHOW_REFRESH;
+            if (arg->readmoe==READ_NORMAL) {
+                if (conf->pos>1) {
+                    conf->new_pos = conf->pos - 1;
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    ret=SHOW_SELCHANGE;
+                } else ret= SHOW_REFRESH;
+            } else { /* 处理同主题阅读*/
+                apply_thread(conf,
+                    arg->data+(conf->pos - conf->page_pos) * arg->ssize,
+                    fileheader_thread_read,
+                    false,
+                    (void*)SR_PREV);
+                if (conf->newpos!=0) {
+                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                    ret=SHOW_SELCHANGE;
+                }
+                else ret=SHOW_REFRESH;
+            }
             break;
         case SELCHANGE:
             ret=SHOW_SELCHANGE;
             break;
     } 
+    if (ret!=SHOW_SELCHANGE) /*返回非顺序阅读模式*/
+        arg->readmode=READ_NORMAL;
     return ret;
 }
 
@@ -221,7 +281,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
     if (cmdmode==DIR_MODE_MAIL)
         modify_user_mode(RMAIL);
     else //todo: other mode
-        modify_user_mode(RMAIL);
+        modify_user_mode(READBRD);
 
     /* save argument */
     arg.mode=cmdmode;
@@ -230,6 +290,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
     arg.doentry=doentry;
     arg.rcmdlist=rcmdlist;
     arg.ssize=ssize;
+    arg.readmode=READ_NORMAL;
 
     clear();
 
@@ -536,37 +597,10 @@ int thread_search(struct _select_def* conf, struct fileheader* fh, void* extraar
     return DONOTHING;
 }
 
-/*用于apply_record的回调函数*/
-static int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
-{
-    int mode=(int)extraarg;
-    switch (mode) {
-        case SR_FIRSTNEWDOWNSEARCH:
-#ifdef HAVE_BRC_CONTROL
-            if (brc_unread(fh->id)) {
-                conf->new_pos=ent;
-            }
-#endif
-            break;
-        case SR_FIRSTNEW:
-#ifdef HAVE_BRC_CONTROL
-            if (brc_unread(fh->id)) {
-                conf->new_pos=ent;
-                return APPLY_CONTINUE;
-            }
-            break;
-#endif
-        case SR_FIRST:
-        case SR_LAST:
-            conf->new_pos=ent;
-            return APPLY_CONTINUE;/*继续查到底*/
-    }
-    return APPLY_QUIT;
-}
-
 int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 {
     int mode=(int)extraarg;
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
     conf->new_pos=0;
     switch (mode) {
         case SR_FIRST:
@@ -583,7 +617,155 @@ int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
             break;
     }
     if (conf->new_pos==0) return DONOTHING;
-    /*TODO: SR_FIRSTNEW还需要紧跟着同主题阅读*/
+    if (mode==SR_FIRSTNEW) {
+        if (conf->new_pos!=0) {
+            list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+            read_arg->readmode=READ_THREAD;
+        }
+    }
     return SELCHANGE;
 }
+
+
+int read_sendmsgtoauthor(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    struct user_info *uin;
+
+    if (!HAS_PERM(currentuser, PERM_PAGE))
+        return DONOTHING;
+    clear();
+    uin = (struct user_info *) t_search(fh->owner, false);
+    if (!uin || !canmsg(currentuser, uin))
+        do_sendmsg(NULL, NULL, 0);
+
+    else {
+        strncpy(MsgDesUid, uin->userid, 20);
+        do_sendmsg(uin, NULL, 0);
+    }
+    return FULLUPDATE;
+}
+
+
+int read_showauthor(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    if ( /*strchr(fileinfo->owner,'.')|| */ !strcmp(fh->owner, "Anonymous") || !strcmp(fh->owner, "deliver"))       /* Leeward 98.04.14 */
+        return DONOTHING;
+
+    else
+        t_query(fh->owner);
+    return FULLUPDATE;
+}
+
+/*直接查作者资料*/
+int read_showauthorinfo(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    struct userec uinfo;
+    struct userec *lookupuser;
+    int id;
+
+    if (!HAS_PERM(currentuser, PERM_ACCOUNTS)
+        || !strcmp(fh->owner, "Anonymous")
+        || !strcmp(fh->owner, "deliver"))
+        return DONOTHING;
+
+    else {
+        if (0 == (id = getuser(fh->owner, &lookupuser))) {
+            move(2, 0);
+            prints("不正确的使用者代号");
+            clrtoeol();
+            return PARTUPDATE;
+        }
+        uinfo = *lookupuser;
+        move(1, 0);
+        clrtobot();
+        disply_userinfo(&uinfo, 1);
+        uinfo_query(&uinfo, 1, id);
+    }
+    return FULLUPDATE;
+}
+
+int read_showauthorBM(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    struct boardheader *bptr;
+    int tuid = 0;
+    int n;
+
+    if (!HAS_PERM(currentuser, PERM_ACCOUNTS) || !strcmp(fh->owner, "Anonymous") || !strcmp(fh->owner, "deliver"))
+        return DONOTHING;
+    else {
+        struct userec *lookupuser;
+
+        if (!(tuid = getuser(fh->owner, &lookupuser))) {
+            clrtobot();
+            prints("不正确的使用者代号\n");
+            pressanykey();
+            move(2, 0);
+            clrtobot();
+            return FULLUPDATE;
+        }
+
+        move(3, 0);
+        if (!(lookupuser->userlevel & PERM_BOARDS)) {
+            clrtobot();
+            prints("用户%s不是版主!\n", lookupuser->userid);
+            pressanykey();
+            move(2, 0);
+            clrtobot();
+            return FULLUPDATE;
+        }
+        clrtobot();
+        prints("用户%s为以下版的版主\n\n", lookupuser->userid);
+
+        prints("┏━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓\n");
+        prints("┃            版英文名            ┃            版中文名            ┃\n");
+
+        for (n = 0; n < get_boardcount(); n++) {
+            bptr = (struct boardheader *) getboard(n + 1);
+            if (chk_BM_instr(bptr->BM, lookupuser->userid) == true) {
+                prints("┣━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━┫\n");
+                prints("┃%-32s┃%-32s┃\n", bptr->filename, bptr->title + 12);
+            }
+        }
+        prints("┗━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━┛\n");
+        pressanykey();
+        move(2, 0);
+        clrtobot();
+        return FULLUPDATE;
+    }
+}
+
+
+int read_addauthorfriend(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    if (!strcmp("guest", currentuser->userid))
+        return DONOTHING;;
+
+    if (!strcmp(fh->owner, "Anonymous") || !strcmp(fh->owner, "deliver"))
+        return DONOTHING;
+    else {
+        clear();
+        addtooverride(fh->owner);
+    }
+    return FULLUPDATE;
+}
+
+int read_zsend(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
+    return zsend_post(conf->pos, fh, read_arg->direct);
+}
+
+int read_cross(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
+    return do_cross(conf->pos, fh, read_arg->direct);
+}
+
+#ifdef PERSONAL_CORP
+int read_importpc(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
+    return import_to_pc(conf->pos, fh, read_arg->direct);
+}
+#endif
 
