@@ -4,6 +4,7 @@
 	 * windinsn Apr 8 , 2004
 	 */
 	require("funcs.php");
+	require("board.inc.php");
 	function get_content($parent)
 	{
 	    $nodes = $parent->child_nodes();
@@ -75,9 +76,11 @@
 		if ($brdnum == 0)
 			continue;
 		$brd_encode = urlencode($brdarr["NAME"]);
+		
+		$i ++ ;
 ?>
 <tr>
-<td class="kt3 c2" align=center height=25><?php echo $i+1; ?></td>
+<td class="kt3 c2" align=center height=25><?php echo $i; ?></td>
 <td class="kt4 c1" >
 	<img src="images/newgroup.gif" height="15" width="20" title="新开讨论区">
 </td>
@@ -114,14 +117,8 @@
   </tr>
   </table>
 </center>
-<p align="center">
-[<a href="/mainpage.html">首页导读</a>]
-[<a href="/bbssec.php">分类讨论区</a>]
-[<a href="/cgi-bin/bbs/bbs0an">精华公布栏</a>]
-[<a href="javascript:history.go(-1)">快速返回</a>]
-<br />
-</p>
 <?php
+		bbs_boards_navigation_bar();
 		html_normal_quit();
 	}
 ?>
