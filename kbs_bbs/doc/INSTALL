@@ -55,7 +55,10 @@ mysql                  可选      选择个人文集等功能支持才需要
 
 2.2 安装 libesmtp 和 gmp
     libesmtp 建议从源代码编译安装，configure 的时候建议加上 --disable-pthreads
-参数，但不加也可以，然后运行 make 和 make install 命令。
+参数，虽然不加也可以编译通过，但运行时可能会出现问题。注意，如果操作系统是
+FreeBSD 5.X，编译 libesmtp 时一定要加上 --disable-pthreads 参数，但直接从 ports
+安装的 libesmtp 默认支持 pthreads。
+
     注：从 smthbbs-1.2.1 版本开始，libesmtp 不再是必须安装的了，但如果不使用
 libesmtp 的话，则系统中必须安装有 sendmail 程序。
 
@@ -100,18 +103,18 @@ BBSGID 与本地系统的 bbs 用户的 uid gid 是否一致，如果不一致请调整到一致。
           chown -R bbs:bbs /usr/local/bbs
 
     注：一些常用 configure 参数说明。
-          --enable-site=SITE      告诉 smthbbs 采用名为 SITE.h 和 SITE.c 的站
-                                  点定制文件，这两个文件必须放在 site/ 目录
-          --with-mysql[=DIR]      让 smthbbs 支持 mysql，DIR 为 mysql 库文件
-                                  所在目录，如果不指明则自动检测
-          --without-mysql         不让 smthbbs 支持 mysql
-          --with-libesmtp[=DIR]   让 smthbbs 支持 libesmtp，DIR 为 libesmt 库
-                                  文件所在目录，如果不指明则自动检测
-          --without-libesmtp      不让 smthbbs 支持 libesmtp
-          --with-www=DIR          设定 smthbbs web 子系统的安装目录，要求 DIR
-                                  目录下存在名为 html 或 htdocs 的子目录
-          --with-php[=DIR]        让 smthbbs 找到 php 头文件所在目录，如果不
-                                  指明 DIR 则自动检测
+          --enable-site=SITE     告诉 smthbbs 采用名为 SITE.h 和 SITE.c 的站
+                                 点定制文件，这两个文件必须放在 site/ 目录
+          --with-mysql[=DIR]     让 smthbbs 支持 mysql，DIR 为 mysql 库文件
+                                 所在目录，如果不指明则自动检测
+          --without-mysql        不让 smthbbs 支持 mysql
+          --with-libesmtp[=DIR]  让 smthbbs 支持 libesmtp，DIR 为 libesmtp 库
+                                 文件所在目录，如果不指明则自动检测
+          --without-libesmtp     不让 smthbbs 支持 libesmtp
+          --with-www=DIR         设定 smthbbs web 子系统的安装目录，要求 DIR
+                                 目录下存在名为 html 或 data 或 htdocs 的子目录
+          --with-php[=DIR]       让 smthbbs 找到 php 头文件所在目录，如果不
+                                 指明 DIR 则自动检测
 
 2.6[不推荐] 将 phpbbslib 放入 php 
     同样切换到 $(SRCDIR) 目录，进入 php 的源代码目录。

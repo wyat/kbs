@@ -1,11 +1,12 @@
 $Id$
 
-              smthbbs 在 RedHat Linux 8/9 上的安装指南
+              smthbbs 在 RedHat Linux 上的安装指南
 
-    本文介绍如何在 RedHat Linux 8/9 系统上安装 smthbbs 系统。与以往
-安装方法不同的是，本文的方法尽可能使用 RedHat 自带的软件，例如 apache
-和 php 等。此外，本文的方法可使 smthbbs 的 www 模块同时适合 apache 和 
-apache2。
+    本文介绍如何在 RedHat Linux (包括 Redhat Linux 7.3/8/9，Enterprise 
+Linux 3 和 Fedora Core 1/2/3，下文中简称 RedHat) 系统上安装 smthbbs 系
+统。与以往安装方法不同的是，本文的方法尽可能使用 RedHat 自带的软件，例
+如 apache 和 php 等。此外，本文的方法可使 smthbbs 的 www 模块同时适合 
+apache 和 apache2。
 
 1. 需要的软件
 httpd-xxx              必须
@@ -20,9 +21,9 @@ libesmtp-devel         可选
      (以上软件可直接用 RedHat 光盘里的安装)
 
 
-autoconf-2.57          必须
-automake-1.6.X         必须
-libtool-1.4.X          必须
+autoconf >= 2.57       必须
+automake >= 1.6.X      必须
+libtool >= 1.4.X       必须
      (以上 3 个可以从 dev.smth.org 下载 rpm 包安装或者下载源代码自己编译安装)
 
 2. 编译安装 smthbbs
@@ -34,6 +35,9 @@ libtool-1.4.X          必须
 是站点定制文件，本文以这两个文件为例子进行讲解。注意验证 fb2k-v2.h 文件中 
 BBSUID 和 BBSGID 与本地系统的 bbs 用户的 uid gid 是否一致，如果不一致请调整到
 一致。
+
+    如果 libtool 是 1.5 以上版本，请先在 smthbbs 主目录和 sshbbsd 主目录运行:
+        libtoolize -c --force
 
     然后进入 smthbbs 的源代码目录，执行下列命令完成编译。
         contrib/build-RH9.sh
@@ -96,11 +100,12 @@ doc/ 目录的文件及 BBS 水木清华站 (http://www.smth.org) BBSMan_Dev 版的文章。
         phpinfo();
 ?>
 
-    然后在浏览器中输入地址 http://server_address/info.php，查看输出页面，
-如果页面中没有 smth_bbs support enabled 这一行，说明 smthbbs 的 phpbbslib
-extension 没有起作用。
+    然后在浏览器中输入地址 http://server_address/info.php，其中 server_address
+为 www 服务器的实际地址，查看输出页面，如果页面中没有 smth_bbs support enabled
+这一行，说明 smthbbs 的 phpbbslib extension 没有起作用。
 
     最后要把 info.php 文件删除。
 
-    其他问题请到 BBS 水木清华站 (http://www.smth.org) BBSMan_Dev 版参与讨论。
+    其他问题请参阅 doc 目录里面的文件或到 BBS 水木清华站 (http://www.smth.org) 
+BBSMan_Dev 版参与讨论。
 
