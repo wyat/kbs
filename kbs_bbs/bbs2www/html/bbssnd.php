@@ -29,6 +29,8 @@
 		if (!isset($_POST["reid"])) $reID = $_GET["reid"];   
 		else
 			$reID = 0;
+		if (bbs_is_outgo_board($brdArr)) $outgo = intval($_POST["outgo"]);
+		else $outgo = 0;
 		
 		settype($reID, "integer");
 				
@@ -42,7 +44,7 @@
 		//post articles
 		$ret = bbs_postarticle($boardName, preg_replace("/\\\(['|\"|\\\])/","$1",$_POST["title"]), 
 			preg_replace("/\\\(['|\"|\\\])/","$1",$_POST["text"]), intval($_POST["signature"]), $reID, 
-			intval($_POST["outgo"]), intval($_POST["anony"]));
+			$outgo, intval($_POST["anony"]));
 		switch ($ret) {
 			case -1:
 				html_error_quit("错误的讨论区名称!");
@@ -77,7 +79,7 @@
 <tr align=center><th width="100%">发文成功！</td>
 </tr><tr><td width="100%" class=TableBody1>
 本页面将在3秒后自动返回版面文章列表<meta HTTP-EQUIV=REFRESH CONTENT='3; URL=bbsdoc.php?board=<?php echo $boardName; ?>' >，<b>您可以选择以下操作：</b><br><ul>
-<li><a href="mainpage.php">返回首页</a></li>
+<li><a href="<?php echo MAINPAGE_FILE; ?>">返回首页</a></li>
 <li><a href="bbsdoc.php?board=<?php   echo $boardName; ?>">返回<?php   echo $boardArr['DESC']; ?></a></li>
 </ul></td></tr></table>
 
