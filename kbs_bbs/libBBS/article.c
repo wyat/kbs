@@ -4,12 +4,12 @@
 
 void cancelpost(const char *board,const char *userid,struct fileheader *fh, int owned, int autoappend);
 int get_effsize_attach(char * ffn, long *att);
-int outgo_post(struct fileheader *fh, char *board, char *title)
+int outgo_post(struct fileheader *fh, char *board, char *title,session_t* session)
 {
     FILE *foo;
 
     if ((foo = fopen("innd/out.bntp", "a")) != NULL) {
-        fprintf(foo, "%s\t%s\t%s\t%s\t%s\n", board, fh->filename, currentuser->userid, currentuser->username, title);
+        fprintf(foo, "%s\t%s\t%s\t%s\t%s\n", board, fh->filename, session->currentuser->userid, session->currentuser->username, title);
         fclose(foo);
         return 0;
     }
@@ -339,7 +339,7 @@ int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct filehead
    Unlike the fb code which moves the file to the deleted
    board.
 */
-void cancelpost(const char *board,const char *userid,struct fileheader *fh, int owned, int autoappend)
+void cancelpost(const char *board,const char *userid,struct fileheader *fh, int owned, int autoappend,session_t session)
 {
     struct fileheader postfile;
     char oldpath[50];
@@ -349,7 +349,7 @@ void cancelpost(const char *board,const char *userid,struct fileheader *fh, int 
 
 #ifdef BBSMAIN
     if (uinfo.mode == RMAIL) {
-        sprintf(oldpath, "mail/%c/%s/%s", toupper(currentuser->userid[0]), currentuser->userid, fh->filename);
+        sprintf(oldpath, "mail/%c/%s/%s", toupper(session->currentuser->userid[0]), session->currentuser->userid, fh->filename);
         my_unlink(oldpath);
         return;
     }
@@ -431,7 +431,7 @@ void cancelpost(const char *board,const char *userid,struct fileheader *fh, int 
 }
 
 
-void add_loginfo(char *filepath, struct userec *user, char *currboard, int Anony)
+void add_loginfo(char *filepath, struct userec *user, char *currboard, int Anony,session_t* session)
 {                               /* POST 最后一行 添加 */
     FILE *fp;
     int color, noidboard;
@@ -453,7 +453,7 @@ void add_loginfo(char *filepath, struct userec *user, char *currboard, int Anony
     if (!strcmp(currboard, "Announce"))
         fprintf(fp, "\033[m\033[1;%2dm※ 来源:·%s %s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, NAME_BBS_ENGLISH, NAME_BBS_CHINESE " BBS站");
     else
-        fprintf(fp, "\n\033[m\033[1;%2dm※ 来源:·%s %s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, NAME_BBS_ENGLISH, (noidboard) ? NAME_ANONYMOUS_FROM : SHOW_USERIP(currentuser, fromhost));
+        fprintf(fp, "\n\033[m\033[1;%2dm※ 来源:·%s %s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, NAME_BBS_ENGLISH, (noidboard) ? NAME_ANONYMOUS_FROM : SHOW_USERIP(session->currentuser, session->fromhost));
     fclose(fp);
     return;
 }
@@ -1037,10 +1037,10 @@ int after_post(struct userec *user, struct fileheader *fh, char *boardname, stru
 				char newtitle[STRLEN];
 
 				if(getuser(re->owner, &lookupuser) != 0){
-					if(( false != canIsend2(currentuser, re->owner)) && !(lookupuser->userlevel & PERM_SUICIDE) && (lookupuser->userlevel & PERM_READMAIL) && !chkusermail(lookupuser)){
+					if(( false != canIsend2(session->currentuser, re->owner)) && !(lookupuser->userlevel & PERM_SUICIDE) && (lookupuser->userlevel & PERM_READMAIL) && !chkusermail(lookupuser)){
 						setbfile(buf, boardname, fh->filename);
 						snprintf(newtitle, ARTICLE_TITLE_LEN, "[回文转寄]%s", fh->title);
-						mail_file(currentuser->userid, buf, re->owner, newtitle, 0, fh);
+						mail_file(session->currentuser->userid, buf, re->owner, newtitle, 0, fh);
 					}
 				}
 			}
@@ -1530,9 +1530,9 @@ int add_edit_mark(char *fname, int mode, char *title)
         if (Origin2(buf) && (!added)) {
             now = time(0);
             if(mode & 1)
-                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %s]\033[m\n", session->currentuser->userid, ctime(&now) + 4, SHOW_USERIP(session->currentuser, fromhost));
             else
-                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+                fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %s]\033[m\n", session->currentuser->userid, ctime(&now) + 4, SHOW_USERIP(session->currentuser, fromhost));
             step = 3;
             added = 1;
         }
@@ -1543,9 +1543,9 @@ int add_edit_mark(char *fname, int mode, char *title)
     {
         now = time(0);
         if(mode & 1)
-            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本信·[FROM: %s]\033[m\n", session->currentuser->userid, ctime(&now) + 4, SHOW_USERIP(session->currentuser, fromhost));
         else
-            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %s]\033[m\n", currentuser->userid, ctime(&now) + 4, SHOW_USERIP(currentuser, fromhost));
+            fprintf(out, "\033[36m※ 修改:·%s 于 %15.15s 修改本文·[FROM: %s]\033[m\n", session->currentuser->userid, ctime(&now) + 4, SHOW_USERIP(session->currentuser, fromhost));
     }
     fclose(fp);
     fclose(out);
@@ -2004,7 +2004,7 @@ int delete_range(struct write_dir_arg* dirarg,int id1,int id2,int del_mode,int c
                 delcount++;
                 if (delcount >= DEL_RANGE_BUF) {
                     for (j = 0; j < DEL_RANGE_BUF; j++)
-                        cancelpost(board->filename, currentuser->userid, &delfhdr[j], !strcmp(delfhdr[j].owner, currentuser->userid), 0);
+                        cancelpost(board->filename, session->currentuser->userid, &delfhdr[j], !strcmp(delfhdr[j].owner, session->currentuser->userid), 0);
                     delcount = 0;
                     setbdir(DIR_MODE_DELETED, genbuf, board->filename);
                     append_record(genbuf, (char *) delfhdr, DEL_RANGE_BUF * sizeof(struct fileheader));
@@ -2019,7 +2019,7 @@ int delete_range(struct write_dir_arg* dirarg,int id1,int id2,int del_mode,int c
                     delcount++;
                     if (delcount >= DEL_RANGE_BUF) {
                         delcount = 0;
-                        setmailfile(genbuf, currentuser->userid, ".DELETED");
+                        setmailfile(genbuf, session->currentuser->userid, ".DELETED");
                         append_record(genbuf, (char *) delfhdr, DEL_RANGE_BUF * sizeof(struct fileheader));
                     }
                 } else {
@@ -2030,8 +2030,8 @@ int delete_range(struct write_dir_arg* dirarg,int id1,int id2,int del_mode,int c
                    if (delcount >= DEL_RANGE_BUF) {
                	       delcount = 0;
                        for (j = 0; j < DEL_RANGE_BUF; j++){
-	            		setmailfile(genbuf, currentuser->userid, delfhdr[j].filename);
-	            		if (stat(genbuf, &st) !=-1) currentuser->usedspace-=st.st_size;
+	            		setmailfile(genbuf, session->currentuser->userid, delfhdr[j].filename);
+	            		if (stat(genbuf, &st) !=-1) session->currentuser->usedspace-=st.st_size;
 	        	}
                    }
                 }
@@ -2066,21 +2066,21 @@ int delete_range(struct write_dir_arg* dirarg,int id1,int id2,int del_mode,int c
         int j;
 
         for (j = 0; j < delcount; j++)
-            cancelpost(board->filename, currentuser->userid, &delfhdr[j], !strcmp(delfhdr[j].owner, currentuser->userid), 0);
+            cancelpost(board->filename, session->currentuser->userid, &delfhdr[j], !strcmp(delfhdr[j].owner, session->currentuser->userid), 0);
         setbdir(DIR_MODE_DELETED, genbuf, board->filename);
         append_record(genbuf, (char *) delfhdr, delcount * sizeof(struct fileheader));
 		setboardorigin(board->filename, 1);
     }
     else if (curmode==DIR_MODE_MAIL&&!strstr(dirarg->filename, ".DELETED")) {
-        setmailfile(genbuf, currentuser->userid, ".DELETED");
+        setmailfile(genbuf, session->currentuser->userid, ".DELETED");
         append_record(genbuf, (char *) delfhdr, delcount * sizeof(struct fileheader));
     }
     else if (curmode==DIR_MODE_MAIL) {
         struct stat st;
         int j;
         for (j = 0; j < delcount; j++){
-            setmailfile(genbuf, currentuser->userid, delfhdr[j].filename);
-            if (stat(genbuf, &st) !=-1) currentuser->usedspace-=st.st_size;
+            setmailfile(genbuf, session->currentuser->userid, delfhdr[j].filename);
+            if (stat(genbuf, &st) !=-1) session->currentuser->usedspace-=st.st_size;
         }
     }
     if (dirarg->needlock)
@@ -2282,11 +2282,11 @@ int change_post_flag(struct write_dir_arg* dirarg,int currmode, struct boardhead
         if (data->accessed[0] & FILE_MARKED) {
             originFh->accessed[0] |= FILE_MARKED;
             if (dobmlog)
-                bmlog(currentuser->userid, board->filename, 7, 1);
+                bmlog(session->currentuser->userid, board->filename, 7, 1);
         } else {
             originFh->accessed[0] &= ~FILE_MARKED;
             if (dobmlog)
-                bmlog(currentuser->userid, board->filename, 6, 1);
+                bmlog(session->currentuser->userid, board->filename, 6, 1);
         } 
         setboardmark(board->filename, 1);
     }
@@ -2295,7 +2295,7 @@ int change_post_flag(struct write_dir_arg* dirarg,int currmode, struct boardhead
     if (flag&FILE_NOREPLY_FLAG) {
         if (!strcmp(board->filename, SYSMAIL_BOARD)) {
             char ans[STRLEN];
-            snprintf(ans, STRLEN, "〖%s〗 处理: %s", currentuser->userid, fileinfo->title);
+            snprintf(ans, STRLEN, "〖%s〗 处理: %s", session->currentuser->userid, fileinfo->title);
             strncpy(originFh->title, ans, ARTICLE_TITLE_LEN - 1);
             originFh->title[ARTICLE_TITLE_LEN - 1] = 0;
         }
@@ -2335,7 +2335,7 @@ int change_post_flag(struct write_dir_arg* dirarg,int currmode, struct boardhead
     if (flag&FILE_DIGEST_FLAG) {
         if (data->accessed[0] & FILE_DIGEST)  {     /*设置DIGEST*/ 
             if (dobmlog) {
-                bmlog(currentuser->userid, board->filename, 3, 1);
+                bmlog(session->currentuser->userid, board->filename, 3, 1);
                 ret=add_digest(originFh,board->filename);
             } else { /*其实这时候只需要改一下标志就够了*/
                 originFh->accessed[0] |= FILE_DIGEST;
@@ -2343,7 +2343,7 @@ int change_post_flag(struct write_dir_arg* dirarg,int currmode, struct boardhead
         } else {/* 如果已经是文摘的话，则从文摘中删除该post */
             originFh->accessed[0] = (originFh->accessed[0] & ~FILE_DIGEST);
             if (dobmlog) {
-                bmlog(currentuser->userid, board->filename, 4, 1);
+                bmlog(session->currentuser->userid, board->filename, 4, 1);
                 ret=dele_digest(originFh->filename, board->filename);
             }
         }

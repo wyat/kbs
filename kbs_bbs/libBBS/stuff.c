@@ -308,13 +308,13 @@ int do_exec(char *com, *wd)
             }
         bbssetenv("PATH", "/bin:.");
         bbssetenv("TERM", "vt100");
-        bbssetenv("USER", currentuser->userid);
-        bbssetenv("USERNAME", currentuser->username);
+        bbssetenv("USER", session->currentuser->userid);
+        bbssetenv("USERNAME", session->currentuser->username);
 
         /*
          * added for tin's reply to 
          */
-        bbssetenv("REPLYTO", currentuser->email);
+        bbssetenv("REPLYTO", session->currentuser->email);
         bbssetenv("FROMHOST", fromhost);
 
         /*
@@ -579,10 +579,10 @@ char *setbdir(int digestmode, char *buf,const  char *boardname)
         strcpy(dir, ".ORIGIN");
         break;
     case DIR_MODE_AUTHOR:
-        sprintf(dir, ".AUTHOR.%s", currentuser->userid);
+        sprintf(dir, ".AUTHOR.%s", session->currentuser->userid);
         break;
     case DIR_MODE_TITLE:
-        sprintf(dir, ".TITLE.%s", currentuser->userid);
+        sprintf(dir, ".TITLE.%s", session->currentuser->userid);
         break;
     case DIR_MODE_ZHIDING:
 	strcpy(dir, DING_DIR);
@@ -591,10 +591,10 @@ char *setbdir(int digestmode, char *buf,const  char *boardname)
         strcpy(dir, DOT_DIR);
         break;
     case DIR_MODE_SUPERFITER:
-        sprintf(dir, ".Search.%s", currentuser->userid);
+        sprintf(dir, ".Search.%s", session->currentuser->userid);
         break;
     default:
-        sprintf(dir, ".Search.%s", currentuser->userid);
+        sprintf(dir, ".Search.%s", session->currentuser->userid);
 	newbbslog(BBSLOG_DEBUG,"uknown dir mode %d",digestmode); 
         break;
     }
@@ -957,11 +957,11 @@ int canIsend2(struct userec *user, char *userid)
     if (HAS_PERM(user, PERM_SYSOP))
         return true;
     sethomefile(path, userid, "ignores");
-    if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, currentuser->userid))
+    if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, session->currentuser->userid))
         return false;
     /*
      * sethomefile(path, userid, "/bads");
-     * if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, currentuser->userid))
+     * if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, session->currentuser->userid))
      * return false;
      * 
      * else
@@ -1665,7 +1665,7 @@ int add_default_mailgroup_item(const char *userid, mailgroup_list_t * mgl)
 
     bzero(&item, sizeof(item));
     snprintf(item.group_desc, sizeof(item.group_desc), "预设群体信件组");
-    return add_mailgroup_item(currentuser->userid, mgl, &item);
+    return add_mailgroup_item(session->currentuser->userid, mgl, &item);
 }
 
 int delete_mailgroup_item(const char *userid, mailgroup_list_t * mgl, int entry)
@@ -1891,7 +1891,7 @@ int gettmpfilename(char *retchar, char *fmt, ...){
         mkdir(retchar, 0755);
         chmod(retchar, 0755);
 	}
-	strcat(retchar, currentuser->userid);
+	strcat(retchar, session->currentuser->userid);
     if (!dashd(retchar)) {
         mkdir(retchar, 0755);
         chmod(retchar, 0755);
@@ -2277,7 +2277,7 @@ int bms_add(char *userid, char *boardname, time_t in, int out, char *memo )
 	if(memo && memo[0])
 		mysql_escape_string(newmemo, memo, strlen(memo));
 
-	sprintf(sql,"INSERT INTO bms VALUES ( NULL, '%s', '%s','%d' ,'%s', '%s', '%s');", boardname, tt2timestamp(in,newts), out, currentuser->userid, newmemo, userid);
+	sprintf(sql,"INSERT INTO bms VALUES ( NULL, '%s', '%s','%d' ,'%s', '%s', '%s');", boardname, tt2timestamp(in,newts), out, session->currentuser->userid, newmemo, userid);
 //		sprintf(sql,"UPDATE users SET description='%s', corpusname='%s', theme='%s', nodelimit=%d, dirlimit=%d, createtime='%s' WHERE uid=%u AND username='%s' ;",newdesc, newcorp, newtheme, pn->nodelimit, pn->dirlimit, tt2timestamp(pn->createtime,newts), pn->uid, pn->username );
 	
 

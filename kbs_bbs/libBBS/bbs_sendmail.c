@@ -49,9 +49,9 @@ int chkusermail(struct userec *user)
         }
         sum = get_mailusedspace(user, 0) / 1024;
         /*
-         * if(user==currentuser)sum=user->usedspace/1024;
+         * if(user==session->currentuser)sum=user->usedspace/1024;
          * else sum = get_sum_records(recmaildir, sizeof(fileheader)); 
-         * if(user!=currentuser)sum += get_sum_records(recmaildir, sizeof(fileheader));
+         * if(user!=session->currentuser)sum += get_sum_records(recmaildir, sizeof(fileheader));
          */
         if (num > numlimit || sum > sumlimit)
             return 1;
@@ -181,7 +181,7 @@ int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int u
     else
         f_cp(tmpfile, filepath, 0);
     if (stat(filepath, &st) != -1)
-        currentuser->usedspace += st.st_size;
+        session->currentuser->usedspace += st.st_size;
     setmailfile(buf, userid, ".SENT");
     newmessage.accessed[0] |= FILE_READ;
     if (append_record(buf, &newmessage, sizeof(newmessage)) == -1)
@@ -380,7 +380,7 @@ char *bbs_readmailfile(char **buf, int *len, void *arg)
     pout = *buf;
     if (pmo->bfirst) {
 
-/*	sprintf(pout,"Reply-To: %s.bbs@%s\r\n\r\n", currentuser->userid, email_domain());
+/*	sprintf(pout,"Reply-To: %s.bbs@%s\r\n\r\n", session->currentuser->userid, email_domain());
 */
         if (pmo->isbig5)
             sprintf(pout, "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=big5\r\nContent-Transfer-Encoding: 8bit\r\nFrom: %s\r\nTo: %s\r\n\r\n",pmo->from,pmo->to);
@@ -488,8 +488,8 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
     if ((server == NULL) || !strcmp(server, "(null ptr)"))
         server = "127.0.0.1:25";
     smtp_set_server(session, server);
-    sprintf(newbuf, "%s@%s", currentuser->userid, email_domain());
-    snprintf(from, STRLEN, "%s(%s) <%s@%s>",currentuser->userid, currentuser->username, currentuser->userid, email_domain());
+    sprintf(newbuf, "%s@%s", session->currentuser->userid, email_domain());
+    snprintf(from, STRLEN, "%s(%s) <%s@%s>",session->currentuser->userid, session->currentuser->username, session->currentuser->userid, email_domain());
     from[STRLEN-1]=0;
     smtp_set_reverse_path(message, newbuf);
     smtp_set_header(message, "Message-Id", NULL);

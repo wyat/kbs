@@ -25,15 +25,7 @@ static const char EmptyChar[] = "空";
 
    favbrd_list_t同理
    */
-struct favbrd_struct *favbrd_list=NULL;
-int *favbrd_list_count;
-struct favbrd_struct mybrd_list[FAVBOARDNUM];
-int mybrd_list_t = -1, favnow = 0;
-
 #define favbrd_list_t (*favbrd_list_count)
-
-int *zapbuf;
-int zapbuf_changed = 0;
 
 int valid_brdname(brd)
 char *brd;
@@ -106,7 +98,7 @@ void load_favboard(int dohelp,int mode)
 	else if(mode==3)
 		sprintf(fname,"etc/wwwboard.dir");
 	else
-	    sethomefile(fname, currentuser->userid, "favboard");
+	    sethomefile(fname, session->currentuser->userid, "favboard");
     favnow = 0;
 	
 	if(mode==2){
@@ -252,7 +244,7 @@ void load_favboard(int dohelp,int mode)
 				if (fd < 0)
 					continue;
 				bh = (struct boardheader *) getboard(fd + 1);
-				if (fd <= get_boardcount() && (bh && bh->filename[0] && (check_see_perm(currentuser,bh)) ) )
+				if (fd <= get_boardcount() && (bh && bh->filename[0] && (check_see_perm(session->currentuser,bh)) ) )
 				    continue;
 				for(k=j;k<favbrd_list[i].bnum-1;k++){
 					favbrd_list[i].bid[k]=favbrd_list[i].bid[k+1];
@@ -278,9 +270,9 @@ void save_favboard(int mode)
 	else if(mode==3)
 		sprintf(fname,"etc/wwwboard.dir");
 	else
-		sethomefile(fname, currentuser->userid, "favboard");
+		sethomefile(fname, session->currentuser->userid, "favboard");
 
-	if( (mode==2 || mode==3 ) && !HAS_PERM(currentuser,PERM_SYSOP))
+	if( (mode==2 || mode==3 ) && !HAS_PERM(session->currentuser,PERM_SYSOP))
 		return;
 
     if ((fd = open(fname, O_WRONLY | O_CREAT, 0600)) != -1) {
@@ -300,7 +292,7 @@ int EnameInFav(char *ename)
 
     for (i = 0; i < bdirshm->allbrd_list_t ; i++){
         if ( ! strcasecmp( bdirshm->allbrd_list[i].ename , ename) ){
-			if( bdirshm->allbrd_list[i].level==0 || HAS_PERM(currentuser, bdirshm->allbrd_list[i].level) )
+			if( bdirshm->allbrd_list[i].level==0 || HAS_PERM(session->currentuser, bdirshm->allbrd_list[i].level) )
             	return i + 1;
 			else
 				return 0;
@@ -508,7 +500,7 @@ void load_zapbuf()
     zapbuf = (int *) malloc(size);
     for (n = 0; n < MAXBOARD; n++)
         zapbuf[n] = 1;
-    sethomefile(fname, currentuser->userid, ".lastread");       /*user的.lastread， zap信息 */
+    sethomefile(fname, session->currentuser->userid, ".lastread");       /*user的.lastread， zap信息 */
     if ((fd = open(fname, O_RDONLY, 0600)) != -1) {
         size = get_boardcount() * sizeof(int);
         read(fd, zapbuf, size);
@@ -523,7 +515,7 @@ void save_userfile(char *fname, int numblk, char *buf)
     char fbuf[256];
     int fd, size;
 
-    sethomefile(fbuf, currentuser->userid, fname);
+    sethomefile(fbuf, session->currentuser->userid, fname);
     if ((fd = open(fbuf, O_WRONLY | O_CREAT, 0600)) != -1) {
         size = numblk * sizeof(int);
         write(fd, buf, size);
@@ -543,7 +535,7 @@ void save_zapbuf()
     char fname[STRLEN];
     int fd, size;
 
-    sethomefile(fname, currentuser->userid, ".lastread");
+    sethomefile(fname, session->currentuser->userid, ".lastread");
     if ((fd = open(fname, O_WRONLY | O_CREAT, 0600)) != -1) {
         size = numboards * sizeof(int);
         write(fd, zapbuf, size);
@@ -802,7 +794,7 @@ int brc_unread(unsigned int fid)
     int n;
 
     /*干脆不搞guest的这个算了*/
-    if (!strcmp(currentuser->userid,"guest")) return 1;
+    if (!strcmp(session->currentuser->userid,"guest")) return 1;
     for (n = 0; n < BRC_MAXNUM; n++) {
         if (brc_cache_entry[brc_currcache].list[n] == 0) {
             if (n == 0)
@@ -828,10 +820,10 @@ void brc_add_read(unsigned int fid)
 {
     int n, i;
 
-    if (!currentuser) return;
+    if (!session->currentuser) return;
     if (brc_currcache==-1) return;
     /*干脆不搞guest的这个算了*/
-    if (!strcmp(currentuser->userid,"guest")) return;
+    if (!strcmp(session->currentuser->userid,"guest")) return;
     for (n = 0; (n < BRC_MAXNUM) && brc_cache_entry[brc_currcache].list[n]; n++) {
         if (fid == brc_cache_entry[brc_currcache].list[n]) {
             return;
@@ -868,7 +860,7 @@ void brc_clear()
 {
     struct BoardStatus const *bs;
     /*干脆不搞guest的这个算了*/
-    if (!strcmp(currentuser->userid,"guest")) return;
+    if (!strcmp(session->currentuser->userid,"guest")) return;
     bs=getbstatus(brc_cache_entry[brc_currcache].bid);
     brc_cache_entry[brc_currcache].list[0] = bs->nowid;
     brc_cache_entry[brc_currcache].list[1] = 0;
@@ -879,7 +871,7 @@ void brc_clear_new_flag(unsigned int fid)
 {
     int n;
     /*干脆不搞guest的这个算了*/
-    if (!strcmp(currentuser->userid,"guest")) return;
+    if (!strcmp(session->currentuser->userid,"guest")) return;
 
     for (n = 0; (n < BRC_MAXNUM) && brc_cache_entry[brc_currcache].list[n]; n++)
         if (fid >= brc_cache_entry[brc_currcache].list[n])
@@ -1017,7 +1009,7 @@ int chk_BM_instr(const char BMstr[STRLEN - 1], const char bmname[IDLEN + 2])
     while (1) {
         if (ptr == NULL)
             return false;
-        if (!strcmp(ptr, bmname /*,strlen(currentuser->userid) */ ))
+        if (!strcmp(ptr, bmname /*,strlen(session->currentuser->userid) */ ))
             return true;
         ptr = strtok(NULL, ",: ;|&()\0\n");
     }
@@ -1029,13 +1021,13 @@ int chk_currBM(const char BMstr[STRLEN - 1], struct userec *user)
          * 根据输入的版主名单 判断user是否有版主 权限 
          */
 {
-    if (HAS_PERM(currentuser, PERM_OBOARDS) || HAS_PERM(currentuser, PERM_SYSOP))
+    if (HAS_PERM(session->currentuser, PERM_OBOARDS) || HAS_PERM(session->currentuser, PERM_SYSOP))
         return true;
 
-    if (!HAS_PERM(currentuser, PERM_BOARDS))
+    if (!HAS_PERM(session->currentuser, PERM_BOARDS))
         return false;
 
-    return chk_BM_instr(BMstr, currentuser->userid);
+    return chk_BM_instr(BMstr, session->currentuser->userid);
 }
 
 int deldeny(struct userec *user, char *board, char *uident, int notice_only)
@@ -1155,10 +1147,10 @@ int fav_loaddata(struct newpostdata *nbrd, int favnow,int pos,int len,bool sort,
                 continue;
             if (!*bptr->filename)
                 continue;
-            if (!check_see_perm(currentuser,bptr))
+            if (!check_see_perm(session->currentuser,bptr))
                 continue;
         }else{
-			if (!HAS_PERM(currentuser,favbrd_list[0-favbrd_list[favnow].bid[n]].level))
+			if (!HAS_PERM(session->currentuser,favbrd_list[0-favbrd_list[favnow].bid[n]].level))
 				continue;
 		}
         /*肯定要计算的版面*/
@@ -1316,7 +1308,7 @@ int load_boards(struct newpostdata *nbrd,char *boardprefix,int group,int pos,int
 				continue;
 		}else if ((bptr->group!=group)&&!((boardprefix==NULL)&&(group==0)))
             continue;
-        if (!check_see_perm(currentuser,bptr)) {
+        if (!check_see_perm(session->currentuser,bptr)) {
             continue;
         }
         if ((group==0)&&(boardprefix != NULL && strchr(boardprefix, bptr->title[0]) == NULL && boardprefix[0] != '*'))

@@ -4,10 +4,7 @@ struct boardheader *bcache;
 struct BCACHE *brdshm;
 struct BDIRCACHE	*bdirshm;
 struct UTMPFILE *utmpshm;
-struct userec *currentuser;
-struct usermemo *currentmemo;
 //struct userdata curruserdata;
-struct _mail_list user_mail_list;
+struct UTMPHEAD *utmphead;
 
 
-char fromhost[IPLEN + 1];

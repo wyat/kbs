@@ -257,7 +257,7 @@ int fill_super_board(char *searchname, int result[], int max)
     for (i = 0; i < brdshm->numboards && total < max ; i++){
         if (bcache[i].filename[0] == '\0')
 			continue;
-    	if (check_read_perm(currentuser, &bcache[i])) {
+    	if (check_read_perm(session->currentuser, &bcache[i])) {
 			if (strcasestr(bcache[i].filename, searchname) || strcasestr(bcache[i].des, searchname) || strcasestr(bcache[i].title, searchname) ){
 				result[total] = i + 1;
 				total ++;
@@ -273,7 +273,7 @@ int getbnum(const char *bname)
 
     for (i = 0; i < brdshm->numboards; i++)
 #ifdef BBSMAIN
-        if (check_read_perm(currentuser,&bcache[i]))
+        if (check_read_perm(session->currentuser,&bcache[i]))
 #endif
             if (!strncasecmp(bname, bcache[i].filename, STRLEN))
                 return i + 1;
@@ -351,7 +351,7 @@ int delete_board(char *boardname, char *title)
     securityreport(buf, NULL, NULL);
 #endif                          /* 
                                  */
-    sprintf(buf, " << '%s'被 %s 删除 >>", bcache[bid].filename, currentuser->userid);
+    sprintf(buf, " << '%s'被 %s 删除 >>", bcache[bid].filename, session->currentuser->userid);
 #ifdef BBSMAIN
     getdata(3, 0, "移除精华区 (Yes, or No) [Y]: ", genbuf, 4, DOECHO, NULL, true);
     if (genbuf[0] != 'N' && genbuf[0] != 'n')
@@ -495,18 +495,18 @@ int board_setreadonly(const char *board, int readonly)
     return 0;
 }
 
-void board_setcurrentuser(int idx,int num)
+void board_setsession->currentuser(int idx,int num)
 {
     if (idx<=0) return;
     if (num > 0)
-        brdshm->bstatus[idx - 1].currentusers++;
+        brdshm->bstatus[idx - 1].session->currentusers++;
     else  if (num < 0) {
-      brdshm->bstatus[idx - 1].currentusers--;
-      if (brdshm->bstatus[idx - 1].currentusers<0)
-          brdshm->bstatus[idx - 1].currentusers=0;
+      brdshm->bstatus[idx - 1].session->currentusers--;
+      if (brdshm->bstatus[idx - 1].session->currentusers<0)
+          brdshm->bstatus[idx - 1].session->currentusers=0;
     }
     else
-        brdshm->bstatus[idx - 1].currentusers=0;
+        brdshm->bstatus[idx - 1].session->currentusers=0;
 }
 
 void board_update_toptitle(int bid,bool needlock)

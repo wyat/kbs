@@ -623,16 +623,16 @@ set_safe_record()
     {
         char buf[STRLEN];
 
-        sprintf(buf,"Error:Read Passfile %4d %12.12s",usernum,currentuser->userid);
+        sprintf(buf,"Error:Read Passfile %4d %12.12s",usernum,session->currentuser->userid);
         bbslog("user","%s",buf);
         ERROR_READ_SYSTEM_FILE=true;
         abort_bbs(0);
         return -1;
     }
-    currentuser->numposts=tmp.numposts;
-    currentuser->numlogins=tmp.numlogins;
-    currentuser->stay=tmp.stay;
-    currentuser->userlevel=tmp.userlevel;
+    session->currentuser->numposts=tmp.numposts;
+    session->currentuser->numlogins=tmp.numlogins;
+    session->currentuser->stay=tmp.stay;
+    session->currentuser->userlevel=tmp.userlevel;
 }
 */
 
@@ -1029,7 +1029,7 @@ int do_after_logout(struct userec* user,struct user_info* userinfo,int unum,int 
 #endif
     }
     if (userinfo&&userinfo->currentboard)
-        board_setcurrentuser(userinfo->currentboard,-1);
+        board_setsession->currentuser(userinfo->currentboard,-1);
     return 0;
 }
 

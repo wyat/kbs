@@ -12,19 +12,7 @@
 #include <sys/socket.h>
 #endif
 
-struct UTMPHEAD {
-    int next[USHM_SIZE];
-    int hashhead[UTMP_HASHSIZE + 1];    /* use UCACHE_HASHSIZE/32 */
-    int number;
-    int listhead;
-    int list_prev[USHM_SIZE];   /* sorted list prev ptr */
-    int list_next[USHM_SIZE];   /* sorted list next ptr */
-    time_t uptime;
-};
-
 static int rebuild_list(struct user_info *up, char *arg, int p);
-static struct UTMPHEAD *utmphead;
-
 struct UTMPFILE *get_utmpshm_addr()
 {
     return utmpshm;
@@ -132,6 +120,7 @@ static int utmp_hash(const char *userid)
     return hash;
 }
 
+/* disable KCN
 struct requesthdr {
     int command;
     union {
@@ -140,7 +129,6 @@ struct requesthdr {
     } u_info;
 } utmpreq;
 
-/* disable KCN
 int sendutmpreq(struct requesthdr *req)
 {
 
@@ -698,7 +686,6 @@ static int cmpfuid(const void*a,const void*b)
 }
 
 
-struct friends_info* topfriend;
 int getfriendstr(struct userec* user,struct user_info* puinfo)
 {
     int nf;

@@ -1,9 +1,5 @@
 #include "bbs.h"
 
-int WORDBOUND, WHOLELINE, NOUPPER, INVERSE, FILENAMEONLY, SILENT, FNAME;
-int ONLYCOUNT, num_of_matched, total_line;
-char *CurrentFileName;
-
 #ifdef FILTER
 extern int prepf(int fp,void** patternbuf,size_t* patt_image_len);
 extern int mgrep(int fp,void* patternbuf);
