@@ -8,7 +8,7 @@
 	global $errno;
 	@$act_attachname=$_GET["attachname"];
 	@$action=$_GET["act"];
-    $totalsize=0;
+    	$totalsize=0;
 	require("funcs.php");
 	if ($loginok !=1 )
 		html_nologin();
@@ -16,16 +16,16 @@
 	{
 		html_init("gb2312","粘贴附件");
 		if (!valid_filename($act_attachname))
-		    html_error_quit("错误的文件名");
-        $attachdir=ATTACHTMPPATH . "/" . $utmpkey;
+                    html_error_quit("错误的文件名");
+		$attachdir=ATTACHTMPPATH . "/" . $utmpkey;
 		if ($action=="delete") {
 			unlink($attachdir . "/" . "$act_attachname");
 		} else if ($action=="add") {
 			@$errno=$_FILES['attachfile']['error'];
 			if ($errno==UPLOAD_ERR_OK) {
 		        if ($_FILES['attachfile']['size']<=ATTACHMAXSIZE) {
-                    @mkdir($attachdir);
-					if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
+				@mkdir($attachdir);
+				if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
 			    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
 			        			$attachdir . "/" . $act_attachname);
 					}
@@ -34,7 +34,7 @@
 			}
 		}
 		$filecount=0;
-        if ($handle = @opendir($attachdir)) {
+		if ($handle = @opendir($attachdir)) {
                     while (false != ($file = readdir($handle))) { 
                         if ($file[0]=='.')
                             continue;
@@ -42,6 +42,7 @@
                     	$filesizes[] = filesize($attachdir . "/" . $file);
                     	$totalsize+=$filesizes[$filecount];
                     	$filecount++;
+			$allnames+=$file . ";";
                     }
                     closedir($handle);
                 }
@@ -101,14 +102,17 @@ function clickclose() {
 	else if (confirm("您填写了文件名，但没有上载。是否确认关闭？")==true) return window.close();
 	return false;
 }
-		<!--
-		opener.document.forms["sendmail"].elements["attachname"].value = "bbsfoot0.htm";
-		opener.document.forms["sendmail"].elements["attach"].value = "bbsfoot0.htm";
-		//-->
+<!--
+        opener.document.forms["attach"].elements["attach"].value = <?php echo "\"$allnemes\""; ?>;
+//-->
 </script>
 <body bgcolor="#FFFFFF"  background="/images/rback.gif">
 <?php
                 if ($action=="add") {
+                	if ($_FILES['attachfile']['size']+$totalsize>ATTACHMAXSIZE) {
+                		unlink($attachdir . "/" . $act_attachname);
+                		$errno=UPLOAD_ERR_FORM_SIZE;
+                	}
                 	switch ($errno) {
                 	case UPLOAD_ERR_OK:
                 		echo "文件上载成功！";
@@ -199,7 +203,13 @@ function clickclose() {
           <tr> 
             <td width="150" class="txt01" align="right">现在附件文件总量为：</td>
             <td width="350" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;<?php echo sizestring($totalsize); ?>字节</b></font></td>
-  </tr></table></td></tr>
+  	</tr>
+          <tr> 
+            <td width="150" class="txt01" align="right">注意：附件总容量最大不能超过：</td>
+            <td width="350" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;<?php echo sizestring(ATTACHMAXSIZE); ?>字节</b></font></td>
+  	</tr>
+  	</table>
+  </td></tr>
 </table>
 <table width="75%" border="0" align="center" cellpadding="0" cellspacing="0">
 </table>
