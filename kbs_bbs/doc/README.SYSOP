@@ -108,7 +108,7 @@ V      Recommend    推荐文章。
 L      Registry     帐号管理员审核 ID 的记录。
 V      syssecurity  系统安全记录，包括任免版主、用户权限更改、版面设置更改等。
 V      undenypost   各版面解封记录。
-V      vote         各项投票与结果。
+X      vote         各项投票与结果。
 V      sysmail      该版面建立以后，应该到 ~bbs/boards/ 下面删除这个目录，然后
                     建立同名符号连接到 ~bbs/mail/S/SYSOP。这个版面应该设置只有
                     站务可读，那么所有站务就都可以看到网友给 SYSOP 发送的信件了。
