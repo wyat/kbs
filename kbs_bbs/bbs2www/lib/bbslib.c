@@ -2497,8 +2497,11 @@ static void print_raw_ansi(char *buf, size_t buflen, buffered_output_t * output)
     for (i = 0; i < buflen; i++) {
         if (buf[i] == 0x1b)
             html_output("*", 1, output);
-        else
+        else if (buf[i]=='\n') {
+			output->output("<br />\n", 7, output);
+        } else {
             html_output(&buf[i], 1, output);
+		}
     }
 }
 
@@ -2548,12 +2551,13 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 	long attachPos[MAXATTACHMENTCOUNT];
 	long attachLen[MAXATTACHMENTCOUNT];
 	char* attachFileName[MAXATTACHMENTCOUNT];
-	char* attachLink[MAXATTACHMENTCOUNT];
 	enum ATTACHMENTTYPE attachType[MAXATTACHMENTCOUNT];
 	char UBBCode[256];	
 	int UBBCodeLen;
 	enum UBBTYPE UBBCodeType;
 	int isUBBMiddleOutput; 
+	int UBBArg1, UBBArg2, UBBArg3;
+	char UBBStrArg[256];
 
 
     if (ptr == NULL)
@@ -2576,9 +2580,6 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 			attachPos[attachmatched]=attachfilename-buf;
 			attachLen[attachmatched]=attach_len;
 			attachFileName[attachmatched]=(char*)malloc(256);
-			attachLink[attachmatched]=(char*)malloc(256);
-            snprintf(attachLink[attachmatched],255,"%s&amp;ap=%d",attachlink,attachfilename-buf,attachfilename,attach_len);
-			attachLink[attachmatched][255]=0;
 			strncpy(attachFileName[attachmatched],attachfilename,255);
 			attachFileName[attachmatched][255]=0;
 			attachType[attachmatched]=ATTACH_OTHERS;
@@ -2597,46 +2598,6 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 			attachmatched++;
 		}
 	}
-			/*
-            char *extension;
-            int type;
-            char outbuf[256];
-
-            extension = attachfilename + strlen(attachfilename);
-            snprintf(link,255,"%s&amp;ap=%d",attachlink,attachfilename-buf,attachfilename,attach_len);
-
-	    link[255]=0;
-			*/
-		/*
-	    if (i>buflen) continue;
-            type = 0;
-	    extension--;
-            while ((*extension != '.') && (*extension != NULL))
-                extension--;
-            if (*extension == '.') {
-                extension++;
-                if (!strcasecmp(extension, "bmp") || !strcasecmp(extension, "jpg")
-                    || !strcasecmp(extension, "png") || !strcasecmp(extension, "jpeg")
-                    || !strcasecmp(extension, "pcx") || !strcasecmp(extension, "gif"))
-                    type = 1;
-                else if (!strcasecmp(extension, "swf"))
-                    type = 2;
-            }
-            switch (type) {
-            case 1:
-                snprintf(outbuf, 255, "Í¼Æ¬:%s(%d)<br><img src='%s'></img><br />", attachfilename, attach_len, link);
-                break;
-            case 2:
-                snprintf(outbuf, 255, "Flash¶¯»­: "
-                        "<a href='%s'>%s</a> (%d ×Ö½Ú)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s'>" "<EMBED SRC='%s'></EMBED></OBJECT><br />", link, attachfilename, attach_len, link, link);
-            default:
-                snprintf(outbuf, 255, "¸½¼þ: <a href='%s'>%s</a> (%d ×Ö½Ú)<br />\n", link, attachfilename, attach_len);
-                break;
-            }
-	    outbuf[255]=0;
-            output->output(outbuf, strlen(outbuf), output);
-	    continue;
-		*/
 
     for (i = 0; i < buflen; i++) {
         long attach_len;
@@ -2713,15 +2674,44 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 				isUBBMiddleOutput=1;
 
 				if ( !strcasecmp(UBBCode,"img"))	{
-					
 					UBBCodeType=UBB_TYPE_IMG;
 					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "b")){
+					UBBCodeType=UBB_TYPE_BOLD;
+					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "i")){
+					UBBCodeType=UBB_TYPE_ITALICIZE;
+					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "u")){
+					UBBCodeType=UBB_TYPE_UNDERLINE;
+					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "center")){
+					UBBCodeType=UBB_TYPE_CENTER;
+					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "fly")){
+					UBBCodeType=UBB_TYPE_FLY;
+					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "quote")){
+					UBBCodeType=UBB_TYPE_QUOTE;
+					isUBBMiddleOutput=0;
+				} else if (!strcasecmp(UBBCode, "move")){
+					UBBCodeType=UBB_TYPE_MOVE;
+					isUBBMiddleOutput=0;
 				} else {
+					int num;
+					num=0;
+					sscanf(UBBCode, "upload=%d",&num);
+					if (num!=0) {
+						UBBArg1=num;
+						UBBCodeType=UBB_TYPE_ATTACH;
+						isUBBMiddleOutput=0;
+					} else {
 					size_t len;
 					STATE_CLR(ansi_state, STATE_UBB_START);
 					len=(&(buf[i+1]))-ubbstart_begin;
 					print_raw_ansi(ubbstart_begin,len,output);
 					continue;
+					}
 				}
 				STATE_CLR(ansi_state, STATE_UBB_START);
 				STATE_SET(ansi_state, STATE_UBB_MIDDLE);
@@ -2734,17 +2724,99 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 				switch (UBBCodeType){
 				case UBB_TYPE_IMG:
 					if (!strcasecmp(UBBCode,"img")){
-						output->output("<IMG SRC=\"", 10, output);
+						output->output("<br><img src=\"images/files/img.gif\">Í¼Æ¬£º<br><IMG SRC=\"", 55, output);
 						len=ubbfinish_begin-ubbmiddle_begin;
 						output->output(ubbmiddle_begin, len, output);
-						output->output("\" border=0>", 11, output);
+						output->output("\" border=0><br />", 17, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_ATTACH:
+					if (!strcasecmp(UBBCode,"upload")){
+						if ( (UBBArg1>0) && (UBBArg1<=attachmatched)) {
+							char outbuf[256];
+							switch(attachType[UBBArg1-1]) {
+							case ATTACH_IMG:
+								snprintf(outbuf, 255, "<br>Í¼Æ¬:%s(%d)<br><img src='%s&amp;ap=%d'></img><br />", attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+								break;
+							case ATTACH_FLASH:
+				                snprintf(outbuf, 255, "<br>Flash¶¯»­: " "<a href='%s&amp;ap=%d'>%s</a> (%d ×Ö½Ú)<br>" "<OBJECT><PARAM NAME='MOVIE' VALUE='%s&amp;ap=%d'>" "<EMBED SRC='%s&amp;ap=%d'></EMBED></OBJECT><br />", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1], attachlink, attachPos[UBBArg1-1], attachlink, attachPos[UBBArg1-1]);
+							case ATTACH_OTHERS:
+								 snprintf(outbuf, 255, "<br>¸½¼þ: <a href='%s&amp;ap=%d'>%s</a> (%d ×Ö½Ú)<br />\n", attachlink, attachPos[UBBArg1-1], attachFileName[UBBArg1-1], attachLen[UBBArg1-1]);
+								 break;
+							}	
+							outbuf[255]=0;
+							output->output(outbuf, strlen(outbuf), output);
+							continue;							
+						}	
+					} 
+					break;
+				case UBB_TYPE_BOLD:
+					if (!strcasecmp(UBBCode,"b")){
+						output->output("<b>", 3, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</b>", 4, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_ITALICIZE:
+					if (!strcasecmp(UBBCode,"i")){
+						output->output("<i>", 3, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</i>", 4, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_UNDERLINE:
+					if (!strcasecmp(UBBCode,"u")){
+						output->output("<u>", 3, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</u>", 4, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_CENTER:
+					if (!strcasecmp(UBBCode,"img")){
+						output->output("<center>", 8, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</center>", 9, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_FLY:
+					if (!strcasecmp(UBBCode,"fly")){
+						output->output("<marquee width=90% behavior=alternate scrollamount=3>", 53, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</marquee>", 10, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_QUOTE:
+					if (!strcasecmp(UBBCode,"quote")){
+						output->output("<table style=\"width:100%\" cellpadding=5 cellspacing=1 class=tableborder1><TR><TD class=tablebody2 width=\"100%\">", 111, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</td></tr></table><br>", 22, output);
+						continue;
+					} 
+					break;
+				case UBB_TYPE_MOVE:
+					if (!strcasecmp(UBBCode,"move")){
+						output->output("<marquee scrollamount=3>", 24, output);
+						len=ubbfinish_begin-ubbmiddle_begin;
+						print_raw_ansi(ubbmiddle_begin, len, output);
+						output->output("</marquee>", 10, output);
 						continue;
 					} 
 					break;
 				}
 				len=(&buf[i])-ubbfinish_begin;
 				print_raw_ansi(ubbfinish_begin,len,output);
-				continue;
 			} 
 		}
 		if (i < (buflen - 1) && (buf[i] == 0x1b && buf[i + 1] == '[')) {
@@ -2779,9 +2851,9 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
                 STYLE_CLR(font_style, FONT_STYLE_QUOTE);
                 STATE_CLR(ansi_state, STATE_FONT_SET);
             }
-            if (!STATE_ISSET(ansi_state,STATE_UBB_MIDDLE) || isUBBMiddleOutput) {
-		    output->output("<br />\n", 7, output);
-	    }
+		    if (!STATE_ISSET(ansi_state,STATE_UBB_MIDDLE) || isUBBMiddleOutput) {
+				output->output("<br />\n", 7, output);
+			}
             STATE_CLR(ansi_state, STATE_QUOTE_LINE);
             STATE_SET(ansi_state, STATE_NEW_LINE);
         } else {
@@ -2883,7 +2955,6 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t * output,char*
 
 	for ( i = 0; i<attachmatched ; i++ ){
 		free(attachFileName[i]);
-		free(attachLink[i]);
 	}
 }
 
