@@ -1572,18 +1572,6 @@ int eat_file_content(int fd, off_t start, off_t len)
 	return 0;
 }
 
-int isowner(struct userec *user, struct fileheader *fileinfo)
-{
-    char buf[25];
-    time_t posttime;
-    if (strcmp(fileinfo->owner,user->userid))
-        return 0;
-    posttime = atoi(fileinfo->filename+2);
-    if (posttime<user->firstlogin)
-        return 0;
-    return 1;
-}
-
 int count_online() /* ugly */
 {
 	/*struct UTMPFILE *u;
