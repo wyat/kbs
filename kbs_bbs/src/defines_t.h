@@ -186,6 +186,7 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg, char
 int a_menusearch(char *path, char *key, int level);
 int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *direct, int ent);
 int a_Import(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *direct, int ent);     /* Leeward 98.04.15 */
+int set_import_path(char* path);
 
 /* goodbye.c */
 void showstuff(char buf[256]);

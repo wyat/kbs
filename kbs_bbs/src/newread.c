@@ -141,6 +141,7 @@ static int read_key(struct _select_def *conf, int command)
                 int findthread=apply_thread(conf,
                     currfh,
                     fileheader_thread_read,
+                    false,
                     true,
                     (void*)SR_NEXT);
                 if (findthread!=0) {
@@ -172,6 +173,7 @@ static int read_key(struct _select_def *conf, int command)
                 int findthread=apply_thread(conf,
                     arg->data+(conf->pos - conf->page_pos) * arg->ssize,
                     fileheader_thread_read,
+                    false,
                     false,
                     (void*)SR_PREV);
                 if (findthread!=0) {
@@ -661,7 +663,7 @@ bool isThreadTitle(char* a,char* b)
     return strcmp(a,b)?0:1;
 }
 
-int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func, bool down,void* arg)
+int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func,bool applycurrent, bool down,void* arg)
 {
     struct fileheader *pFh,*nowFh;
     int size;
@@ -681,7 +683,7 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
                 /*在置顶文章前搜索*/
                 now=recordcount;
             nowFh=pFh+now-1;
-            needmove=true;
+            needmove=!applycurrent;
             while (1) {
                 int ret;
                 /* 移动指针*/
@@ -743,16 +745,16 @@ int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg)
             return DONOTHING;
         case SR_FIRST:
         case SR_PREV:
-            apply_thread(conf,fh,fileheader_thread_read,false,(void*)mode);
+            apply_thread(conf,fh,fileheader_thread_read,false,false,(void*)mode);
             break;
         case SR_LAST:
         case SR_NEXT:
-            apply_thread(conf,fh,fileheader_thread_read,true,(void*)mode);
+            apply_thread(conf,fh,fileheader_thread_read,false,true,(void*)mode);
             break;
         case SR_FIRSTNEW:
-            apply_thread(conf,fh,fileheader_thread_read,false,(void*)mode);
+            apply_thread(conf,fh,fileheader_thread_read,false,false,(void*)mode);
             if (conf->new_pos==0) {
-                apply_thread(conf,fh,fileheader_thread_read,true,(void*)SR_FIRSTNEWDOWNSEARCH);
+                apply_thread(conf,fh,fileheader_thread_read,false,true,(void*)SR_FIRSTNEWDOWNSEARCH);
             }
             break;
     }

@@ -13,6 +13,7 @@ struct key_command {                /* Used to pass commands to the readmenu */
 enum {
     READ_NORMAL,
     READ_THREAD,
+    READ_NEW,
     READ_AUTHOR
 };
 
@@ -66,12 +67,13 @@ typedef int (*APPLY_THREAD_FUNC)(struct _select_def* conf,struct fileheader* fh,
         返回APPLY_CONTINUE继续应用下一个主题结构
         返回APPLY_QUIT则停止执行。
         返回APPLY_REAPPLY则重复应用这一个位置的fileheader
+  @param applycurrent 是否对当前位置的fileheader应用func
   @param down 查找主题方向，如果是1,向下查找，否则向上
   @param arg 传递给func的参数
   @return 应用的主题个数
 */
 
-int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func, bool down,void* arg);
+int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FUNC func,bool applycurrent, bool down,void* arg);
 
 /*@param buf 显示的字符串
    @param num 序号
@@ -95,6 +97,8 @@ int post_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 #define SR_PREV             4
 #define SR_READ            5    /*同主题阅读*/
 #define SR_READX           6   /*同主题阅读，保存原始位置*/
+
+
 #define SR_FIRSTNEWDOWNSEARCH 100
 
 int thread_read(struct _select_def* conf, struct fileheader* fh, void* extraarg);

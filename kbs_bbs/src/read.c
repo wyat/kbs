@@ -27,8 +27,6 @@
 #include <sys/mman.h>
 
 struct fileheader SR_fptr;
-int SR_BMDELFLAG = false;
-int B_to_b = false;
 
 
 /*---	Modified by period	2000-11-12	---*

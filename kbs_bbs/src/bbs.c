@@ -51,6 +51,9 @@ char replytitle[STRLEN];
 #endif
 
 char *filemargin();
+#define ARG_NOPROMPT_FLAG   1 /*操作不提示*/
+#define ARG_DELDECPOST_FLAG 2 /*删除操作要减文章数*/
+#define ARG_BMFUNC_FLAG 4 /*版主操作标志*/
 
 /* bad 2002.8.1 */
 
@@ -66,7 +69,6 @@ int Goodbye();
 void RemoveAppendedSpace();     /* Leeward 98.02.13 */
 extern time_t login_start_time;
 extern int cmpbnames();
-extern int B_to_b;
 
 extern struct screenline *big_picture;
 extern struct userec *user_data;
@@ -2561,7 +2563,7 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     struct fileheader mkpost;
     struct read_arg* arg=conf->arg;
     int ent;
-    extern int SR_BMDELFLAG;
+    int flag=(int)extraarg;
 
     ent=conf->pos;
 	/* add by stiger */
@@ -2576,7 +2578,7 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     if (arg->mode== DIR_MODE_DELETED|| arg->mode== DIR_MODE_JUNK)
         return DONOTHING;
     keep = sysconf_eval("KEEP_DELETED_HEADER", 0);      /*是否保持被删除的POST的 title */
-    if (fileinfo->owner[0] == '-' && keep > 0 && !SR_BMDELFLAG) {
+    if (fileinfo->owner[0] == '-' && keep > 0 && !(flag&&ARG_NOPROMPT_FLAG)) {
         clear();
         prints("本文章已删除.\n");
         pressreturn();
@@ -2592,7 +2594,7 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         if (!chk_currBM(currboard->BM, currentuser)) {
             return DONOTHING;
         }
-    if (!SR_BMDELFLAG) {
+    if (!(flag&&ARG_NOPROMPT_FLAG)) {
         clear();
         prints("删除文章 '%s'.", fileinfo->title);
         getdata(1, 0, "(Y/N) [N]: ", genbuf, 3, DOECHO, NULL, true);
@@ -2612,14 +2614,16 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         ent = search_record(arg->direct, &mkpost, sizeof(struct fileheader), (RECORD_FUNC_ARG) cmpfileinfoname, fileinfo->filename);
     }
 
-    if (do_del_post(currentuser, ent, fileinfo, arg->direct, currboard->filename, 0, !B_to_b) != 0) {
-        move(2, 0);
-        prints("删除失败\n");
-        pressreturn();
-        clear();
-        return FULLUPDATE;
+    if (do_del_post(currentuser, ent, fileinfo, arg->direct, currboard->filename, 0, flag&ARG_DELDECPOST_FLAG) != 0) {
+        if (!(flag&ARG_NOPROMPT_FLAG)) {
+            move(2, 0);
+            prints("删除失败\n");
+            pressreturn();
+            clear();
+            return FULLUPDATE;
+        }
     }
-    if (arg->mode) {
+    if (!(flag&ARG_BMFUNC_FLAG)&&arg->mode) {
         switch (arg->mode) {
         case DIR_MODE_THREAD:
             title_mode(conf,fileinfo,extraarg);
@@ -4606,11 +4610,235 @@ int b_results(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     return vote_results(currboard->filename);
 }
 
+enum {
+    BM_DELETE=1,
+    BM_MARK,
+    BM_DIGEST,
+    BM_IMPORT,
+    BM_TMP,
+    BM_MARKDEL,
+    BM_NOREPLY,
+    BM_TOTAL
+};
+
+const char *SR_BMitems[] = {
+    "删除",
+    "保留",
+    "文摘",
+    "放入精华区",
+    "放入暂存档",
+    "标记删除",
+    "设为不可回复",
+    "做合集"
+};
+const int item_num = 8;
+
+struct BMFunc_arg {
+    bool delpostnum; /*是否减文章数*/
+    int action;            /*版主操作，为BM_DELETE到BM_TOTAL其中之一*/
+    bool saveorigin;    /*在合集操作的时候表明是否保存原文*/
+    char* announce_path; /*收录精华区的时候的位置*/
+};
+
+/*版主同主题函数，用于apply_record的回调函数*/
+static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
+{
+    struct read_arg* arg=(struct read_arg*)conf->arg;
+    struct BMFunc_arg* func_arg=(struct BMFunc_arg*)extraarg;
+
+    conf->pos=ent;
+    switch (func_arg->action) {
+        case BM_DELETE:
+            if (!(fh->accessed[0] & FILE_MARKED)) {
+                del_post(conf,fh,(void*)ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG|ARG_BMFUNC_FLAG);
+            }
+            break;
+        case BM_MARK:
+            fh->accessed[0] |= FILE_MARKED;
+            break;
+        case BM_DIGEST:
+            change_post_flag(currBM, currentuser, arg->mode, currboard->filename, conf->pos, fh, arg->direct, FILE_DIGEST, false);
+            break;
+        case BM_MARKDEL:
+            if (!(fh->accessed[0] & FILE_MARKED)) {
+                fh->accessed[1] |= FILE_DEL;
+            }
+            break;
+        case BM_NOREPLY:
+            fh->accessed[0] |= FILE_READ;
+            break;
+        case BM_IMPORT:
+            if (a_Import(func_arg->announce_path, 
+                currboard->filename, 
+                fh, 
+                true, 
+                arg->direct, 
+                ent)==0) {
+                fh->accessed[0]=FILE_IMPORTED;
+            }            
+            break;
+        case BM_TOTAL:
+        case BM_TMP:
+            a_SeSave("0Announce",
+                currboard->filename,
+                fh,
+                true,
+                arg->direct,
+                ent,
+                !func_arg->saveorigin);
+            fh->accessed[0]=FILE_IMPORTED;
+            break;
+    }
+}
+
+static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    int i;
+    char buf[256], ch[4], BMch;
+    struct BMFunc_arg func_arg;
+    bool fromfirst;
+    int ent;
+    struct read_arg* arg=(struct read_arg*)conf->arg;
+    char linebuffer[LINELEN*3];
+    char annpath[MAX_PATH];
+
+    func_arg.delpostnum=(bool)extraarg;
+    if (!chk_currBM(currBM, currentuser)) {
+        return DONOTHING;
+    }
+    if (arg->mode != DIR_MODE_NORMAL && arg->mode != DIR_MODE_DIGEST)     /* KCN:暂不允许 */
+        return DONOTHING;
+    if (conf->pos>arg->filecount) /*置顶*/
+        return DONOTHING;
+    saveline(t_lines - 3, 0, linebuffer);
+    saveline(t_lines - 2, 0, NULL);
+    move(t_lines - 3, 0);
+    clrtoeol();
+    strcpy(buf, "相同主题 (0)取消  ");
+    for (i = 0; i < item_num; i++) {
+        char t[40];
+
+        sprintf(t, "(%d)%s", i + 1, SR_BMitems[i]);
+        strcat(buf, t);
+    };
+    strcat(buf, "? [0]: ");
+    if (strlen(buf) > 76) {
+        char savech = buf[76];
+
+        buf[76] = 0;
+        prints("%s", buf);
+        buf[76] = savech;
+
+/*        strcpy(buf,buf+76);*/
+        getdata(t_lines - 2, 0, buf + 76, ch, 3, DOECHO, NULL, true);
+    } else
+        getdata(t_lines - 3, 0, buf, ch, 3, DOECHO, NULL, true);
+    BMch = atoi(ch);
+    if (BMch <= 0 || BMch > item_num) {
+        saveline(t_lines - 2, 1, NULL);
+        saveline(t_lines - 3, 1, linebuffer);
+        return DONOTHING;
+    }
+    if (arg->mode == DIR_MODE_DIGEST && BMch == 3) {
+        saveline(t_lines - 2, 1, NULL);
+        saveline(t_lines - 3, 1, linebuffer);
+        return DONOTHING;
+    }
+    move(t_lines - 2, 0);
+    clrtoeol();
+    move(t_lines - 3, 0);
+    clrtoeol();
+
+    /*
+     * Leeward 98.04.16
+     */
+    snprintf(buf, 256, "是否从此主题第一篇开始%s (Y)第一篇 (N)目前这篇 (C)取消 (Y/N/C)? [Y]: ", SR_BMitems[BMch - 1]);
+    getdata(t_lines - 3, 0, buf, ch, 3, DOECHO, NULL, true);
+    switch (ch[0]) {
+    default:
+    case 'y':
+    case 'Y':
+        fromfirst=true;
+        break;
+    case 'c':
+    case 'C':
+        saveline(t_lines - 2, 1, NULL);
+        saveline(t_lines - 3, 1, linebuffer);
+        return DONOTHING;
+    default:
+        fromfirst=false;
+        break;
+    }
+    bmlog(currentuser->userid, currboard->filename, 14, 1);
+
+    if(BM_TOTAL == BMch ){ //作合集
+        sprintf(annpath,"tmp/bm.%s",currentuser->userid);
+        if(dashf(annpath))unlink(annpath);
+        snprintf(buf, 256, "是否保留引文(Y/N/C)? [Y]: ");
+        getdata(t_lines - 2, 0, buf, ch, 3, DOECHO, NULL, true);
+        switch (ch[0]){
+        case 'n':
+        case 'N':
+            BMFunc_arg.saveorigin=false;
+            break;
+        case 'c':
+        case 'C':
+            saveline(t_lines - 2, 1, NULL);
+            saveline(t_lines - 3, 1, linebuffer);
+            return DONOTHING;
+        default:
+            BMFunc_arg.saveorigin=true;
+        }
+    } else if (BMch==BM_IMPORT) {
+        if (set_import_path(annpath)!=0) {
+            saveline(t_lines - 2, 1, NULL);
+            saveline(t_lines - 3, 1, linebuffer);
+            return DONOTHING;
+        }
+        func_arg.announce_path=annpath;
+    }
+
+    func_arg.action=BMch;
+    ent=conf->pos;
+    flock(arg->fd,LOCK_EX);
+    if (fromfirst) {
+        /*走到第一篇*/
+        apply_thread(conf,fh,fileheader_thread_read,false,false,(void*)SR_FIRST);
+        if (conf->new_pos!=0)
+            conf->pos=conf->new_pos;
+    }
+    apply_thread(conf,fh,BM_thread_func,true,true,(void*)&func_arg);
+    flock(arg->fd,LOCK_UN);
+    conf->pos=ent; /*恢复原来的ent*/
+    if(BM_TOTAL == BMch){ //作合集
+        char title[STRLEN];
+        //create new title
+        strcpy(buf,"[合集] ");
+        if(!strncmp(fh->title,"Re: ",4))strcpy(buf+7,fh->title + 4);
+        else
+            strcpy(buf+7,fh->title);
+        if(strlen(buf) >= STRLEN )buf[STRLEN-1] = 0;
+        strcpy(title,buf);
+        //post file to the board
+        if(post_file(currentuser,"",filepath,currboard->filename,title,0,2) < 0) {//fail
+            sprintf(buf,"发表文章到版面出错!请按任意键退出 << ");
+            a_prompt(-1,buf,filepath); //filepath no use
+            saveline(t_lines - 2, 1, NULL);
+            saveline(t_lines - 3, 1, linebuffer);
+        }
+        unlink(annpath);
+        sprintf(filepath,"tmp/se.%s",currentuser->userid);
+        unlink(annpath);
+        return DIRCHANGED;
+    }
+    return DIRCHANGED;
+}
+
 static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {'r', (READ_KEY_FUNC)read_post,NULL},
     {'K', (READ_KEY_FUNC)skip_post,NULL},
 
-    {'d', (READ_KEY_FUNC)del_post,NULL},
+    {'d', (READ_KEY_FUNC)del_post,(void*)0},
     {'D', (READ_KEY_FUNC)del_range,NULL},
     {Ctrl('C'), (READ_KEY_FUNC)do_cross,NULL},
     {'Y', (READ_KEY_FUNC)UndeleteArticle,NULL},     /* Leeward 98.05.18 */
@@ -4709,12 +4937,10 @@ static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {Ctrl('U'), (READ_KEY_FUNC)author_read,(void*)SR_READ},
     {Ctrl('H'), (READ_KEY_FUNC)author_read,(void*)SR_READX}, 
     /*----------------------------------------*/
-/*
-    {'S', sequential_read},
+    {'S', (READ_KEY_FUNC)sequential_read,NULL},
     
-    {'b', SR_BMfunc},
-    {'B', SR_BMfuncX},
-*/
+    {'b', (READ_KEY_FUNC)SR_BMFunc,(void*)true},
+    {'B', (READ_KEY_FUNC)SR_BMFunc,(void*)false},
     {'\0', NULL},
 };
 

@@ -661,9 +661,10 @@ int ent;
              */
             bmlog(currentuser->userid, currboard->filename, 12, 1);
         } else {
-            sprintf(buf, " 收入精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
-            if (!nomsg)
+            if (!nomsg) {
+                sprintf(buf, " 收入精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
                 a_prompt(-1, buf, ans);
+            }
             ret = 3;
         }
         for (ch = 0; ch < pm.num; ch++)
@@ -1901,4 +1902,19 @@ void Announce()
     sprintf(genbuf, "%s 精华区公布栏", BBS_FULL_NAME);
     a_menu(genbuf, "0Announce", HAS_PERM(currentuser, PERM_ANNOUNCE) ? PERM_BOARDS : 0, 0);
     clear();
+}
+
+int set_import_path(char* path)
+{
+    int i;
+    i = a_select_path(true);
+    if (i == 0)
+        return 1;
+    import_path_select = i;
+    i--;
+    if (import_path[i][0] != '\0') {
+        strncpy(path, import_path[i], MAXPATH);
+        return 0;
+    }
+     return 2;
 }
