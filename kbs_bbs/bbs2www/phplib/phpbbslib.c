@@ -320,6 +320,8 @@ static void assign_user(zval * array, struct userec *user, int num)
     add_assoc_long(array,"education", ud.education);
     add_assoc_string(array,"graduateschool",ud.graduateschool,1);
     add_assoc_long(array,"character", ud.character);
+	add_assoc_string(array,"photo_url", ud.photo_url,1);
+	add_assoc_string(array,"telephone", ud.telephone,1);
 #endif
 
 }
@@ -3995,6 +3997,8 @@ static PHP_FUNCTION(bbs_createregform_wbbs)
 	strncpy(ud.province,province,STRLEN);
 	strncpy(ud.city,city,STRLEN);
 	strncpy(ud.graduateschool,graduate_school,STRLEN);
+	strncpy(ud.telephone,phone,STRLEN);
+	ud.telephone[STRLEN-1]=0;
 	ud.OICQ[STRLEN-1]=0;
 	ud.ICQ[STRLEN-1]=0;
 	ud.MSN[STRLEN-1]=0;

@@ -53,8 +53,8 @@
 #undef HAVE_REVERSE_DNS
 #endif
 
-#if HAVE_WBBS != 1
-#undef HAVE_WBBS /* wbbs 支持 */
+#if HAVE_WFORUM != 1
+#undef HAVE_WFORUM /* wbbs 支持 */
 #endif
 
 #ifndef CHINESE_CHARACTER /*汉字整字处理,缺省使能*/

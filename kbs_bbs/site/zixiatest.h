@@ -25,7 +25,7 @@
 #define BBS_SERVICE_DICT    1
 #define HAVE_TSINGHUA_INFO_REGISTER 0 /* 允许从清华信息系统注册 */
 
-#define HAVE_WBBS 1
+#define HAVE_WFORUM 1
 
 #define SMTH			1		/* SMTH专有代码 */
 #define FILTER			1		/* 使用文章内容过滤 */
