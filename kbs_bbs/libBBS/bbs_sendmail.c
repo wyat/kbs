@@ -2,7 +2,9 @@
 extern char *gb2big(char *, int *, int);
 extern char *sysconf_str();
 
+#ifdef HAVE_LIBESMTP
 #include <libesmtp.h>
+#endif
 
 int getmailnum(char *recmaildir)
 {                               /*Haohmaru.99.4.5.查对方信件数 */
@@ -48,11 +50,6 @@ int chkusermail(struct userec *user)
             num += getmailnum(recmaildir);
         }
         sum = get_mailusedspace(user, 0) / 1024;
-        /*
-         * if(user==currentuser)sum=user->usedspace/1024;
-         * else sum = get_sum_records(recmaildir, sizeof(fileheader)); 
-         * if(user!=currentuser)sum += get_sum_records(recmaildir, sizeof(fileheader));
-         */
         if (num > numlimit || sum > sumlimit)
             return 1;
     }
@@ -340,20 +337,8 @@ struct mail_option {
     char* from;
     char* to;
 };
-void monitor_cb(const char *buf, int buflen, int writing, void *arg)
-{
-    FILE *fp = arg;
-
-    if (writing == SMTP_CB_HEADERS) {
-        fputs("H: ", fp);
-        fwrite(buf, 1, buflen, fp);
-        return;
-    }
-    fputs(writing ? "C >>>>\n" : "S <<<<\n", fp);
-    fwrite(buf, 1, buflen, fp);
-    if (buf[buflen - 1] != '\n')
-        putc('\n', fp);
-}
+#ifdef HAVE_LIBESMTP
+#endif
 char *bbs_readmailfile(char **buf, int *len, void *arg)
 {
 #define MAILBUFLEN	8192
@@ -380,8 +365,6 @@ char *bbs_readmailfile(char **buf, int *len, void *arg)
     pout = *buf;
     if (pmo->bfirst) {
 
-/*	sprintf(pout,"Reply-To: %s.bbs@%s\r\n\r\n", currentuser->userid, email_domain());
-*/
         if (pmo->isbig5)
             sprintf(pout, "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=big5\r\nContent-Transfer-Encoding: 8bit\r\nFrom: %s\r\nTo: %s\r\n\r\n",pmo->from,pmo->to);
         else
@@ -431,6 +414,22 @@ char *bbs_readmailfile(char **buf, int *len, void *arg)
 #undef MAILBUFLEN
 }
 
+#ifdef HAVE_LIBESMTP
+void monitor_cb(const char *buf, int buflen, int writing, void *arg)
+{
+    FILE *fp = arg;
+
+    if (writing == SMTP_CB_HEADERS) {
+        fputs("H: ", fp);
+        fwrite(buf, 1, buflen, fp);
+        return;
+    }
+    fputs(writing ? "C >>>>\n" : "S <<<<\n", fp);
+    fwrite(buf, 1, buflen, fp);
+    if (buf[buflen - 1] != '\n')
+        putc('\n', fp);
+}
+
 /* Callback to prnt the recipient status */
 void print_recipient_status(smtp_recipient_t recipient, const char *mailbox, void *arg)
 {
@@ -441,6 +440,19 @@ void print_recipient_status(smtp_recipient_t recipient, const char *mailbox, voi
     prints("mail to %s: %d %s\n", mailbox, status->code, status->text);
 #endif
 }
+
+static char* encodestring(const char* string,char* encode)
+{
+    char* encodestr;
+	int len;
+    len = strlen(string);
+	encodestr=malloc((len+1)*2+8+strlen(encode)); //for gb2big5 +1,for base64 *2,for padding "=?GBK?B?" "=?BIG5?B?" "?=" +12
+	sprintf(encodestr,"=?%s?B?",encode);
+	to64frombits(encodestr+5+strlen(encode),string,len);
+	strcat(encodestr,"?=");
+	return encodestr;
+}
+
 int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5, int noansi)
 {                               /* Modified by ming, 96.10.9  KCN,99.12.16 */
     struct mail_option mo;
@@ -455,6 +467,7 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
     enum notify_flags notify = Notify_NOTSET;
     char *server;
     char newbuf[257];
+	char* encodestr;
 
     if (isuu) {
         char buf[256];
@@ -488,18 +501,33 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
     if ((server == NULL) || !strcmp(server, "(null ptr)"))
         server = "127.0.0.1:25";
     smtp_set_server(session, server);
-    sprintf(newbuf, "%s@%s", currentuser->userid, email_domain());
-    snprintf(from, STRLEN, "%s(%s) <%s@%s>",currentuser->userid, currentuser->username, currentuser->userid, email_domain());
+	smtp_set_hostname(session, email_domain());
+    snprintf(newbuf, STRLEN, "%s(%s)",currentuser->userid, currentuser->username);
+    newbuf[STRLEN-1]=0;
+    if (isbig5) {
+       len=strlen(newbuf);
+       encodestr=gb2big(newbuf,&len,1);
+       encodestr=encodestring(encodestr,"BIG5");
+    } else {
+       encodestr=encodestring(newbuf,"GBK");
+    }
+	strncpy(newbuf,encodestr,STRLEN-1);
+    newbuf[STRLEN-1]=0;
+    snprintf(from, STRLEN, "\"%s\" <%s@%s>",newbuf, currentuser->userid, email_domain());
     from[STRLEN-1]=0;
+	free(encodestr);
+    sprintf(newbuf, "%s@%s", currentuser->userid, email_domain());
     smtp_set_reverse_path(message, newbuf);
     smtp_set_header(message, "Message-Id", NULL);
     if (isbig5) {
-        strcpy(newbuf, title);
-        len = strlen(title);
-        smtp_set_header(message, "Subject", gb2big(title, &len, 1));
+        len=strlen(title);
+		encodestr=gb2big(title,&len,1);
+		encodestr=encodestring(encodestr,"BIG5");
     } else {
-        smtp_set_header(message, "Subject", title);
+		encodestr=encodestring(title,"GBK");
     }
+    smtp_set_header(message, "Subject", encodestr);
+	free(encodestr);
     smtp_set_header_option(message, "Subject", Hdr_OVERRIDE, 3);
     /*
      * smtp_8bitmime_set_body(message, E8bitmime_8BITMIME); 
@@ -534,3 +562,181 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5,
         unlink(uname);
     return (status->code != 250);
 }
+
+#else
+
+int encode_imail_file(char *fromid, char *fromhost, char *fromip, char *to, char *oldfile, char *newfile, char *title){
+
+	FILE *fp2;
+	time_t now;
+	char boundary[256];
+
+	int fd;
+	char *ptr;
+	long size;
+	int matched=0;
+
+	snprintf(newfile, STRLEN, "%s.ib", oldfile);
+	if((fp2=fopen(newfile, "w"))==NULL){
+		return -1;
+	}
+	now = time(0);
+	sprintf(boundary,"----=_%ld_%d.attach", now, rand());
+	fprintf(fp2,"Return-Path: <%s@%s>\n", fromid, fromhost);
+	fprintf(fp2,"Received: from %s by %s\n", fromip, fromhost);
+	fprintf(fp2,"From: <%s@%s>\n", fromid, fromhost);
+	fprintf(fp2,"To: %s\n", to);
+	fprintf(fp2,"Date: %s", ctime(&now) );
+	fprintf(fp2,"Reply-To: <%s@%s>\n", fromid, fromhost);
+	fprintf(fp2,"Subject: %s\n", title);
+	fprintf(fp2,"MIME-Version: 1.0\n");
+	fprintf(fp2,"Content-Type: multipart/mixed;\n\tboundary=\"%s\"\n\n", boundary);
+
+	fd=open(oldfile, O_RDONLY);
+	if(fd<0)
+		goto endencode;
+
+    BBS_TRY { 
+        if (safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, (void **) &ptr, (off_t *) & size
+) == 1) {
+            char *start,*end;
+            long not;
+            
+            start = ptr;
+            for (not = 0; not < size; ) {
+				if (*start != 0) {
+					int length;
+					for(length=0,end=start;not<size && *end!=0;not++,end++,length++);
+					fprintf(fp2, "--%s\nContent-Type: text/plain\n", boundary);
+					fwrite(start, length, 1, fp2);
+					fprintf(fp2, "\n\n");
+					if(not >= size)
+						break;
+					start=end;
+					matched=0;
+				}
+                if (*start == 0) {
+                    matched++;
+                    if (matched == ATTACHMENT_SIZE) {
+                        int d;
+                        long attsize;
+						char *attfilename;
+						char *base64old;
+						char base64new[73];
+						int i;
+
+                        start++;
+                        not++;
+						attfilename = start;
+                        while (*start) {
+                            start++;
+                            not++;
+                        }
+
+                        start++;
+                        not++;
+                        memcpy(&d, start, 4);
+                        attsize = htonl(d);
+                        start += 4;
+                        not += 4;
+						/* deal with attach */
+						fprintf(fp2, "--%s\nContent-Type: text/plain;\tname=\"%s\"\nContent-Transfer-Encoding: base64\nContent-Disposition: attachment;\n\tfilename=\"%s\"\n\n", boundary, attfilename, attfilename);
+
+						base64old = start;
+						for(i=0; i<attsize; i+=54, base64old += 54){
+							to64frombits (base64new, base64old, attsize-i>54?54:(attsize-i) );
+							base64new[72]=0;
+							fprintf(fp2,"%s\n",base64new);
+						}
+
+						fprintf(fp2, "\n\n");
+						/* deal end */
+						start += attsize;
+						not += attsize;
+                        matched = 0;
+                    }else{
+						start++;
+						not++;
+					}
+                }
+			}
+		}else{
+			BBS_RETURN(-1);
+		}
+	}
+	BBS_CATCH{
+	}
+	BBS_END end_mmapfile((void*)ptr, size, -1);
+
+	close(fd);
+endencode:
+
+	fprintf(fp2, "--%s--\n", boundary);
+	fclose(fp2);
+
+	return 0;
+}
+
+void my_ansi_filter(char *source)
+{
+    char result[500];
+    int i, flag = 0, loc = 0;
+    int len;
+
+    len = strlen(source);
+    len = len >= sizeof(result) ? sizeof(result) - 1 : len;
+    for (i = 0; i < len; i++) {
+        if (source[i] == '\x1B') {
+            flag = 1;
+            continue;
+        } else if (flag == 1 && isalpha(source[i])) {
+            flag = 0;
+            continue;
+        } else if (flag == 1) {
+            continue;
+        } else {
+            result[loc++] = source[i];
+        }
+    }
+    result[loc] = '\0';
+    strncpy(source, result, loc + 1);
+}
+
+int bbs_sendmail(char *fname, char *title, char *receiver, int isuu, int isbig5, int noansi)
+{                               /* Modified by ming, 96.10.9  KCN,99.12.16 */
+    FILE *fin;
+    char newbuf[257];
+	FILE *fout;
+	char gbuf[256];
+
+	sprintf(gbuf, "%s -f %s@%s %s", OWNSENDMAIL, currentuser->userid, MAIL_BBSDOMAIN, receiver);
+
+	if( encode_imail_file(currentuser->userid, MAIL_BBSDOMAIN, currentuser->lasthost, receiver, fname, newbuf, title) != 0 )
+	    return -1;
+
+	fout = popen(gbuf, "w");
+	if(fout == NULL)
+		return -1;
+	fin = fopen(newbuf, "r");
+	if(fin==NULL){
+		pclose(fout);
+		return -1;
+	}
+
+	while (fgets(gbuf, 255, fin) != NULL) {
+		if(noansi)  my_ansi_filter(gbuf);
+		if (gbuf[0] == '.' && gbuf[1] == '\n')
+			fputs(". \n", fout);
+		else
+			fputs(gbuf, fout);
+	}
+
+	fprintf(fout, ".\n");
+	fclose(fin);
+    pclose(fout);
+
+	unlink(newbuf);
+	return 0;
+}
+#endif
+
