@@ -6,7 +6,7 @@
 #define USE_TMPFS           1   /*使用内存文件系统加速*/
 #define TMPFSROOT   "cache" /*tmpfs的根在bbshome/cache */
 #define NINE_BUILD 		0
-#define NEW_COMERS 		0	/* 注册后在 newcomers 版自动发文 */
+#define NEW_COMERS 		1	/* 注册后在 newcomers 版自动发文 */
 #define HAVE_BIRTHDAY 		1
 #define HAPPY_BBS		0
 #define HAVE_COLOR_DATE		0
@@ -290,7 +290,10 @@ typedef struct fileheader {     /* This structure is used to hold data in */
 #endif
     char innflag[2];
     char owner[OWNER_LEN];
-    char unused2[34];
+    char unused2[22];
+    unsigned int disagree_num;
+    unsigned int favorite_num;
+    unsigned int post_face;
     unsigned int www_flags;
     unsigned int eff_size;
     time_t posttime;
