@@ -685,6 +685,10 @@ typedef struct fileheader fileheader_t;
 //修改密码之类的页面使用https
 #ifndef SECURE_HTTPS
 #define SECURE_HTTPS
+#else
+#if SECURE_HTTPS == 0
+#undef SECURE_HTTPS
+#endif
 #endif
 
 /**

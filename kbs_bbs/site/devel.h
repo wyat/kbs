@@ -39,6 +39,8 @@
 
 #define CHECK_CONNECT 0
 
+#define SECURE_HTTPS 0
+
 #define COMMEND_ARTICLE "Recommend"
 
 #define BUILD_PHP_EXTENSION

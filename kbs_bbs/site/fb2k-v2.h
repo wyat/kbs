@@ -321,8 +321,8 @@ typedef struct fileheader fileheader_t;
 
 // WWW部分
 
-//修改密码之类的页面使用https
-#define SECURE_HTTPS
+//修改密码之类的页面不使用https
+#define SECURE_HTTPS 0
 
 /**
  * Mailbox properties.
