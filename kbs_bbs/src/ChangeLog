@@ -1,3 +1,4 @@
 
 zixia: 	群体邮件的BUG
-	
+	~bbs/tmp目录下的文件建立不同类型的子目录分别存储
+zixia: sysconf.ini 的 relay server 缺省改成 localhost

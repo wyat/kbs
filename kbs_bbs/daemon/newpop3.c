@@ -621,7 +621,8 @@ get_userdata(user)
 char *user;
 {
 	int uid;
-	uid = getuser(user,&currentuser);
+	// by zixia ??? uid = getuser(user,&currentuser);
+	uid = getuser(user,currentuser);
 	if (uid) 
 		return 1;
 	alluser=*currentuser;

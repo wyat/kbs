@@ -238,7 +238,7 @@ x_level()
     }
     clear();
     move(0,0) ;
-    prints("更改使用者的权限\n") ;
+    prints("更改帮众的权限\n") ;
     clrtoeol() ;
     move(1,0) ;
     usercomplete("请输入用户 ID: ",genbuf) ;
@@ -264,11 +264,11 @@ x_level()
     move(1,0);
     clrtobot();
     move(2,0);
-    prints("请设定使用者 '%s' 的权限\n", genbuf);
+    prints("请设定帮众 '%s' 的权限\n", genbuf);
     newlevel = setperms(lookupuser->userlevel,"权限",NUMPERMS,showperminfo);
     move(2,0);
     if (newlevel == lookupuser->userlevel)
-        prints("使用者 '%s' 的权限没有更改\n", lookupuser->userid);
+        prints("帮众 '%s' 的权限没有更改\n", lookupuser->userid);
     else { /* Leeward: 1997.12.02 : Modification starts */
         char        secu[STRLEN];
 
@@ -278,17 +278,17 @@ x_level()
         lookupuser->userlevel = newlevel;
         /* Leeward: 1997.12.02 : Modification stops */
 
-        prints("使用者 '%s' 的权限已更改\n",lookupuser->userid) ;
+        prints("帮众 '%s' 的权限已更改\n",lookupuser->userid) ;
         sprintf(genbuf, "changed permissions for %s", lookupuser->userid);
         report(genbuf);
         /*Haohmaru.98.10.03.给新任板主自动发信*/
         if ((lookupuser->userlevel & PERM_BOARDS ) && flag==0 )
-            mail_file("etc/forbm",lookupuser->userid,"新任板主必读");
+            mail_file("etc/forbm",lookupuser->userid,"新任二当家的必读");
         /* Bigman 2000.1.5 修改权限自动发信 */
         if ((lookupuser->userlevel & PERM_CLOAK ) && flag1==0 )
-            mail_file("etc/forcloak",lookupuser->userid,"批准您的隐身申请");
+            mail_file("etc/forcloak",lookupuser->userid,"帮主授予您隐身权限");
         if ((lookupuser->userlevel & PERM_XEMPT ) && flag2==0 )
-            mail_file("etc/forlongid",lookupuser->userid,"批准您的长期帐号");
+            mail_file("etc/forlongid",lookupuser->userid,"帮主授予您长期帐号权限");
     }
     pressreturn() ;
     clear() ;
@@ -418,7 +418,7 @@ x_userdefine()
     modify_user_mode( USERDEF );
     if(!(id = getuser(currentuser->userid,&lookupuser))) {
         move(3,0) ;
-        prints("错误的 使用者 ID...") ;
+        prints("错误的 帮众 ID...") ;
         clrtoeol() ;
         pressreturn() ;
         clear() ;

@@ -248,7 +248,8 @@ resolve_ucache()
     int passwdfd;
 
     if( uidshm == NULL ) {
-        uidshm = (struct UCACHE*)attach_shm( "UCACHE_SHMKEY", 3696, sizeof( *uidshm ) ,&iscreate); /*attach to user shm */
+        uidshm = (struct UCACHE*)attach_shm( "UCACHE_SHMKEY", 3696,
+			sizeof( *uidshm ) ,&iscreate); /*attach to user shm */
     }
 
 /*  This need to do by using other way 

@@ -64,7 +64,8 @@ void resolve_utmp()
 {
 	int iscreate;
     if( utmpshm == NULL ) {
-        utmpshm = (struct UTMPFILE*)attach_shm( "UTMP_SHMKEY", 3699, sizeof( *utmpshm ),&iscreate );/*attach user tmp cache */
+        utmpshm = (struct UTMPFILE*)attach_shm( "UTMP_SHMKEY", 3699,
+			sizeof( *utmpshm ),&iscreate );/*attach user tmp cache */
         if (iscreate) {
         	int i,utmpfd;
 			utmpfd = utmp_lock();

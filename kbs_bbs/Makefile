@@ -148,6 +148,9 @@ chatd: station.c
 	$(CC) -g $(CFLAGS) -o chatd $(OS_DEF) station.c $(LIBS)
 #	cp -f chatd ${BBSHOME}/bin
 
+bbsnet: bbsnet.c 
+	$(CC) -g $(CFLAGS) -o bbsnet $(OS_DEF) bbsnet.c $(LIBS) $(SITE_DEF)
+	cp -f bbsnet ${BBSHOME}/bin
 
 ve: edit.o term.o screen.o io.o editor.c
 	$(CC) -o ve -g edit.o term.o screen.o io.o editor.c
@@ -187,5 +190,5 @@ dist_clean: clean
 	-rm -f Install.sh
 
 tags: /tmp
-	ctags $(CFILE)
+	ctags -f .tags $(CFILE)
 

@@ -732,6 +732,7 @@ unsigned lvl;
     /* Bigman: 增加中文查询显示 2000.8.10 */
      // buf[10], buf 最多 4 个汉字 + 1 byte （\0结尾）
       if( lvl & PERM_SYSOP ) strcpy(buf,"帮主");
+      else if( lvl & PERM_MM && lvl & PERM_CHATCLOAK ) strcpy(buf,"晶晶姑娘");
       else if( lvl & PERM_MM ) strcpy(buf,"观音姐姐");
       else  if( lvl & PERM_CHATCLOAK ) strcpy(buf,"无敌牛虱");
       else if  ( lvl & PERM_BOARDS ) strcpy(buf,"二当家的");

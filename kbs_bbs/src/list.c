@@ -692,9 +692,13 @@ int star,curr;
 {
 
     clear();
-    t_query(user_record[curr]->userid);
-    move(t_lines-1,0);
-    prints( "[44mÁÄÌì[t] ¼ÄĞÅ[m] ËÍÑ¶Ï¢[s] ¼Ó,¼õÅóÓÑ[o,d] Ñ¡ÔñÊ¹ÓÃÕß[¡ü,¡ı] ÇĞ»»Ä£Ê½ [f] Çó¾È[h][m");
+    if( user_record[curr]->active && user_record[curr]->pid ){
+    	t_query(user_record[curr]->userid);
+    	move(t_lines-1,0);
+    	prints( "[44mÁÄÌì[t] ¼ÄĞÅ[m] ËÍÑ¶Ï¢[s] ¼Ó,¼õÅóÓÑ[o,d] Ñ¡ÔñÊ¹ÓÃÕß[¡ü,¡ı] ÇĞ»»Ä£Ê½ [f] Çó¾È[h][m");
+    }else{
+	prints( "\n\n    Õæ²»ÇÉ£¬ÕâÎ»°ïÖÚÒÑ¾­ÏûÊ§ÔÚÈËÈºÖĞÁË¡­¡­" );
+    }
 }
 
 do_query2(star,curr)

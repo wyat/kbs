@@ -1098,6 +1098,7 @@ main_bbs(char *originhost, int convit,char* argv)
     user_login();
     m_init();
     clear(); 
+//
 
 #ifndef DEBUG
     sprintf(argv,"bbsd:%s",currentuser->userid);

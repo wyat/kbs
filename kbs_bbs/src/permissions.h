@@ -30,13 +30,13 @@
 #define PERM_NOZAP     02000000
 #define PERM_CHATOP    04000000
 #define PERM_ADMIN     010000000
-#define UNUSE4	    	020000000
+#define PERM_DME73    	020000000
 #define PERM_SECANC    040000000
 #define PERM_GIRL      0100000000
 #define PERM_SEXY      0200000000
 #define PERM_SUICIDE   0400000000
 #define PERM_MM	        01000000000
-#define UNUSE10        02000000000
+#define PERM_DISS        02000000000
 #define PERM_DENYMAIL   	04000000000
 
 
@@ -105,13 +105,13 @@ char *permstrings[] = {
         "不能 ZAP(讨论区专用)", /* PERM_NOZAP*/
         "聊天室OP(元老院专用)", /* PERM_CHATOP */
         "系统总管理员",         /* PERM_ADMIN */
-        "特殊权限 4",          	/* PERM_UNUSE?*/
+        "机73成员",          	/* PERM_DME73*/
         "看秘密精华区",         /* PERM_SECANC*/
         "看Girl版",            /* PERM_GIRL*/
         "看Sexy版",             /* PERM_SEXY*/
         "自杀进行中",           /* PERM_SUICIDE*/
         "观音姐姐",             /* PERM_MM*/
-        "看系统讨论版",           /* PERM_UNUSE?*/
+        "看系统讨论版",           /* PERM_DISS*/
         "封禁Mail",           /* PERM_DENYMAIL*/
 
 };
