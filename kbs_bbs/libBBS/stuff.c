@@ -949,12 +949,12 @@ int cmpfileid(int *id, struct fileheader *fi)
 	return (*id==fi->id);
 }
 
-int canIsend2(struct userec *src,struct userec *user, char *userid)
+int canIsend2(struct userec *src, char *userid)
 {                               /* Leeward 98.04.10 */
     char buf[IDLEN + 1];
     char path[256];
 
-    if (HAS_PERM(user, PERM_SYSOP))
+    if (HAS_PERM(src, PERM_SYSOP))
         return true;
     sethomefile(path, userid, "ignores");
     if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, src->userid))

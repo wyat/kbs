@@ -175,21 +175,21 @@ int store_msgfile(char *uident, char *msgbuf)
     return 0;
 }
 
-int msg_can_sendmsg(char *userid, int utmppid)
+int msg_can_sendmsg(struct userec* user,char *userid, int utmppid)
 {
     struct userec *x;
     struct user_info *uin;
 
     if (getuser(userid, &x) == 0)
         return 0;
-    if (strcmp(x->userid, "guest") && !HAS_PERM(session->currentuser, PERM_PAGE))
+    if (strcmp(x->userid, "guest") && !HAS_PERM(user, PERM_PAGE))
         return 0;
     uin = t_search(userid, utmppid);
     if (uin == NULL)
         return 0;
     if (strcasecmp(uin->userid, userid))
         return 0;
-    if (!canmsg(session->currentuser, uin))
+    if (!canmsg(user, uin))
         return 0;
 
     return 1;
@@ -530,19 +530,19 @@ int load_msgtext(char *uident, struct msghead *head, char *msgbuf)
     return 0;
 }
 
-int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode)
+int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode,session_t* session)
 {
     char uident[STRLEN];
     struct user_info *uin;
     struct msghead head, head2;
 
-    *msgerr = 0;
+    session->msgerr[0] = 0;
     uin = uentp;
     strcpy(uident, uin->userid);
     if (!HAS_PERM(session->currentuser, PERM_SEECLOAK) && uin->invisible && strcmp(uin->userid, session->currentuser->userid) && mode != 4)
         return -2;
     if ((mode != 3) && (LOCKSCREEN == uin->mode)) {     /* Leeward 98.02.28 */
-        strcpy(msgerr, "对方已经锁定屏幕，请稍候再发或给他(她)写信...");
+        strcpy(session->msgerr, "对方已经锁定屏幕，请稍候再发或给他(她)写信...");
         return -1;
     }
 //    if ((mode != 3) && (uin->mode == BBSNET)) /* flyriver, 2002.9.12 */
@@ -551,12 +551,12 @@ int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode)
 //       return -1;
 //    }
     if ((mode != 3) && (false == canIsend2(session->currentuser,uin->userid))) {     /*Haohmaru.06.06.99.检查自己是否被ignore */
-        strcpy(msgerr, "对方拒绝接受你的讯息...");
+        strcpy(session->msgerr, "对方拒绝接受你的讯息...");
         return -1;
     }
     if (mode != 3 && uin->mode != WEBEXPLORE) {
         if (get_unreadcount(uident) > MAXMESSAGE) {
-            strcpy(msgerr, "对方尚有一些讯息未处理，请稍候再发或给他(她)写信...");
+            strcpy(session->msgerr, "对方尚有一些讯息未处理，请稍候再发或给他(她)写信...");
             return -1;
         }
     }
@@ -590,12 +590,12 @@ int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode)
         return 1;
     }
 */
-    uin = t_search(MsgDesUid, uentp->pid);
+    uin = t_search(session->MsgDesUid, uentp->pid);
     if ((uin == NULL) || (uin->active == 0) || (uin->pid == 0) || ((kill(uin->pid, 0) != 0) && (uentp->pid != 1))
-        || strncasecmp(MsgDesUid,uident,STRLEN)) {
+        || strncasecmp(session->MsgDesUid,uident,STRLEN)) {
         if (mode == 0)
             return -2;
-        strcpy(msgerr, "对方已经离线....");
+        strcpy(session->msgerr, "对方已经离线....");
         return -1;
     }
 
@@ -612,13 +612,13 @@ int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode)
 		return 1;
 	}
     if (uentp->pid != 1 && kill(uin->pid, SIGUSR2) == -1) {
-        strcpy(msgerr, "对方已经离线.....");
+        strcpy(session->msgerr, "对方已经离线.....");
         return -1;
     }
     return 1;
 }
 
-int translate_msg(char* src, struct msghead *head, char* dest)
+int translate_msg(char* src, struct msghead *head, char* dest,session_t* session)
 {
     char *time, attstr[STRLEN];
     int i,j=0,len,pos,ret=0;
@@ -703,7 +703,7 @@ int translate_msg(char* src, struct msghead *head, char* dest)
     return ret+2;
 }
 
-void mail_msg(struct userec* user)
+void mail_msg(struct userec* user,session_t* session)
 {
     char fname[MAXPATH];
     char buf[MAX_MSG_SIZE],showmsg[MAX_MSG_SIZE*2];
@@ -721,7 +721,7 @@ void mail_msg(struct userec* user)
     for(i=0;i<count;i++) {
         load_msghead(0, user->userid, i, &head);
         load_msgtext(user->userid, &head, buf);
-        translate_msg(buf, &head, showmsg);
+        translate_msg(buf, &head, showmsg,session);
         fprintf(fn, "%s", showmsg);
     }
     fclose(fn);
@@ -1254,7 +1254,7 @@ int count_sql_al( char *userid, char *dest, char *group, char *msgtxt)
 }
 
 
-char * get_al_mobile( char *userid, char *mobile)
+char * get_al_mobile( char *userid, char *mobile,session_t* session)
 {
 
 	MYSQL s;
@@ -1632,7 +1632,7 @@ static struct csv_list * read_csv_line(char *ptr, off_t size, off_t *dlength)
 #define CSV_HASH_EMAIL 9
 #define CSV_HASH_QQ 10
 #define CSV_HASH_MEMO 11
-int conv_csv_to_al(char *fname)
+int conv_csv_to_al(char *fname,session_t * session)
 {
 	FILE *fp;
 	char *ptr;

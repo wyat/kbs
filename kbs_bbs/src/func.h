@@ -175,7 +175,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
 	int cmpfileid(int *id, struct fileheader *fi);
     int dodaemon(char *daemonname, bool single, bool closefd);
 
-    int canIsend2(struct userec* src,struct userec *user, char *userid);
+    int canIsend2(struct userec *src, char *userid);
     void sigbus(int signo);
     void encodestr(register char *str);
     int Isspace(char ch);
@@ -507,16 +507,16 @@ void unlock_sem_check(int lockid);
     int get_unreadmsg(char *uident);
     int load_msghead(int id, char *uident, int index, struct msghead *head);
     int load_msgtext(char *uident, struct msghead *head, char *msgbuf);
-    int translate_msg(char* src, struct msghead *head, char* dest);
+    int translate_msg(char* src, struct msghead *head, char* dest,session_t* session);
     int get_msgcount(int id, char *uident);
-    void mail_msg(struct userec* user);
+    void mail_msg(struct userec* user,session_t* session);
     int clear_msg(char *uident);
     int addto_msglist(int utmpnum, char *userid);
-    int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode);
+    int sendmsgfunc(struct user_info *uentp, const char *msgstr, int mode,session_t* session);
     int canmsg(struct userec *fromuser, struct user_info *uin);
     int can_override(char *userid, char *whoasks);
     int delfrom_msglist(int utmpnum, char *userid);
-    int msg_can_sendmsg(char *userid, int utmpnum);
+    int msg_can_sendmsg(struct userec* user,char *userid, int utmpnum);
 #ifdef SMS_SUPPORT
 #if HAVE_MYSQL_SMTH == 1
 int get_sql_smsmsg( struct smsmsg * smdata, char *userid, char *dest, time_t start_time, time_t end_time, int type, 					int level, int start, int num, char *msgtxt, int desc);
@@ -533,7 +533,7 @@ int chk_smsmsg(int force );
 #endif
 
 #if HAVE_MYSQL_SMTH == 1
-char * get_al_mobile( char *userid, char *mobile);
+char * get_al_mobile( char *userid, char *mobile,session_t* session);
 int get_sql_al( struct addresslist * smdata, char *userid, char *dest, char *group,int start, int num, int order, char *msgtxt);
 int add_sql_al(char *userid, struct addresslist *al, char *msgbuf);
 int count_sql_al( char *userid, char *dest, char *group, char *msgtxt);
