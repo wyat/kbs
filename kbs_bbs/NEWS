@@ -1,4 +1,4 @@
-* smthbbs 1.2.1 stable release. 2004-07-31
+* smthbbs 1.2.1 stable release. 2004-08-08 (Happy birthday to SMTH!)
 
   smthbbs-1.2.1 是 smthbbs-1.2 的后续稳定版本，修正了 smthbbs-1.2 发布后
   发现的很多 bug，同时也增强了一些功能，但数据结构则保持不变。建议用户使用
@@ -14,6 +14,7 @@
   4. contrib/ 目录增加了 build-RH9.sh 文件。 
   5. smthbbs-1.2.1 已经可以在 Solaris 8/9 for X86/SPARC 上正常编译和运行。
   6. configure 增加交叉编译支持。
+  7. 去掉了精华区搜索代码。需要该代码的用户可从以前的代码包中取得。
 
   注1: smthbbs 的 cvs 服务器上 v1_2 分支对应 smthbbs-1.2 系列，喜欢用 cvs
        的用户可以用 cvs 加 -r v1_2 参数获取最新的 smthbbs-1.2 稳定版本。
