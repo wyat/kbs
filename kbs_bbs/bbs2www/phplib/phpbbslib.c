@@ -1579,9 +1579,9 @@ static PHP_FUNCTION(bbs_postarticle)
     if (brd->flag&BOARD_ATTACH) {
 #if USE_TMPFS==1
         snprintf(buf,MAXPATH,"%s/home/%c/%s/%d/upload",TMPFSROOT,toupper(currentuser->userid[0]),
-			currentuser->userid,utmpent);
+			currentuser->userid,getcurrentuinfo_num());
 #else
-        snprintf(buf,MAXPATH,"%s/%s_%d",ATTACHTMPPATH,currentuser->userid,utmpent);
+        snprintf(buf,MAXPATH,"%s/%s_%d",ATTACHTMPPATH,currentuser->userid,getcurrentuinfo_num());
 #endif
         if (!sigsetjmp(bus_jump, 1)) {
             signal(SIGBUS, sigbus);
