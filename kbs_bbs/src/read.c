@@ -79,11 +79,8 @@ search_file(char *filename) /* Leeward 98.10.02 */
     close(fd);
     return - 1;
 }
-struct keeploc *
-getkeep(s,def_topline,def_cursline)
-            char    *s;
-int     def_topline;
-int     def_cursline;
+
+struct keeploc *getkeep(char    *s,int     def_topline,int     def_cursline)
 {
     static struct keeploc *keeplist = NULL ;
     struct keeploc *p ;
@@ -421,13 +418,7 @@ int     ssize;
     pnt = NULL;
 }
 
-/*---	Modified by period	2000-11-12	---*
-int
-i_read_key( rcmdlist, locmem, ch,ssize)
-struct one_key  *rcmdlist ;
-struct keeploc  *locmem;
-int     ch,ssize;
- *---		---*/
+/*---	Modified by period	2000-11-12	---*/
 int i_read_key(struct one_key * rcmdlist, struct keeploc * locmem,
                int ch, int ssize, char * pnt)
 {
