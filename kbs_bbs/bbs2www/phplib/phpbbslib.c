@@ -24,7 +24,7 @@ static PHP_FUNCTION(bbs_setuserscore);
 static PHP_FUNCTION(bbs_adduserscore);
 #endif
 
-static PHP_FUNCTION(bbs_searchTitle);
+static PHP_FUNCTION(bbs_searchtitle);
 static PHP_FUNCTION(bbs_getnumofsig);
 static PHP_FUNCTION(bbs_postmail);
 static PHP_FUNCTION(bbs_mailwebmsgs);
@@ -122,7 +122,7 @@ static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_setuserscore, NULL)
 		PHP_FE(bbs_adduserscore, NULL)
 #endif
-		PHP_FE(bbs_searchTitle, NULL)
+		PHP_FE(bbs_searchtitle, NULL)
 	    PHP_FE(bbs_getnumofsig, NULL)
 		PHP_FE(bbs_postmail, NULL)
 		PHP_FE(bbs_mailwebmsgs, NULL)
@@ -281,10 +281,10 @@ static int foundInArray(unsigned int content, unsigned int array[], unsigned int
 	int i;
 	for (i=0;i<len;i++){
 		if (array[i]==content)	{
-			return 1;
+			return i;
 		}
 	}
-	return 0;
+	return -1;
 }
 static void assign_userinfo(zval * array, struct user_info *uinfo, int num)
 {
@@ -930,7 +930,7 @@ static PHP_FUNCTION(bbs_printansifile)
 	RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
 }
 
-static PHP_FUNCTION(bbs_searchTitle)
+static PHP_FUNCTION(bbs_searchtitle)
 {
     char *board,*title, *title2, *title3,*author;
     long bLen,tLen,tLen2,tLen3,aLen;
@@ -945,6 +945,7 @@ static PHP_FUNCTION(bbs_searchTitle)
 	long int threadsFounded;
 	unsigned int *IDList;
 	unsigned int *IDList2;
+	unsigned int *index;
 	long int threads;
 	int total,i;
 	zval * element;
@@ -957,7 +958,7 @@ static PHP_FUNCTION(bbs_searchTitle)
     struct boardheader *bp;
 
 
-    if (ZEND_NUM_ARGS() != 9 || zend_parse_parameters(9 TSRMLS_CC, "sssssllll", &board, &bLen,&title,&tLen, &title2, &tLen2, &title3, &tLen3,&author, &aLen, &date,&mmode,&origin,&attach) != SUCCESS) {
+    if (ZEND_NUM_ARGS() != 9 || zend_parse_parameters(9 TSRMLS_CC, "sssssllll", &board, &bLen,&title,&tLen, &title2, &tLen2, &title3, &tLen3,&author, &aLen, &date,&mmode,&attach,&origin) != SUCCESS) {
             WRONG_PARAM_COUNT;
     }
     if (date < 0)
@@ -1003,12 +1004,13 @@ static PHP_FUNCTION(bbs_searchTitle)
 #endif
 	IDList	= emalloc((1000)*sizeof(long int));
 	IDList2	= emalloc((50000)*sizeof(long int));
+	index	= emalloc((50000)*sizeof(long int));
 
 	threadsFounded=0;
 	threads=0;
 
 	for (i=total-1;i>=0;i--) {
-		if (!foundInArray(ptr1[i].groupid,IDList2,threads))	{
+		if (foundInArray(ptr1[i].groupid,IDList2,threads)==-1)	{
 			unsigned int low, high ,mid, found;
 			int comp;
 			low = 0;
@@ -1025,50 +1027,55 @@ static PHP_FUNCTION(bbs_searchTitle)
 				else
 					low = mid + 1;
 			}
-			if (found==-1) continue;
-			threads++;
-			if (threads>10000) 
+			if (found!=-1) {
+				IDList2[threads]=ptr1[i].groupid;
+				index[threads]=found;
+				threads++;
+			}
+		}
+		if (threads>10000) 
+			break;
+		if (title[0] && !strcasestr(ptr1[i].title, title))
+	        continue;
+	    if (title2[0] && !strcasestr(ptr1[i].title, title2))
+	        continue;
+	    if (author[0] && strcasecmp(ptr1[i].owner, author))
+	        continue;
+		if (title3[0] && strcasestr(ptr1[i].title, title3))
+			continue;
+		if (abs(time(0) - get_posttime(ptr1+i)) > date * 86400)
+			break;
+		if (mmode && !(ptr1[i].accessed[0] & FILE_MARKED) && !(ptr1[i].accessed[0] & FILE_DIGEST))
+			continue;
+		if (origin && (ptr1[i].groupid!=ptr1[i].id) )
+			continue;
+		if (origin && ptr1[i].attachment==0)
+			continue;
+		if (foundInArray(ptr1[i].groupid,IDList,threadsFounded)==-1)	{
+			int found,tmp=foundInArray(ptr1[i].groupid,IDList2,threads);
+			found=index[tmp];
+			IDList[threadsFounded]=ptr1[i].groupid;
+			threadsFounded++;
+			MAKE_STD_ZVAL(element);
+			array_init(element);
+			flags[0] = get_article_flag(ptr1+found, currentuser, board, is_bm);
+			if (is_bm && (ptr1[found].accessed[0] & FILE_IMPORTED))
+				flags[1] = 'y';
+			else
+				flags[1] = 'n';
+			if (ptr1[found].accessed[1] & FILE_READ)
+				flags[2] = 'y';
+			else
+				flags[2] = 'n';
+			if (ptr1[found].attachment)
+				flags[3] = '@';
+			else
+				flags[3] = ' ';
+			bbs_make_article_array(element, ptr1+found, flags, sizeof(flags));
+			add_assoc_long(element, "threadsnum",tmp);
+			zend_hash_index_update(Z_ARRVAL_P(return_value),threadsFounded, (void *) &element, sizeof(zval *), NULL);
+			if (threadsFounded>=999){
 				break;
-			if (title[0] && !strcasestr(ptr1[i].title, title))
-	            continue;
-	        if (title2[0] && !strcasestr(ptr1[i].title, title2))
-	            continue;
-	        if (author[0] && strcasecmp(ptr1[i].owner, author))
-	            continue;
-	        if (title3[0] && strcasestr(ptr1[i].title, title3))
-	            continue;
-	        if (abs(time(0) - get_posttime(ptr1+i)) > date * 86400)
-	            break;
-	        if (mmode && !(ptr1[i].accessed[0] & FILE_MARKED) && !(ptr1[i].accessed[0] & FILE_DIGEST))
-	            continue;
-	        if (origin && (ptr1[i].groupid!=ptr1[i].id) )
-	            continue;
-			if (origin && ptr1[i].attachment==0)
-				continue;
-			if (!foundInArray(ptr1[i].groupid,IDList,threadsFounded))	{
-				IDList[threadsFounded]=ptr1[i].groupid;
-				threadsFounded++;
-				MAKE_STD_ZVAL(element);
-				array_init(element);
-				flags[0] = get_article_flag(ptr1+found, currentuser, board, is_bm);
-				if (is_bm && (ptr1[found].accessed[0] & FILE_IMPORTED))
-					flags[1] = 'y';
-				else
-					flags[1] = 'n';
-				if (ptr1[found].accessed[1] & FILE_READ)
-					flags[2] = 'y';
-				else
-					flags[2] = 'n';
-				if (ptr1[found].attachment)
-					flags[3] = '@';
-				else
-					flags[3] = ' ';
-				bbs_make_article_array(element, ptr1+found, flags, sizeof(flags));
-				add_assoc_long(element, "threadsnum",threads);
-				zend_hash_index_update(Z_ARRVAL_P(return_value),threadsFounded, (void *) &element, sizeof(zval *), NULL);
-				if (threadsFounded>=999){
-					break;
-				}
 			}
 		}
 	}
@@ -1078,9 +1085,9 @@ static PHP_FUNCTION(bbs_searchTitle)
     close(fd);
     efree(IDList);
     efree(IDList2);
+	efree(index);
 
 }
-
 
 
 /* function bbs_caneditfile(string board, string filename);
@@ -1705,7 +1712,7 @@ static PHP_FUNCTION(bbs_getthreads)
 
 
 	for (i=total-1;i>=0;i--) {
-		if (!foundInArray(ptr1[i].groupid,IDList,threadsFounded))	{
+		if (foundInArray(ptr1[i].groupid,IDList,threadsFounded)==-1)	{
 			unsigned int low, high ,mid, found;
 			int comp;
 			low = 0;
