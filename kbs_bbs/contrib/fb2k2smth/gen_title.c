@@ -28,12 +28,13 @@ int generate_board_title(struct boardheader *bh, void *arg)
     } *index;
     struct stat buf;
     int gen_threadid;
-	struct BoardStatus* bs;
 
-    setbdir(DIR_MODE_NORMAL, olddirect, bh->filename);
-	setbdir(DIR_MODE_ORIGIN, opath, bh->filename);
+    setbdir(0, olddirect, bh->filename);
+    snprintf(opath, 512, "%s/boards/%s/.ORIGIN", BBSHOME, bh->filename);
 
-	gen_threadid = 1;
+    gen_threadid = bh->nowid + 1;
+    if (gen_threadid <= 0)
+        gen_threadid = 1;
     if ((fd2 = open(olddirect, O_RDWR, 0664)) == -1) {
         return 0;
     }
@@ -102,8 +103,7 @@ int generate_board_title(struct boardheader *bh, void *arg)
     fclose(fp);
     close(fd2);
     memcpy(&btmp, getbcache(bh->filename), sizeof(btmp));
-	bs=getbstatus(getbnum(bh->filename));
-	bs->nowid=gen_threadid + 1;
+    btmp.nowid = gen_threadid + 1;
     set_board(getbnum(bh->filename), &btmp, NULL);
     return 0;
 }
