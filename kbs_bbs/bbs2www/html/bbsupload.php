@@ -8,6 +8,7 @@
 	global $errno;
 	@$act_attachname=$_GET["attachname"];
 	@$action=$_GET["act"];
+    $totalsize=0;
 	require("funcs.php");
 	if ($loginok !=1 )
 		html_nologin();
@@ -16,27 +17,31 @@
 		html_init("gb2312","粘贴附件");
 		if (!valid_filename($act_attachname))
 		    html_error_quit("错误的文件名");
+        $attachdir=ATTACHTMPPATH . "/" . $utmpkey;
 		if ($action=="delete") {
-			unlink(ATTACHTMPPATH . "$act_attachname");
+			unlink($attachdir . "/" . "$act_attachname");
 		} else if ($action=="add") {
 			@$errno=$_FILES['attachfile']['error'];
-			if ($errno==UPLOAD_ERR_OK)
-			        if ($_FILES['userfile']['size']<=ATTACHMAXSIZE)) {
+			if ($errno==UPLOAD_ERR_OK) {
+		        if ($_FILES['attachfile']['size']<=ATTACHMAXSIZE) {
+                    @mkdir($attachdir);
 					if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
 			    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
-			        			ATTACHTMPPATH . "$act_attachname");
+			        			$attachdir . "/" . $act_attachname);
 					}
 				} else
 					$errno=UPLOAD_ERR_FORM_SIZE;
 			}
 		}
 		$filecount=0;
-                if ($handle = opendir(ATTACHTMPPATH . "/" . $utmpkey)) {
-                    while (false !== ($filenames = readdir($handle))) { 
+        if ($handle = @opendir($attachdir)) {
+                    while (false != ($file = readdir($handle))) { 
+                        if ($file[0]=='.')
+                            continue;
                     	$filenames[] = $file;
-                    	$filesizes[] = filesize($file);
-                    	$filecount++;
+                    	$filesizes[] = filesize($attachdir . "/" . $file);
                     	$totalsize+=$filesizes[$filecount];
+                    	$filecount++;
                     }
                     closedir($handle);
                 }
@@ -110,7 +115,7 @@ function clickclose() {
                 		break;
                 	case UPLOAD_ERR_INI_SIZE:
                 	case UPLOAD_ERR_FORM_SIZE:
-                		echo "文件超过预定的大小" . sizestr(ATTACHMAXSIZE) . "字节");
+                		echo "文件超过预定的大小" . sizestr(ATTACHMAXSIZE) . "字节";
                 		break;
                 	case UPLOAD_ERR_PARTIAL:
                 		echo "文件传输出错！";
@@ -178,7 +183,7 @@ function clickclose() {
     <td width="423"><font color="#804040"> 
       <select name="removefile" cols="40" size="1" class="form02">
 <?php
-      foreach ($file as $filenames)
+      foreach ($filenames as $file)
         printf("<option value=\"%s\">%s</option>",$file,$file);
 ?>
       </select>

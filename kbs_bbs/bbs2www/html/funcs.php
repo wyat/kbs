@@ -65,8 +65,8 @@ function valid_filename($fn)
 {
 	if ((strstr($fn,"..")!=FALSE)||(strstr($fn,"/")!=FALSE))
 		return 0;
-	if ( (strstr($fn,"&")!=FALSE)||(strstr($fn,";")!=FALSE))
-	   ||(strstr($fn,"|")!=FALSE)||(strstr($fn,"*")!=FALSE))
+	if ( (strstr($fn,"&")!=FALSE)||(strstr($fn,";")!=FALSE)
+	   ||(strstr($fn,"|")!=FALSE)||(strstr($fn,"*")!=FALSE)
 	   ||(strstr($fn,"<")!=FALSE)||(strstr($fn,">")!=FALSE))
 		return 0;
 	return 1;
