@@ -17,6 +17,7 @@ global $loginok;
 global $currentuinfo_num;
 //global $currentuser;
 global $currentuuser_num;
+global $cachemode="";
 $currentuinfo=array ();
 $currentuser=array ();
 $dir_modes = array(
@@ -41,9 +42,8 @@ $filename_trans = array(" " => "_",
 require("site.php");
 
 $loginok=0;
-header("Cache-Control: no-cache");
 
-  @$fullfromhost=$_SERVER["HTTP_X_FORWARDED_FOR"];
+@$fullfromhost=$_SERVER["HTTP_X_FORWARDED_FOR"];
   if ($fullfromhost=="") {
       @$fullfromhost=$_SERVER["REMOTE_ADDR"];
       $fromhost=$fullfromhost;
@@ -104,8 +104,31 @@ window.location="/nologin.html";
 <?php
 }
 
+function cache_header($scope,$modifytime=0,$expiretime=300)
+{
+	session_cache_limiter($scope);
+	$cachemode=$scope;
+	if ($scope=="nocache")
+		return FALSE;
+	$oldmodified=$_SERVER["HTTP_IF_MODIFIED_SINCE"];
+	if ($oldmodified!="") {
+                $oldtime=strtotime($oldmodified);
+	} else $oldtime=0;
+	if ($oldtime>=$modifytime) {
+		header("HTTP/1.1 304 Not Modified");
+	        header("Cache-Control: max-age=" . "$expiretime");
+		return TRUE;
+	}
+	header("Last-Modified: " . gmdate("D, d M Y H:i:s", $modifytime) . "GMT");
+	header("Expires: " . gmdate("D, d M Y H:i:s", $modifytime+$expiretime) . "GMT");
+	header("Cache-Control: max-age=" . "$expiretime");
+	return FALSE;
+}
+
 function html_init($charset,$title="")
 {
+	if ($cachemode=="")
+		cache_header("nocache");
 	@$css_style = $_COOKIE["STYLE"];
 ?>
 <?xml version="1.0" encoding="<?php echo $charset; ?>"?>

@@ -391,7 +391,7 @@ enum BBSPOST_MODE
     BBSPOST_LINK=2
 };
 
-#define ATTACHMMENT_PAD "\0\0\0\0\0"
+#define ATTACHMMENT_PAD "\0\0\0\0\0\0\0\0"
 #include "system.h"
 #include "vars.h"
 #include "func.h"
