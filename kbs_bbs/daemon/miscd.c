@@ -581,6 +581,8 @@ static int miscd_dodaemon(char *argv1, char *daemon)
 		fprintf(stderr, "Error! File %s is not writable.\n", BOARDS);
 		exit(-1);
 	}
+	truncate(BOARDS, MAXBOARD * sizeof(struct boardheader));
+
     if (load_ucache() != 0) {
         printf("ft,load ucache error!");
         exit(-1);

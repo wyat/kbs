@@ -172,7 +172,6 @@ void resolve_boards()
             bbslog("3system", "Can't open " BOARDS "file %s", strerror(errno));
             exit(-1);
         }
-		ftruncate(boardfd, MAXBOARD * sizeof(struct boardheader));
         bcache = (struct boardheader *) mmap(NULL, MAXBOARD * sizeof(struct boardheader), PROT_READ |PROT_WRITE, MAP_SHARED, boardfd, 0);
         if (bcache == (struct boardheader *) -1) {
             bbslog("4system", "Can't map " BOARDS "file %s", strerror(errno));
@@ -204,7 +203,7 @@ void resolve_boards()
                     else
                         brdshm->bstatus[i].nowid=lastfh.id+1;
                     /* update top title */
-                    board_update_toptitle(i,false);
+                    board_update_toptitle(i+1,false);
                     
                     maxi = i;
                 }
@@ -509,18 +508,18 @@ void board_update_toptitle(int bid,bool needlock)
     char dirpath[MAXPATH];
     if (bs==NULL)
         return;
-    bh=bcache[bid-1];
-    if (bh->fileheader[0]==0)
+    bh=&bcache[bid-1];
+    if (bh->filename[0]==0)
         return;
     setbdir(DIR_MODE_ZHIDING,dirpath,bh->filename);
     int fd;
     if (needlock)
         fd=bcache_lock();
-    bs->toptitle=get_num_records(dirpath, sizeof(struct boardheader));
+    bs->toptitle=get_num_records(dirpath, sizeof(struct fileheader));
     if (bs->toptitle>MAX_DING) {
         bs->toptitle=MAX_DING;
     }
-    get_records(dirpath, bs->topfh, sizeof(struct fileheader), 0, bs->toptitle);
+    get_records(dirpath, bs->topfh, sizeof(struct fileheader), 1, bs->toptitle);
     if (needlock)
         bcache_unlock(fd);
 }

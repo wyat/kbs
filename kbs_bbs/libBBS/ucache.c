@@ -358,7 +358,6 @@ int load_ucache()
 int resolve_ucache()
 {
     int iscreate;
-    int fd;
 
     iscreate = 0;
     if (uidshm == NULL) {
