@@ -3161,7 +3161,6 @@ Read()
     i_read( READING, buf,readtitle,readdoent,&read_comms[0],sizeof(struct fileheader)) ;/*进入本版*/
     board_usage(currboard,time(0)-usetime);/*board使用时间记录*/
 
-    brc_update(currentuser->userid,currboard);
     return 0 ;
 }
 
@@ -3284,7 +3283,6 @@ Goodbye()    /*离站 选单*/
     long	Time=10;/*Haohmaru*/
 
     /* Add by SmallPig */
-    brc_update(currentuser->userid,currboard);
     strcpy(quote_file,"");
 
 /*---	显示备忘录的关掉该死的活动看板	2001-07-01	---*/
@@ -3536,7 +3534,7 @@ Goodbye()    /*离站 选单*/
     sleep(1);
     reset_tty() ;
     pressreturn();/*Haohmaru.98.10.18*/
-    shutdown(0,2);
+    shutdown(0,2);    
     close(0);
     exit(0) ;
     return -1;
