@@ -326,13 +326,13 @@ export CFLAGS CC
 # where, so I'll use pipes everywhere for now.
 #AC_DEFINE(USE_PIPES)
 
-AC_MSG_CHECKING([that the compiler works])
-AC_TRY_RUN([ main(int ac, char **av) { return 0; } ],
-    AC_MSG_RESULT(yes),
-    AC_MSG_RESULT(no)
-    AC_MSG_ERROR(Could not compile and run even a trivial ANSI C program - check CC.),
-    AC_MSG_ERROR(Could not compile and run even a trivial ANSI C program - check CC.))
-
+dnl AC_MSG_CHECKING([that the compiler works])
+dnl AC_TRY_RUN([ main(int ac, char **av) { return 0; } ],
+dnl     AC_MSG_RESULT(yes),
+dnl     AC_MSG_RESULT(no)
+dnl     AC_MSG_ERROR(Could not compile and run even a trivial ANSI C program - check CC.),
+dnl     AC_MSG_ERROR(Could not compile and run even a trivial ANSI C program - check CC.))
+dnl 
 if test -z "$no_pipe"; then
 if test -n "$GCC"; then
   AC_MSG_CHECKING([if the compiler understands -pipe])
