@@ -508,25 +508,14 @@ int chk_currBM(char BMstr[STRLEN-1],struct userec* user)
     char *ptr;
     char BMstrbuf[STRLEN-1];
 
-    if(HAS_PERM(currentuser,PERM_OBOARDS)||HAS_PERM(currentuser,PERM_SYSOP))
+    if(HAS_PERM(user,PERM_OBOARDS)||HAS_PERM(user,PERM_SYSOP))
         return YEA;
 
-    if(!HAS_PERM(currentuser,PERM_BOARDS))
+    if(!HAS_PERM(user,PERM_BOARDS))
         return NA;
 
-    return chk_BM_instr(BMstr, currentuser->userid);
+    return chk_BM_instr(BMstr, user->userid);
 }
-
-
-      return 1;*/ /* Leeward 98.05.21 revised by stephen 2000.10.27*/ 
-        /* let user denied post right post at Complain*/
-    {if (!strcmp(bname, "Complain")) return 1;/* added by stephen 2000.10.27*/
-        else if(!strcmp(bname, "sysop"))
-            return 1;} /* stephen 2000.10.27 */
-    if (!HAS_PERM(user,PERM_POST)) return 0;
-    return (HAS_PERM(user,(bcache[i-1].level&~PERM_NOZAP) & ~PERM_POSTMASK));
-}
-
 
 int chk_BM_instr(char BMstr[STRLEN-1],char    bmname[IDLEN+2])
 {
