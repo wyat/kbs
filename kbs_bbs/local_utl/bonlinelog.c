@@ -40,8 +40,6 @@ int fillboard()
     apply_record(BOARDS, (APPLY_FUNC_ARG)fillbcache, sizeof(struct boardheader), NULL, 0,false);
 }
 
-#define BONLINE_LOGDIR "/home/bbs/bonlinelog"
-
 main()
 {
 	char path[256];
