@@ -86,9 +86,9 @@ AC_ARG_ENABLE(www,
 			AC_MSG_ERROR([can't find bbs2www package,please get it first!])
 		fi
 		CONFIG_HAVE_WWW=1
-        else
-		CONFIG_HAVE_WWW=0
-	fi
+    else
+        CONFIG_HAVE_WWW=0
+    fi
 ])
 AC_SUBST(CONFIG_HAVE_WWW)
 AC_SUBST(BBSSUBDIRS)
