@@ -6,15 +6,14 @@ function getattachtmppath($userid,$utmpnum)
   $attachdir="cache/home/" . strtoupper(substr($userid,0,1)) . "/" . $userid . "/" . $utmpnum . "/upload"; 
   return $attachdir;
 }
-define("ANNOUNCENUMBER",5);
-define("ARTICLESPERPAGE",20);
+
 $SiteName="大运村BBS";
 
 $HTMLTitle="大运村BBS";
 
 $HTMLCharset="GB2312";
 
-$DEFAULTStyle="defaultstyle";
+$DEFAULTStyle="style1.css";
 
 $Banner="pic/ws.jpg";
 
@@ -22,7 +21,7 @@ $BannerURL="http://172.16.50.79";
 
 //$SiteURL=$_SERVER['SERVER_NAME'];
 
-$SiteURL="http://172.16.50.79/wbbs/index.php";
+$SiteURL="172.16.50.79";
 
 
 
@@ -36,5 +35,4 @@ $section_names = array(
     array("学术科学", "[学习]"),
     array("休闲娱乐", "[娱乐]")
 );
-$sectionCount=count($section_names);
 ?>

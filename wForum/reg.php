@@ -1,32 +1,26 @@
 <?php
 	$needlogin=0;
 	require("inc/funcs.php");
-	setStat("新用户注册");
+	$stats="新用户注册";
 		show_nav();
 	@$action=$_POST['action'];
 	if ($action=='apply') {
-		setStat("填写资料");
-		head_var("新用户注册");
+		$stats="填写资料";
 		do_apply();
 	} elseif ($action=='save') {
-		setStat("提交注册");
-		head_var("新用户注册");
+		$stats="提交注册";
 		do_save();
 	} else {
-		setStat("注册协议");
-		head_var("新用户注册");
+		$stats="注册协议";
 		do_show();
 	}
 
-	if (isErrFounded()) {
-		html_error_quit();
-	}
 show_footer();
 
 function do_show() {
 ?>
 <table cellpadding=3 cellspacing=1 align=center class=tableborder1>
-    <tr><th align=center><form action="<?php echo $_SERVER['PHP_SELF'] ?>" method=post>服务条款和声明</td></tr>
+    <tr><th align=center><form action="reg.php" method=post>服务条款和声明</td></tr>
 	<input type="hidden" name="action" value="apply">
     <tr><td class=tablebody1 align=left>
 <?php	require("inc/reg_txt.php") ; ?>
@@ -42,7 +36,7 @@ function do_apply(){
 	global $SiteName;
 ?>
 
-<form method=post action="<?php echo $_SERVER['PHP_SELF'] ?>">
+<form method=post action="reg.php">
 <input type="hidden" name="action" value="save">
 <table cellpadding=3 cellspacing=1 align=center class=tableborder1>
 <thead>
@@ -136,44 +130,39 @@ function do_save(){
 
 
 	if(strcmp($pass1,$pass2))
-		foundErr("两次密码输入不一样");
+		html_error_quit("两次密码输入不一样");
 	else if(strlen($pass1) < 5 || !strcmp($pass1,$userid))
-       	foundErr("密码长度太短或者和用户名相同!");
-	if (isErrFounded() ){
-		return false;
-	}
+       	html_error_quit("密码长度太短或者和用户名相同!");
+
 	$ret=bbs_createnewid($userid,$pass1,$nickname);
 	switch($ret)
 	{
 	case 0:
 			break;
 	case 1:
-			foundErr("用户名有非数字字母字符或者首字符不是字母!");
+			html_error_quit("用户名有非数字字母字符或者首字符不是字母!");
 			break;
 	case 2:
-			foundErr("用户名至少为两个字母!");
+			html_error_quit("用户名至少为两个字母!");
 			break;
 	case 3:
-			foundErr("系统用字或不雅用字!");
+			html_error_quit("系统用字或不雅用字!");
 			break;
 	case 4:
-			foundErr("该用户名已经被使用!");
+			html_error_quit("该用户名已经被使用!");
 			break;
 	case 5:
-			foundErr("用户名太长,最长12个字符!");
+			html_error_quit("用户名太长,最长12个字符!");
 			break;
 	case 6:
-			foundErr("密码太长,最长39个字符!");
+			html_error_quit("密码太长,最长39个字符!");
 			break;
 	case 10:
-			foundErr("系统错误,请与系统管理员SYSOP联系.");
+			html_error_quit("系统错误,请与系统管理员SYSOP联系.");
 			break;
 	default:
-			foundErr("注册ID时发生未知的错误!");
+			html_error_quit("注册ID时发生未知的错误!");
 			break;
-	}
-	if (isErrFounded() ){
-		return false;
 	}
 	if($gender!='1')$gender=2;
     settype($year,"integer");
@@ -186,17 +175,14 @@ function do_save(){
 	case 0:
 		break;
 	case 2:
-		foundErr("该用户不存在!");
+		html_error_quit("该用户不存在!");
 		break;
 	case 3:
-		foundErr("参数错误");
+		html_error_quit("参数错误");
 		break;
 	default:
-		foundErr("未知的错误!");
+		html_error_quit("未知的错误!");
 		break;
-	}
-	if (isErrFounded() ){
-		return false;
 	}
 ?>
 <table cellpadding=3 cellspacing=1 align=center class=tableborder1>
@@ -214,5 +200,6 @@ function do_save(){
 }
 
 ?>
+
 </body>
 </html>

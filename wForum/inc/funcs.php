@@ -33,42 +33,6 @@ global $currentuinfo_num;
 //global $currentuser;
 global $currentuuser_num;
 global $cachemode;
-global $errMsg;
-global $foundErr;
-global $stats;
-global $gusetloginok;
-global $sucmsg;
-$sucmsg='';
-$stats='';
-$errMsg='';
-$foundErr=false;
-$loginok=0;
-$guestloginok=0;
-
-if (!isset($needlogin)){
-	$needlogin=1;
-}
-
-function setSucMsg($msg){
-	global $sucmsg;
-	$sucmsg.='<br><li>'.$msg;
-}
-function setStat($stat){
-	GLOBAL $stats;
-	$stats=$stat;
-}
-
-function foundErr($msg){
-	global $errMsg;
-	global $foundErr;
-	$errMsg.='<br><li>'.$msg;
-	$foundErr=true;
-}
-
-function isErrFounded(){
-	GLOBAL $foundErr;
-	return $foundErr;
-}
 
 $cachemode="";
 $currentuinfo=array ();
@@ -149,84 +113,32 @@ if (($sessionid!='')&&($_SERVER['PHP_SELF']=='/bbscon.php')) {
 	@$utmpkey = $_COOKIE["UTMPKEY"];
 	@$utmpnum = $_COOKIE["UTMPNUM"];
 	@$userid = $_COOKIE["UTMPUSERID"];
-	@$userpassword=$_COOKIE["PASSWORD"];
-	if ($userid=='') {
-		$userid='guest';
-	}
 }
-
 // add by stiger, login as "guest" default.....
-if ( ($userid=='guest') && ($utmpkey == "")&&($needlogin!=0)){ 
+if (($utmpkey == "")&&(!isset($needlogin) || ($needlogin!=0))){
 	$error = bbs_wwwlogin(0);
 	if($error == 2 || $error == 0){
 		$data = array();
 		$num = bbs_getcurrentuinfo($data);
-		setcookie("UTMPKEY",$data["utmpkey"],time()+360000,"");
-		setcookie("UTMPNUM",$num,time()+360000,"");
-		setcookie("UTMPUSERID",$data["userid"],0,"");
-		setcookie("LOGINTIME",$data["logintime"],0,"");
+        setcookie("UTMPKEY",$data["utmpkey"],time()+360000,"");
+        setcookie("UTMPNUM",$num,time()+360000,"");
+        setcookie("UTMPUSERID",$data["userid"],time()+360000,"");
+        setcookie("LOGINTIME",$data["logintime"],time()+360000,"");
 		@$utmpkey = $data["utmpkey"];
 		@$utmpnum = $num;
 		@$userid = $data["userid"];
-		$compat_telnet=1;
-		$guestloginok=1;
-	}
-} else {
-	if ( ($utmpkey!="") || ($userid!='guest')) {
-
-		$ret=bbs_setonlineuser($userid,intval($utmpnum),intval($utmpkey),$currentuinfo,$compat_telnet);
-
-	  if (($ret)==0) {
-		if ($userid!="guest") {
-			$loginok=1;
-		} else {
-			$guestloginok=1;
-		}
-		$currentuinfo_num=bbs_getcurrentuinfo();
-		$currentuser_num=bbs_getcurrentuser($currentuser);
-
-	  } else {
-		if (($userid!='guest') && (bbs_checkpasswd($userid,$userpassword)==0)){
-
-			$ret=bbs_wwwlogin(1);
-			if ( ($ret==2) || ($ret==0) ){
-				if ($userid!="guest") {
-					$loginok=1;
-				} else {
-					$guestloginok=1;
-				}
-				$data=array();
-				$currentuinfo_num=bbs_getcurrentuinfo($data);
-				$currentuser_num=bbs_getcurrentuser($currentuser);
-				$path='';
-				setcookie("UTMPKEY",$data["utmpkey"],time()+360000,$path);
-				setcookie("UTMPNUM",$currentuinfo_num,time()+360000,$path);
-				setcookie("LOGINTIME",$data["logintime"],0,$path);
-
-			}else if ($ret==5) {
-				foundErr("请勿频繁登陆！");
-			}
-		} else {
-			$error = bbs_wwwlogin(0);
-			if($error == 2 || $error == 0){
-				$data = array();
-				$num = bbs_getcurrentuinfo($data);
-				setcookie("UTMPKEY",$data["utmpkey"],time()+360000,"");
-				setcookie("UTMPNUM",$num,time()+360000,"");
-				setcookie("UTMPUSERID",$data["userid"],0,"");
-				setcookie("LOGINTIME",$data["logintime"],0,"");
-				@$utmpkey = $data["utmpkey"];
-				@$utmpnum = $num;
-				@$userid = $data["userid"];
-				$compat_telnet=1;
-				$guestloginok=1;
-			}
-		}
-
-	  }
+  		$compat_telnet=1;
 	}
 }
+//add end
 
+if ($utmpkey!="") {
+  if (($ret=bbs_setonlineuser($userid,intval($utmpnum),intval($utmpkey),$currentuinfo,$compat_telnet))==0) {
+    $loginok=1;
+    $currentuinfo_num=bbs_getcurrentuinfo();
+    $currentuser_num=bbs_getcurrentuser($currentuser);
+  }
+}
 
 function valid_filename($fn)
 {
@@ -247,6 +159,25 @@ function bbs_get_board_filename($boardname,$filename)
 function bbs_get_vote_filename($boardname, $filename)
 {
 	return "vote/" . $boardname . "/" . $filename;
+}
+
+function error_alert($msg)
+{
+?>
+<SCRIPT language="javascript">
+window.alert(<?php echo "\"$msg\""; ?>);
+history.go(-1);
+</SCRIPT>
+<?php
+}
+
+function error_nologin()
+{
+?>
+<SCRIPT language="javascript">
+window.location="/nologin.html";
+</SCRIPT>
+<?php
 }
 
 function cache_header($scope,$modifytime=0,$expiretime=300)
@@ -293,7 +224,7 @@ function html_init($charset="",$title="",$otherheader="")
 		cache_header("no-cache");
 		Header("Cache-Control: no-cache");
     }
-	@$css_style = $_COOKIE["style"];
+	@$css_style = $_COOKIE["STYLE"];
 	if ($css_style==''){
 		$css_style=$DEFAULTStyle;
 	}
@@ -306,100 +237,48 @@ function html_init($charset="",$title="",$otherheader="")
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=<?php echo $charset; ?>"/>
 <title><?php echo $title; ?></title>
+<link rel="stylesheet" type="text/css" href="css/<?php echo $css_style; ?>"/>
 <link rel="stylesheet" type="text/css" href="css/ansi.css"/>
-<link rel="stylesheet" type="text/css" href="css/<?php echo $css_style; ?>.css"/>
-<script src="inc/funcs.js"  language="javascript"></script>
+<script src="/inc/funcs.js"  language="javascript"></script>
 <?php echo($otherheader); ?>
 </head>
 <?php
 }
 
-
-
-
-function html_error_quit()
+function html_normal_quit()
 {
-	global $errMsg;
-	global $needlogin;
-	global $loginok;
 ?>
-<br>
-<table cellpadding=3 cellspacing=1 align=center class=tableborder1 style="width:75%">
-<tr align=center>
-<th width="100%" height=25 colspan=2>论坛错误信息
-</td>
-</tr>
-<tr>
-<td width="100%" class=tablebody1 colspan=2>
-<b>产生错误的可能原因：</b><br><br>
-<li>您是否仔细阅读了<a href="boardhelp.php">帮助文件</a>，可能您还没有登陆或者不具有使用当前功能的权限。
-<?php   echo $errMsg; ?>
-</td></tr>
-<?php   if (($needlogin!=0)&&($loginok!=1))
-  {
-?>
-<form action="logon.php" method=post>
-<input type="hidden" name="action" value="doLogon">
-    <tr>
-    <th valign=middle colspan=2 align=center height=25>请输入您的用户名、密码登陆</td></tr>
-    <tr>
-    <td valign=middle class=tablebody1>请输入您的用户名</td>
-    <td valign=middle class=tablebody1><INPUT name=id type=text> &nbsp; <a href=reg.php>没有注册？</a></td></tr>
-    <tr>
-    <td valign=middle class=tablebody1>请输入您的密码</font></td>
-    <td valign=middle class=tablebody1><INPUT name=password type=password> &nbsp; <a href=lostpass.php>忘记密码？</a></td></tr>
-    <tr>
-    <td class=tablebody1 valign=top width=30% ><b>Cookie 选项</b><BR> 请选择你的 Cookie 保存时间，下次访问可以方便输入。</td>
-    <td valign=middle class=tablebody1>                <input type=radio name=CookieDate value=0 checked>不保存，关闭浏览器就失效<br>
-                <input type=radio name=CookieDate value=1>保存一天<br>
-                <input type=radio name=CookieDate value=2>保存一月<br>
-                <input type=radio name=CookieDate value=3>保存一年<br>                </td></tr>
-	<input type=hidden name=comeurl value="<?php     echo $_SERVER['HTTP_REFERER']; ?>">
-    <tr>
-    <td class=tablebody2 valign=middle colspan=2 align=center><input type=submit name=submit value="登 陆">&nbsp;&nbsp;<input type=button name="back" value="返 回" onclick="location.href='<?php  echo $_SERVER['HTTP_REFERER']; ?>'"></td></tr>
-</form>
-<?php   }
-    else
-  {
-?>
-    <tr>
-    <td class=tablebody2 valign=middle colspan=2 align=center><a href="<?php echo $_SERVER['HTTP_REFERER']; ?>"><<返回上一页</a></td></tr>
-<?php   } ?>
-</table>
-<?php 
-} 
+</body>
+</html>
+<?php
+	exit;
+}
 
-function html_success_quit($Desc='',$URL='')
+function html_nologin()
 {
-  global $sucmsg;
 ?>
-<br>
-<table cellpadding=3 cellspacing=1 align=center class=tableborder1>
-<tr align=center>
-<th width="100%">论坛成功信息
-</td>
-</tr>
-<tr>
-<td width="100%" class=tablebody1>
-<b>操作成功：</b><br><br>
-<?php   echo $sucmsg; ?>
-</td></tr>
-<tr align=center><td width="100%" class=tablebody2>
+<html>
+<head></head>
+<body>
+<script language="Javascript">
+top.window.location='/nologin.html';
+</script>
+</body>
+</html>
 <?php
-	if ($Desc=='') {
+}
+
+function html_error_quit($err_msg)
+{
 ?>
-<a href="<?php   echo $_SERVER['HTTP_REFERER']; ?>"> << 返回上一页</a>
+<body>
+错误! <?php echo $err_msg; ?>! <br><br>
+<a href="javascript:history.go(-1)">快速返回</a>
+</body>
+</html>
 <?php
-	} else {
-?>
-<a href="<?php   echo $URL; ?>"> << <?php echo $Desc; ?></a>
-<?php
-	}
-?>
-</td></tr>
-</table>
-<?php 
-} 
+	exit;
+}
 
 function sizestring($size)
 {
@@ -580,13 +459,14 @@ function show_nav()
 	global $SiteName;
 	global $SiteURL;
 	global $StartTime;
-	global $loginok;
 
 
   html_init();
 ?>
-
-<body topmargin=0 leftmargin=0 onmouseover="HideMenu();">
+<script>
+var stylelist = '<a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=0&boardid=0\">恢复默认设置</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=1&boardid=0\">默认模板</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=25&boardid=0\">水晶紫色</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=26&boardid=0\">ｅ点小镇</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=27&boardid=0\">心情灰色</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=28&boardid=0\">秋意盎然</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=29&boardid=0\">蓝色庄重</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=32&boardid=0\">绿色淡雅</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=34&boardid=0\">蓝雅绿</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=35&boardid=0\">紫色淡雅</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=36&boardid=0\">淡紫色</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=37&boardid=0\">橘子红了</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=38&boardid=0\">红红夜思</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=40&boardid=0\">粉色回忆</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=41&boardid=0\">青青河草</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=42&boardid=0\">浓浓绿意</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=44&boardid=0\">棕红预览</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=45&boardid=0\">淡咖啡</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=46&boardid=0\">碧海晴天</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=47&boardid=0\">蓝色水晶</a><br><a style=font-size:9pt;line-height:12pt; href=\"cookies.asp?action=stylemod&skinid=48&boardid=0\">雪花飘飘</a><br>';
+</script>
+<body topmargin=0 leftmargin=0 onmouseover="HideMenu();>
 <div id=menuDiv class="navclass1"></div>
 <table cellspacing=0 cellpadding=0 align=center class="navclass2">
 <tr><td width=100% >
@@ -613,63 +493,132 @@ function show_nav()
         <tr> 
           <td class=TopLighNav1 height=22  valign="middle">&nbsp;&nbsp;
 <?php   
-	if ($loginok!=1)  {
+	if (!$Founduser)  {
 ?>
-<a href="logon.php">登陆</a> <img src=pic/navspacer.gif align=absmiddle> <a href="register.php">注册</a>
+<a href="login.php">登陆</a> <img src=pic/navspacer.gif align=absmiddle> <a href="reg.php">注册</a>
 <?php  
 	}  else  {
 ?>
-<a href="logon.php">重登陆</a> 
+ <img src=pic/navspacer.gif align=absmiddle> <a href="login.php">重登陆</a> 
 <?php
  }
 ?>
  <img src=pic/navspacer.gif align=absmiddle>  <a href="#" onMouseOver='ShowMenu(stylelist,100)'>自选风格</a> 
- <?php    if ($loginok)
+ <?php    if ($Founduser)
   {
-?> <img src=pic/navspacer.gif align=absmiddle> <a href="logout.php">退出</a><?php   
+?> <img src=<?php     echo $Forum_info[7]; ?>navspacer.gif align=absmiddle> <a href="logout.php">退出</a><?php   
 } ?>
 			</td>
         </tr>
 </table>
 </td></tr>
 </table>
+<br>
+<br>
 <?php 
 
 } 
 
-function head_var($Title, $URL='',$showWelcome=1)
+function head_var($IsBoard,$idepth,$GetTitle,$GetUrl)
 {
-  GLOBAL $SiteName;
-  GLOBAL $SiteURL;
-  GLOBAL $stats;
-  if ($URL=='') {
-	  $URL=$_SERVER['PHP_SELF'];
-  }
+  extract($GLOBALS);
+
+
 ?>
-<?php
-  if ($showWelcome==1) {
-?>
-<br>
 <table cellspacing=1 cellpadding=3 align=center border=0 width="97%">
 <tr>
+<?php   if (!$Founduser)
+  {
+?>
 <td height=25>
->> 欢迎光临 <B><?php       echo $SiteName; ?></B>
+<BR>
+>> <?php     if ($FoundBoard)
+    {
+?><?php       echo $BoardReadme; ?><?php     }
+      else
+    {
+?>欢迎光临 <B><?php       echo $Forum_info[0]; ?></B><?php     } ?>
+<?php   }
+    else
+  {
+?>
+<td width=65% >
+</td><td width=35% align=right>
+<?php     if (intval(newincept())>intval(0))
+    {
+?>
+<bgsound src="<?php       echo $Forum_info[7].$Forum_statePic[8]; ?>" border=0>
+<?php       if (intval($Forum_setting[10])==1)
+      {
+?>
+<script language=JavaScript>openScript('messanger.php?action=read&id=<?php         echo inceptid(1); ?>&sender=<?php         echo inceptid(2); ?>',500,400)</script>
+<?php       } ?>
+<img src=<?php       echo $Forum_info[7].$Forum_boardpic[9]; ?>> <a href="usersms.php?action=inbox">我的收件箱</a> (<a href="javascript:openScript('messanger.php?action=read&id=<?php       echo inceptid(1); ?>&sender=<?php       echo inceptid(2); ?>',500,400)"><font color="<?php       echo $Forum_body[8]; ?>"><?php       echo newincept(); ?> 新</font></a>)
+<?php     }
+      else
+    {
+?>
+<img src=<?php       echo $Forum_info[7].$Forum_boardpic[8]; ?>> <a href="usersms.php?action=inbox">我的收件箱</a> (<font color=gray>0 新</font>)
+<?php     } ?>
+<?php   } ?>
 </td></tr>
 </table>
-<?php
-  } 
-?>
 <table cellspacing=1 cellpadding=3 align=center class=tableBorder2>
 <tr><td height=25 valign=middle>
-<img src="pic/forum_nav.gif" align=absmiddle> <a href="<?php echo $SiteURL; ?>"><?php   echo $SiteName; ?></a> → 
+<img src="<?php   echo $Forum_info[7].$Forum_pic[12]; ?>" align=absmiddle> <a href=index.php><?php   echo $Forum_info[0]; ?></a> → 
 <?php 
-    print "<a href=".$URL.">".$Title."</a> → ".$stats;
+  if ($IsBoard==1)
+  {
+
+    if ($BoardParentID>0)
+    {
+
+      for ($i=0; $i<=$idepth-1; $i=$i+1)
+      {
+
+        print "<a href=list.php?boardid=".$FBoardID[$i].">".$FBoardName[$i]."</a> →  ";
+        if ($i>9)
+        {
+          break;
+        } 
+
+
+      } 
+
+    } 
+
+    if ($_REQUEST['CatLog']=="NN")
+    {
+
+            $_COOKIE['BoardList'.$Boardid."BoardID"]="NNotShow";
+    } 
+
+    print "<a href=list.php?boardid=".$Boardid.">".$boardtype."</a> →  ".HTMLEncode($Stats);
+    if ($_COOKIE['BoardList'.$Boardid."BoardID"]=="NNotShow")
+    {
+      print "&nbsp;<a href=\"?BoardID=".$Boardid."&cBoardID=".$Boardid."&Catlog=Y\" title=\"展开论坛列表\">[展开]</a>";
+    } 
+
+  }
+    else
+  if ($IsBoard==2)
+  {
+
+    print HTMLEncode($Stats);
+  }
+    else
+  {
+
+    print "<a href=".$GetUrl.">".$GetTitle."</a> → ".HTMLEncode($Stats);
+  } 
+
 ?>
 <a name=top></a>
 </td></td>
 </table>
 <br>
 <?php 
+  return $function_ret;
 } 
 
 function show_footer()
@@ -691,25 +640,19 @@ function show_footer()
  , 页面执行时间：<?php  printf(number_format(($endtime-$StartTime)*1000,3)); ?>毫秒
 </td></tr>
 </table>
-<br>
-<br>
 </body>
 </html>
 <?php 
 
 } 
 
-if (($needlogin!=0)&&($loginok!=1)&& ($guestloginok!=1) ){
-	show_nav();
-	foundErr("您尚未登陆！");
-	html_error_quit();
-	show_footer();
-	exit(0);
+if ((!isset($needlogin)||($needlogin!=0))&&($loginok!=1)&&($_SERVER["PHP_SELF"]!="/bbslogin.php")) {
+	error_nologin();
 	return;
 }
 
+if (($loginok==1)&&(isset($setboard)&&($setboard==1))) bbs_set_onboard(0,0);
 
-if (( ($loginok==1) || ($guestloginok==1) )&&(isset($setboard)&&($setboard==1))) bbs_set_onboard(0,0);
 
 } // !define ('_BBS_FUNCS_PHP_')
 ?>
