@@ -51,11 +51,12 @@
 #define BBS_PAGE_SIZE 20
 
 #define RAW_ARTICLE 1
+#define HAVE_USERMONEY 1
 
 #define DEFAULTBOARD    	"zixia.net"//test
 #define FILTER_BOARD        "Filter"
 #define SYSMAIL_BOARD       "sysmail"
-#define MAXUSERS  		400 //150,000
+#define MAXUSERS  		1500 //150,000
 #define MAXBOARD  		40//400
 #define MAXCLUB                 12
 #define MAXACTIVE 		99  //3000
@@ -90,7 +91,7 @@
 #define MAIL_BBSDOMAIN      "bbs.zixia.net"
 #define MAIL_MAILSERVER     "127.0.0.1:25"
 
-#define NAME_BBS_ENGLISH	"bbs.zixia.net" //smth.org
+#define NAME_BBS_ENGLISH	"news.zixia.net:8080" //smth.org
 #define	NAME_BBS_CHINESE	"大话西游" //水木清华
 #define NAME_BBS_NICK		"斧头帮" // BBS 站
 #define BBS_FULL_NAME		"BBS 大话西游站"

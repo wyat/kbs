@@ -30,6 +30,10 @@ struct userec {                 /* Structure used to hold information in */
     time_t exittime;
 	/* 生日数据转移到 userdata 结构中 */
     unsigned int usedspace;     /* used space of user's mailbox, in bytes */
+#ifdef HAVE_USERMONEY
+    unsigned int money;
+    unsigned int score;
+#endif
 };
 
 struct userdata

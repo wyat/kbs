@@ -691,3 +691,32 @@ int auto_register(char* userid,char* email,int msize)
 	return 0;
 }
 
+/* user score, add by roy 2003.7.23 */
+#ifdef HAVE_USERMONEY
+   unsigned int get_score(struct userec *user){
+	   return user->score;
+}
+   unsigned int set_score(struct userec *user, unsigned int score){
+	   unsigned int old_score=user->score;
+	   user->score=score;
+	   return old_score;
+}
+   unsigned int add_score(struct userec *user, unsigned int score_addition){
+	   unsigned int old_score=user->score;
+	   user->score+=score_addition;
+	   return old_score;
+}
+   unsigned int get_money(struct userec *user){
+	return user->money;
+}
+   unsigned int set_money(struct userec *user, unsigned int money){
+	   unsigned int old_money=user->money;
+	   user->money=money;
+	   return old_money;
+}
+  unsigned int add_money(struct userec *user, unsigned int money_addition){
+	  unsigned int old_money;
+	  user->money+=money_addition;
+	  return old_money;
+}
+#endif

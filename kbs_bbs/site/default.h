@@ -326,7 +326,6 @@
 #define ANONYMOUS_DEFAULT 0
 #endif
 
-
 #ifndef NAME_MATTER
 #define NAME_MATTER		"Õ¾Îñ"
 #endif
