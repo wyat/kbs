@@ -6,7 +6,6 @@
 	$filenames=array();
 	$filesizes=array();
 	global $errno;
-	@$act_attachname=$_GET["attachname"];
 	@$action=$_GET["act"];
     	$totalsize=0;
 	require("funcs.php");
@@ -15,22 +14,33 @@
 	else
 	{
 		html_init("gb2312","粘贴附件");
-		if (!valid_filename($act_attachname))
-                    html_error_quit("错误的文件名");
-		$attachdir=ATTACHTMPPATH . "/" . $utmpkey;
+		$attachdir=ATTACHTMPPATH . "/" . $currentuser["userid"] . "_" . $utmpnum;
 		if ($action=="delete") {
+			@$act_attachname=$_GET["attachname"];
 			unlink($attachdir . "/" . "$act_attachname");
 		} else if ($action=="add") {
 			@$errno=$_FILES['attachfile']['error'];
 			if ($errno==UPLOAD_ERR_OK) {
-		        if ($_FILES['attachfile']['size']<=ATTACHMAXSIZE) {
-				@mkdir($attachdir);
-				if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
-			    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
-			        			$attachdir . "/" . $act_attachname);
-					}
+				$buf=$_FILES['attachfile']['name'];
+				
+				$tok = strtok($buf,"/\\");
+				$act_attachname="";
+				while ($tok) {
+					$act_attachname=$tok;
+    					$tok = strtok("/\\");
+				}
+				$act_attachname=strtr($act_attachname,$filename_trans);
+				if ($act_attachname!="") {
+			        	if ($_FILES['attachfile']['size']<=ATTACHMAXSIZE) {
+						@mkdir($attachdir);
+						if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
+				    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
+				        			$attachdir . "/" . $act_attachname);
+						}
+					} else
+						$errno=UPLOAD_ERR_FORM_SIZE;
 				} else
-					$errno=UPLOAD_ERR_FORM_SIZE;
+					$errno=100;
 			}
 		}
 		$filecount=0;
@@ -80,11 +90,7 @@ function addsubmit() {
 	alert('您还没选择上传的附件');
  	return false;
   } else {
-        e1=e3=document.forms[0].elements["attachfile"].value;
-        pos=e1.indexOf('&',0);
-        if (pos!=-1)
-            e3=e1.substring(0,pos)+e1.substring(pos+1,document.forms[0].elements["attachfile"].value.length);
-        e2="bbsupload.php?act=add&attach=bbsfoot0.htm&attachname=bbsfoot0.htm&attachfile="+e3+"&sid=NWs2YzFuNDA5MDEwNTA0MDAw";
+        e2="bbsupload.php?act=add";
         document.forms[0].action=e2;  
         document.forms[0].submit();
   }
@@ -92,7 +98,7 @@ function addsubmit() {
 
 function deletesubmit() {
   var e2;
-  e2="bbsupload.php?act=delete&attach=bbsfoot0.htm&attachname=bbsfoot0.htm&removefile="+document.forms[1].elements["removefile"].value+"&sid=NWs2YzFuNDA5MDEwNTA0MDAw";
+  e2="bbsupload.php?act=delete&attachname="+document.forms[1].elements["removefile"].value;
   document.forms[1].action=e2;
   document.forms[1].submit();
 }
@@ -103,7 +109,7 @@ function clickclose() {
 	return false;
 }
 <!--
-        opener.document.forms["attach"].elements["attach"].value = <?php echo "\"$allnemes\""; ?>;
+        opener.document.forms["postform"].elements["attachname"].value = <?php echo "\"$allnemes\""; ?>;
 //-->
 </script>
 <body bgcolor="#FFFFFF"  background="/images/rback.gif">
@@ -127,6 +133,8 @@ function clickclose() {
                 	case UPLOAD_ERR_NO_FILE:
                 		echo "没有文件上传！";
                 		break;
+                	case 100:
+                		echo "无效的文件名！";
                 	default:
                 		echo "未知错误";
                 	}

@@ -30,6 +30,14 @@ $dir_modes = array(
 	"AUTHOR" => 7,
 	"TITLE" => 8
 );
+$filename_trans = array(" " => "_", 
+	";" => "_", 
+	"|" => "_",
+	"&" => "_",
+	">" => "_",
+	"<" => "_",
+	"*" => "_"
+	);
 require("site.php");
 
 $loginok=0;
@@ -96,7 +104,7 @@ window.location="/nologin.html";
 <?php
 }
 
-function html_init($charset,$title)
+function html_init($charset,$title="")
 {
 	@$css_style = $_COOKIE["STYLE"];
 ?>

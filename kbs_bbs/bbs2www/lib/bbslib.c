@@ -685,16 +685,14 @@ int outgo_post2(struct fileheader *fh, char *board, char *userid, char *username
     }
 }
 
-void add_loginfo2(char *filepath, char *board, struct userec *user, int anony)
+void add_loginfo2(FILE* fp, char *board, struct userec *user, int anony)
 {
-    FILE *fp;
     FILE *fp2;
     int color;
     char fname[STRLEN];
 
     color = (user->numlogins % 7) + 31; /* 颜色随机变化 */
     sethomefile(fname, currentuser->userid, "signatures");
-    fp = fopen(filepath, "a");
     if ((fp2 = fopen(fname, "r")) == NULL ||    /* 判断是否已经 存在 签名档 */
         user->signature == 0 || anony == 1) {
         fputs("\n--\n", fp);
@@ -709,7 +707,6 @@ void add_loginfo2(char *filepath, char *board, struct userec *user, int anony)
 
     if (fp2)
         fclose(fp2);
-    fclose(fp);
     return;
 }
 
@@ -746,10 +743,10 @@ int write_file2(FILE * fp, FILE * fp2)
 /* return value:
    >0		success
    -1		write .DIR failed*/
-int post_article(char *board, char *title, char *file, struct userec *user, char *ip, int sig, int local_save, int anony, struct fileheader* oldx)
+int post_article(char *board, char *title, char *file, struct userec *user, char *ip, int sig, int local_save, int anony, struct fileheader* oldx,char* attach_dir)
 {
     struct fileheader post_file;
-    char filepath[STRLEN], fname[STRLEN];
+    char filepath[MAXPATH], fname[STRLEN];
     char buf[256];
     int fd, anonyboard;
     FILE *fp, *fp2;
@@ -777,8 +774,7 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
     fclose(fp2);
     if (!anony)
         addsignature(fp, user, sig);
-    fclose(fp);
-    add_loginfo2(filepath, board, user, anony); /*添加最后一行 */
+    add_loginfo2(fp, board, user, anony); /*添加最后一行 */
 
     strncpy(post_file.title, title, STRLEN);
     if (local_save == 1) {      /* local save */
@@ -798,6 +794,44 @@ int post_article(char *board, char *title, char *file, struct userec *user, char
         post_file.accessed[0] |= FILE_SIGN;
     }
 
+    if (attach_dir!=NULL) {
+        DIR* attach_tmp_dir;
+        if (NULL!=(attach_tmp_dir=opendir(attach_dir))) {
+    		struct dirent dirp;
+    		while (NULL!=(dirp=readdir(attach_tmp_dir))) {
+                    int fd;
+                    char* ptr;
+                    off_t begin,size;
+                    if (dirp->d_name[0]=='.') continue;
+                    snprintf(filepath,"%s/%s",attach_dir,dirp->d_name);
+                    if (-1==(fd=open(filepath,O_RDONLY)))
+                        continue;
+                    if (post_file.attachment==0) {
+                        /* log the attachment begin */
+                        post_file.attachment=ftell(fp)+1;
+                    }
+                    fwrite(fp,ATTACHMMENT_PAD,sizeof(ATTACHMMENT_PAD)-1);
+                    fwrite(fp,dirp->d_name,strlen(dirp->d_name)+1);
+                    BBS_TRY {
+                        if (safe_mmapfile_handle(fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &ptr, (size_t *) & size) == 0) {
+                            size=0;
+                            fwrite(fp,&size,sizeof(size));
+                        } else {
+                            fwrite(fp,&size,sizeof(size));
+                            begin=ftell(fp);
+                            fwrite(fp,ptr,size);
+                        }
+                    }
+                    BBS_CATCH {
+                        ftruncate(fp,begin+size);
+                        fseek(fp,begin+size,SEEK_SET);
+                    }
+                    BBS_END end_mmapfile((void *) ptr, size, -1);
+                    close(fd);
+    		}
+        }
+    }
+    fclose(fp);
     after_post(currentuser, &post_file, board, oldx);
 
     return post_file.id;
