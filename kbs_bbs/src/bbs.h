@@ -299,6 +299,8 @@ typedef size_t socklen_t;
 #define MAX_PATH 255
 #endif
 
+#define FAVBOARDNUM     20
+
 #define system my_system
 
 #ifdef NJU_WWWBBS

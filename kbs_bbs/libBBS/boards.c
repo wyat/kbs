@@ -9,8 +9,6 @@
 #define BRC_ITEMSIZE    (BRC_MAXNUM * sizeof( time_t ))
 #define BRC_MAXBOARD	200  /*×î´ó±£´æ¶àÉÙ¸ö°åµÄÎ´¶Á±ê¼Ç*/
 #define BRC_FILESIZE BRC_ITEMSIZE*BRC_MAXBOARD
-/* added period 2000-09-11	4 FavBoard */
-#define FAVBOARDNUM     20
 
 #define BRC_CACHE_NUM 20 /* Î´¶Á±ê¼Çcache 20¸ö°å*/
 
@@ -96,6 +94,20 @@ int IsFavBoard(int idx)
     int i;
     for(i=1;i<=*favbrd_list;i++) if(idx == favbrd_list[i]) return i;
     return 0;
+}
+
+int getfavnum()
+{
+	return *favbrd_list;
+}
+
+void addFavBoard(int i)
+{
+	int llen;
+	if (getfavnum()<FAVBOARDNUM) {
+	llen = ++(*favbrd_list);
+	favbrd_list[llen] = i-1;
+	};
 }
 
 int DelFavBoard(int i)
@@ -240,14 +252,14 @@ void brc_update(char *userid) {
 			if (j==BRC_MAXBOARD)
 				j=time(0)%BRC_MAXBOARD;
 				/*Ô­À´Ã»ÓÐµÄ°æÃæ£¬Ëæ»úÕÒÒ»¸ö´úÌæ*/
-			lseek(fd,L_BEGIN,BRC_HEADER_LEN+j*BRC_ITEMSIZE);
+			lseek(fd,BRC_HEADER_LEN+j*BRC_ITEMSIZE,SEEK_SET);
 			write(fd,&brc_cache_entry[i].list,BRC_ITEMSIZE);
 
 		}
 	}
 	if (fd!=-1)
 		close(fd);
-	return 0;
+	return;
 }
 
 
@@ -261,16 +273,16 @@ static int brc_convert_struct(char* dirfile,char* data,int size) /* °Ñ¾ÉµÄbroard
 	struct brc_struct brc;
 	char* ptr;
 	int entry;
+	int fd;
 	entry=0;
 	ptr = data;
 	while( ptr < &data[ size ] && (*ptr >= ' ' && *ptr <= 'z') ) {
 	    int num;
 	    char* tmp;
 	    char boardname[18];
-    	    brc.bid[entry]=getbnum(*ptr);
-	    strncpy(boardname,*ptr,BRC_OLD_STRLEN);
+	    strncpy(boardname,ptr,BRC_OLD_STRLEN);
 	    boardname[BRC_OLD_STRLEN]=0;
-           brc.bid=getbnum(boardname);
+            brc.bid[entry]=getbnum(boardname);
            ptr+=BRC_OLD_STRLEN;
            num=(*ptr++) & 0xff;
            tmp=ptr;
@@ -310,7 +322,7 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼þ£¬È¡³ö±£´
     int bid=getbnum(boardname);
     int fd;
     for (i=0;i<BRC_CACHE_NUM;i++) 
-    	if (brc_cache_entry[i].brd_id==bid) {
+    	if (brc_cache_entry[i].bid==bid) {
     		brc_currcache=bid;
     		return 1; /* cache ÖÐÓÐ*/
     	}
@@ -326,7 +338,7 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼þ£¬È¡³ö±£´
 	    if ((brc_size)&&(brc_head[0]>MAXBOARD)||(brc_size<BRC_HEADER_LEN)) { 
 	    	/* ÀÏ°æµÄboardrc,ÒòÎªÓ¦¸ÃÖ»ÐèÒª×ª»¯Ò»´Î£¬²»¿¼ÂÇÐ§ÂÊÀ²*/
 	    	char brc_buffer[BRC_OLD_MAXSIZE];
-		if( (lseek(fd,L_BEGIN,0)  != -1 ) {
+		if( lseek(fd,0,SEEK_SET)  != -1 ) {
 		        brc_size = read( fd, brc_buffer, sizeof( brc_buffer) );
 		        close(fd);
     			 brc_size = brc_convert_struct(dirfile,brc_buffer, brc_size);
@@ -336,14 +348,14 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼þ£¬È¡³ö±£´
 	    } else break;
     }
 
-    entry=brc_getcache();
+    entry=brc_getcache(userid);
     for (i=0;i<BRC_MAXBOARD;i++) {
     	if (brc_head[i]==bid) {
     		struct boardheader* bptr;
     		bptr=getboard(bid);
-    		lseek(fd,L_BEGIN,BRC_HEADER_LEN+i*BRC_ITEMSIZE);
+    		lseek(fd,BRC_HEADER_LEN+i*BRC_ITEMSIZE,SEEK_SET);
     		read(fd,&brc_cache_entry[entry].list,BRC_ITEMSIZE);
-    		if (brc_cache_entry[entry].list[0]&&(brc_cache_entry[entry].list[0]<bptr->createtime) 
+    		if (brc_cache_entry[entry].list[0]&&(brc_cache_entry[entry].list[0]<bptr->createtime) )
     		{
     			brc_cache_entry[entry].changed=1;
     			brc_cache_entry[entry].list[0]=0;
@@ -384,7 +396,7 @@ int brc_has_read(char *file) {
 }
 */
 
-int brc_add_read(char *filename) {
+void brc_add_read(char *filename) {
         int     ftime, n, i;
         ftime=atoi(&filename[2]);
         if(filename[0]!='M' && filename[0]!='G')  return;
@@ -419,7 +431,7 @@ int brc_clear_new_flag(char* filename)
 		brc_cache_entry[brc_currcache].list[n] = ftime;
         	if (n+1<BRC_MAXNUM)
         		brc_cache_entry[brc_currcache].list[n+1]=0;
-        	brc_cache_entry[brc_currcache].brc_changed = 1;
+        	brc_cache_entry[brc_currcache].changed = 1;
 	}
 	return;
 }
