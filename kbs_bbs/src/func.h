@@ -350,12 +350,12 @@ int clean_cachedata(char* userid,int unum);
     char* checkattach(char *buf, long size,long *len,char** attachptr);
 /* roy 2003.7.23 */
 #ifdef HAVE_USERMONEY
-    unsigned int get_score(struct userec *user);
-    unsigned int set_score(struct userec *user, unsigned int score);
-    unsigned int add_score(struct userec *user, unsigned int score_addition);
-    unsigned int get_money(struct userec *user);
-    unsigned int set_money(struct userec *user, unsigned int money);
-    unsigned int add_money(struct userec *user, unsigned int money_addition);
+    int get_score(struct userec *user);
+    int set_score(struct userec *user, unsigned int score);
+    int add_score(struct userec *user, unsigned int score_addition);
+    int get_money(struct userec *user);
+    int set_money(struct userec *user, unsigned int money);
+    int add_money(struct userec *user, unsigned int money_addition);
 #endif
 
 /**

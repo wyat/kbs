@@ -31,8 +31,9 @@ struct userec {                 /* Structure used to hold information in */
 	/* 生日数据转移到 userdata 结构中 */
     unsigned int usedspace;     /* used space of user's mailbox, in bytes */
 #ifdef HAVE_USERMONEY
-    unsigned int money;
-    unsigned int score;
+    int money;
+    int score;
+    char unused[80];
 #endif
 };
 
@@ -56,6 +57,25 @@ struct userdata
     bool mobileregistered;
     char mobilenumber[MOBILE_NUMBER_LEN];
 /*#endif*/
+/* add by roy 2003.07.23 for wbbs*/
+    char OICQ[STRLEN];
+    char ICQ[STRLEN];
+    char MSN[STRLEN];
+    char homepage[STRLEN];
+    unsigned int userface_img;
+    unsigned int group;
+    char country[STRLEN];
+    char province[STRLEN];
+    char city[STRLEN];
+    char shenxiao;
+    char bloodtype;
+    char religion;
+    char profession;
+    char married;
+    char education;
+    char graduateschool[STRLEN];
+    char character;
+
 };
 
 struct user_info {              /* Structure used in UTMP file */
