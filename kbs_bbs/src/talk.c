@@ -34,6 +34,10 @@ extern char BoardName[];
 extern int iscolor;
 extern int numf,friendmode;
 
+char talkobuf[80] ;
+int talkobuflen ;
+int talkflushfd ;
+
 int talkidletime=0;
 int ulistpage;
 int friend_query();
@@ -75,8 +79,6 @@ int     bind(/*int,struct sockaddr *, int*/) ;
 char    *sysconf_str();
 
 
-#include "modetype.c"
-
 extern int t_columns;
 char    *talk_uent_buf;
 
@@ -85,60 +87,6 @@ char save_page_requestor[STRLEN];
 /* end - jjyang */
 
 int cmpfnames();
-/*---	changed to isidhidden by period	2000-10-20	---*
-int
-ishidden(user)
-char *user;
-{
-    int tuid;
-    struct user_info uin;
-
-    if (!(tuid = getuser(user))) return 0;
-    search_ulist( &uin, t_cmpuids, tuid );
-    return( uin.invisible );
-}
----*/
-/*---	get by uid(not userid)	---*/
-int isidhidden(nuid)
-int nuid;
-{
-    struct user_info uin;
-
-    if(search_ulist( &uin, t_cmpuids, nuid ) <= 0) return 0;
-    return( uin.invisible );
-}
-/*---	---*/
-char *
-modestring(mode, towho, complete, chatid)
-int mode, towho, complete;
-char *chatid;
-{
-    static char modestr[STRLEN];
-    struct userec urec;
-
-    /* Leeward: 97.12.18: Below removing ' characters for more display width */
-    if (chatid) {
-        if (complete) sprintf(modestr, "%s %s", ModeType(mode), chatid);
-        else return (ModeType(mode));
-        return (modestr);
-    }
-    if (mode != TALK && mode != PAGE && mode != QUERY)
-        return (ModeType(mode));
-    /*---	modified by period	2000-10-20	---*
-        if (get_record(PASSFILE, &urec, sizeof(urec), towho) == -1)
-            return (ModeType(mode));
-    ---*/
-    if(getuserid(urec.userid, towho) != towho) return ModeType(mode);
-    /*---	---*/
-
-    if (mode != QUERY && !HAS_PERM(PERM_SYSOP) && isidhidden(towho)
-            /*---ishidden(urec.userid)---*/) return (ModeType(TMENU));
-    if (complete)
-        sprintf(modestr, "%s %s", ModeType(mode), urec.userid);
-    else
-        return (ModeType(mode));
-    return (modestr);
-}
 
 char
 pagerchar(friend, pager)
@@ -446,42 +394,6 @@ count_active(struct user_info *uentp,char* arg,int pos)
 }
 
 int
-count_useshell(struct user_info *uentp ,char* arg,int pos)
-{
-    static int count ;
-
-    if(uentp == NULL) {
-        int c = count;
-        count = 0;
-        return c;
-    }
-    if(!uentp->active || !uentp->pid)
-        return 0 ;
-    if(uentp->mode==WWW||uentp->mode==CSIE_TIN||uentp->mode==CSIE_GOPHER
-            ||uentp->mode==EXCE_CHESS||uentp->mode==EXCE_BIG2||uentp->mode==EXCE_MJ
-            ||uentp->mode==IRCCHAT)
-        count++ ;
-    return 1 ;
-}
-
-int
-count_user_logins(struct user_info *uentp,char* arg,int pos)
-{
-    static int count ;
-
-    if(uentp == NULL) {
-        int c = count;
-        count = 0;
-        return c;
-    }
-    if(!uentp->active || !uentp->pid)
-        return 0 ;
-    if(!strcasecmp(uentp->userid,save_page_requestor))
-        count++ ;
-    return 1 ;
-}
-
-int
 count_visible_active(struct user_info *uentp,char* arg,int pos)
 {
     static int count ;
@@ -536,6 +448,26 @@ num_alcounter()
     return;
 }
 
+#ifdef CAN_EXEC
+int
+count_useshell(struct user_info *uentp ,char* arg,int pos)
+{
+    static int count ;
+
+    if(uentp == NULL) {
+        int c = count;
+        count = 0;
+        return c;
+    }
+    if(!uentp->active || !uentp->pid)
+        return 0 ;
+    if(uentp->mode==WWW||uentp->mode==CSIE_TIN||uentp->mode==CSIE_GOPHER
+            ||uentp->mode==EXCE_CHESS||uentp->mode==EXCE_BIG2||uentp->mode==EXCE_MJ
+            ||uentp->mode==IRCCHAT)
+        count++ ;
+    return 1 ;
+}
+
 int
 num_useshell()
 {
@@ -543,6 +475,7 @@ num_useshell()
     apply_ulist( count_useshell,0) ;
     return count_useshell(NULL,0,0) ;
 }
+#endif
 
 int
 num_active_users()
@@ -555,10 +488,7 @@ int
 num_user_logins(uid)
 char *uid;
 {
-    strcpy(save_page_requestor,uid);
-    count_active(NULL,0,0) ;
-    apply_ulist( count_user_logins,0 ) ;
-    return count_user_logins(NULL,0,0) ;
+    return apply_utmp(NULL,0,uid,NULL);
 }
 int
 num_visible_users()
@@ -1136,49 +1066,6 @@ talkreply()
     return 0 ;
 }
 
-int
-dotalkent(uentp, buf)
-struct user_info *uentp;
-char *buf;
-{
-    char mch;
-    if (!uentp->active || !uentp->pid) return -1;
-    if(!HAS_PERM(PERM_SEECLOAK) && uentp->invisible)
-        return -1;
-    switch(uentp->mode) {
-    case ULDL: mch = 'U'; break;
-    case TALK: mch = 'T'; break;
-    case CHAT1:
-    case CHAT2:
-    case CHAT3:
-    case CHAT4: mch = 'C'; break;
-    case IRCCHAT: mch = 'I'; break;
-    case FOURM: mch = '4'; break;
-    case BBSNET: mch = 'B'; break;
-    case READNEW:
-    case READING: mch = 'R'; break;
-    case POSTING: mch = 'P'; break;
-    case SMAIL:
-    case RMAIL:
-    case MAIL: mch = 'M'; break;
-    default: mch = '-';
-    }
-    sprintf(buf, "%s%s(%c), ", uentp->invisible?"*":"", uentp->userid, mch);
-    return 0;
-}
-
-int
-dotalkuent(struct user_info *uentp,char* arg,int pos)
-{
-    char        buf[ STRLEN ];
-
-    if( dotalkent( uentp, buf ) != -1 ) {
-        strcpy( talk_uent_buf, buf );
-        talk_uent_buf += strlen( buf );
-    }
-    return 0;
-}
-
 void
 do_talk_nextline( twin )
 struct talk_win *twin;
@@ -1235,38 +1122,6 @@ if( twin->curcol == 0 ) {
     }
     return ;
 }
-
-void
-do_talk_string( twin, str )
-struct talk_win *twin;
-char            *str;
-{
-    while( *str ) {
-        do_talk_char( twin, *str++ );
-    }
-}
-
-void
-dotalkuserlist( twin )
-struct talk_win *twin;
-{
-    char        bigbuf[ USHM_SIZE * 20 ]; /* change MAXACTIVE->USHM_SIZE, dong, 1999.9.15 */
-    int         savecolumns;
-
-    do_talk_string( twin, "\n*** 上线网友 ***\n" );
-    savecolumns = (t_columns > STRLEN ? t_columns : 0);
-    talk_uent_buf = bigbuf;
-    if( apply_ulist( dotalkuent,0 ) == -1 ) {
-        strcpy( bigbuf, "没有任何使用者上线\n" );
-    }
-    strcpy( talk_uent_buf, "\n" );
-    do_talk_string( twin, bigbuf );
-    if (savecolumns) t_columns = savecolumns;
-}
-
-char talkobuf[80] ;
-int talkobuflen ;
-int talkflushfd ;
 
 void
 talkflush()
@@ -1708,6 +1563,7 @@ char    *cmdfile;
     int save_pager;
     extern int RUNSH;
 
+#ifdef CAN_EXEC
     if(num_useshell()>=15)
     {
         clear();
@@ -1715,7 +1571,7 @@ char    *cmdfile;
         pressanykey();
         return ;
     }
-
+#endif
     if( ! dashf( cmdfile ) ) {
         move(2,0);
         prints( "no %s\n", cmdfile );
