@@ -3936,6 +3936,7 @@ int set_ip_acl()
     clear();
     oldmode = uinfo.mode;
     modify_user_mode(SETACL);
+    //TODO: 窗口大小动态改变的情况？这里有bug
     pts = (POINT *) malloc(sizeof(POINT) * BBS_PAGESIZE);
     for (i = 0; i < BBS_PAGESIZE; i++) {
         pts[i].x = 2;

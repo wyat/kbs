@@ -4,6 +4,21 @@
 */
 #include "bbs.h"
 #include "select.h"
+
+static struct _select_def* current_conf;
+
+struct _select_def* select_get_current_conf()
+{
+    return current_conf;
+}
+
+struct _select_def* select_set_current_conf(struct _select_def* conf)
+{
+    struct _select_def* oldconf=current_conf;
+    current_conf=conf;
+    return oldconf;
+}
+
 static int check_valid(struct _select_def *conf)
 {
     int ret = SHOW_CONTINUE;;
@@ -17,7 +32,7 @@ static int check_valid(struct _select_def *conf)
         conf->pos = conf->item_count;
     if (conf->pos <= 1)
         conf->pos = 1;
-    if (conf->page_pos <= 1) {
+    if ((conf->page_pos <= 1)||(conf->page_pos > conf->pos)||(conf->page_pos+conf->item_per_page<=conf->pos)) {
         int i;
         i = ((conf->pos-1)/conf->item_per_page)*conf->item_per_page+1;
         if(i!=conf->page_pos) {
@@ -171,6 +186,9 @@ static int do_select_internal(struct _select_def *conf, int key)
             return SHOW_QUIT;
         if (conf->flag & LF_NUMSEL)
             conf->tmpnum=0;
+        if (conf->on_size) { //初始化界面
+            (*conf->on_size)(conf);
+        }
     }
     if (key == KEY_INIT)
         return SHOW_CONTINUE;
@@ -210,6 +228,10 @@ static int do_select_internal(struct _select_def *conf, int key)
     	}
     }
     switch (key) {
+    case KEY_ONSIZE: /*处理窗口大小变化事件*/
+        if (conf->on_size)
+            return (*conf->on_size)(conf);
+        return SHOW_DIRCHANGE;
     case KEY_REFRESH:
         return refresh_select(conf);
     case KEY_UP:
@@ -398,16 +420,19 @@ int list_select_remove_key(struct _select_def* conf)
 int list_select_loop(struct _select_def *conf)
 {
     int ch;
+    int ret;
 
+    select_set_current_conf(conf);
     list_select(conf, KEY_INIT);
     while (1) {
-        int ret;
         if ((ch=list_select_remove_key(conf))==KEY_INVALID)
             ch = igetkey();
         ret=list_select(conf, ch);
         if ((ret == SHOW_QUIT)||(ret == SHOW_SELECT))
-            return ret;
+            break;
     }
+    select_set_current_conf(conf);
+    return ret;
 }
 
 struct _simple_select_arg{

@@ -2974,6 +2974,7 @@ int set_mailgroup(mailgroup_list_t * mgl, int entry, mailgroup_t * users)
     }
 
     clear();
+    //TODO: 窗口大小动态改变的情况？这里有bug
     pts = (POINT *) malloc(sizeof(POINT) * BBS_PAGESIZE);
     for (i = 0; i < BBS_PAGESIZE; i++) {
         pts[i].x = 2;

@@ -23,38 +23,45 @@ static int read_key(struct _select_def *conf, int command)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
     int i;
+    int ret=SHOW_CONTINUE;
     
     for (i = 0; arg->rcmdlist[i].fptr != NULL; i++) {
         if (arg->rcmdlist[i].key == command) {
             int mode = (*(arg->rcmdlist[i].fptr)) (conf->pos, arg->data+(conf->pos - conf->page_pos) * arg->ssize, arg->direct);
-            if ((mode==FULLUPDATE)||(mode==PARTUPDATE)) {
-                clear();
-                return SHOW_REFRESH;
-            }
-            if ((mode==DIRCHANGED)||(NEWDIRECT))
-                return SHOW_DIRCHANGE;
-            if ((mode == DOQUIT)||(mode == CHANGEMODE))
-                return SHOW_QUIT;
-            if (mode==READ_NEXT) {
-                if (conf->pos<conf->item_count) {
-                    conf->new_pos = conf->pos + 1;
-                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
-                    return SHOW_SELCHANGE;
-                }
-                return SHOW_REFRESH;
-            } 
-            if (mode==READ_PREV) {
-                if (conf->pos>1) {
-                    conf->new_pos = conf->pos - 1;
-                    list_select_add_key(conf,'r'); //SEL change的下一条指令是read
-                    return SHOW_SELCHANGE;
-                }
-                return SHOW_REFRESH;
+            switch (mode) {
+                case FULLUPDATE:
+                case PARTUPDATE:
+                    clear();
+                    ret=SHOW_REFRESH;
+                    break;
+                case DIRCHANGED:
+                case NEWDIRECT:
+                    ret=SHOW_DIRCHANGE;
+                    break;
+                case DOQUIT:
+                case CHANGEMODE:
+                    ret=SHOW_QUIT;
+                    break;
+                case READ_NEXT:
+                    if (conf->pos<conf->item_count) {
+                        conf->new_pos = conf->pos + 1;
+                        list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                        ret=SHOW_SELCHANGE;
+                    } else ret=SHOW_REFRESH;
+                    break;
+                case READ_PREV:
+                    if (conf->pos>1) {
+                        conf->new_pos = conf->pos - 1;
+                        list_select_add_key(conf,'r'); //SEL change的下一条指令是read
+                        ret=SHOW_SELCHANGE;
+                    }
+                    ret= SHOW_REFRESH;
+                    break;
             } 
             break;
         }
     }
-    return SHOW_CONTINUE;
+    return ret;
 }
 
 static int read_onselect(struct _select_def *conf)
@@ -71,6 +78,9 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
     int entry=0;
     int count;
 
+    if (arg.data==NULL)
+        arg.data=calloc(BBS_PAGESIZE,ssize);
+    
     if (fstat(arg->fd,&st)!=-1) {
         count=st.st_size/arg->ssize;
         if (count!=conf->item_count) {
@@ -138,11 +148,30 @@ static int read_show(struct _select_def *conf, int pos)
     return SHOW_CONTINUE;
 }
 
+static int read_onsize(struct _select_def* conf)
+{
+    int i;
+    struct read_arg *arg = (struct read_arg *) conf->arg;
+    if (conf->item_pos!=NULL)
+        free(conf->item_pos);
+    conf->item_pos = (POINT *) calloc(BBS_PAGESIZE,sizeof(POINT));
+
+    for (i = 0; i < BBS_PAGESIZE; i++) {
+        conf->item_pos[i].x = 1;
+        conf->item_pos[i].y = i + 3;
+    };
+    if (arg->data!=NULL) {
+        free(arg->data);
+        arg->data=NULL;
+    }
+    conf->item_per_page = BBS_PAGESIZE;
+    return SHOW_DIRCHANGE;
+}
+
 int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct one_key *rcmdlist, int ssize)
 {
     struct _select_def read_conf;
     struct read_arg arg;
-    POINT *pts;
     int i;
     const struct key_translate ktab[]= {
             {'\n','r'},
@@ -162,16 +191,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
     arg.rcmdlist=rcmdlist;
     arg.ssize=ssize;
 
-    //TODO: 窗口大小动态改变的情况？
-    arg.data=calloc(BBS_PAGESIZE,ssize);
-    
     clear();
-    pts = (POINT *) malloc(sizeof(POINT) * BBS_PAGESIZE);
-
-    for (i = 0; i < BBS_PAGESIZE; i++) {
-        pts[i].x = 1;
-        pts[i].y = i + 3;
-    };
 
     if ((arg.fd = open(arg.direct, O_RDONLY, 0)) != -1) {
         bzero((char *) &read_conf, sizeof(struct _select_def));
@@ -193,20 +213,23 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
         read_conf.key_command = read_key;
         read_conf.show_title = read_title;
         read_conf.show_endline= read_endline;
+        read_conf.on_size= read_onsize;
         read_conf.key_table = &(ktab[0]);
 
         read_getdata(&read_conf,read_conf.pos,read_conf.item_per_page);
 
         list_select_loop(&read_conf);
+        if (arg.data!=NULL)
+            free(arg.data);    
+        if (read_conf.item_pos!=NULL)
+            free(read_conf.item_pos);
+        close(arg.fd);
     } else {
             prints("没有任何信件...");
             pressreturn();
             clear();
 
     }
-    free(arg.data);    
-    free(pts);
-    close(arg.fd);
 }
 
 
