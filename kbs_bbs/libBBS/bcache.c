@@ -173,7 +173,7 @@ void resolve_boards()
             exit(-1);
         }
 		ftruncate(boardfd, MAXBOARD * sizeof(struct boardheader));
-        bcache = (struct boardheader *) mmap(NULL, MAXBOARD * sizeof(struct boardheader), PROT_READ , MAP_SHARED, boardfd, 0);
+        bcache = (struct boardheader *) mmap(NULL, MAXBOARD * sizeof(struct boardheader), PROT_READ |PROT_WRITE, MAP_SHARED, boardfd, 0);
         if (bcache == (struct boardheader *) -1) {
             bbslog("4system", "Can't map " BOARDS "file %s", strerror(errno));
             close(boardfd);
@@ -194,11 +194,15 @@ void resolve_boards()
                     char filename[MAXPATH];
                     struct fileheader lastfh;
                     getlastpost(bcache[i].filename, &brdshm->bstatus[i].lastpost, &brdshm->bstatus[i].total);
-                    /* ulock: get nowid from the last fileheader*/
+                    /* ulock: get nowid from the last fileheader and idseq*/
                     setbfile(filename,bcache[i].filename,DOT_DIR);
                     count=get_num_records(filename,sizeof(struct fileheader));
                     get_record(filename, &lastfh, sizeof(struct fileheader), count-1);
                     brdshm->bstatus[i].nowid=lastfh.id+1;
+					if (bcache[i].idseq>lastfh.id+1)
+                        brdshm->bstatus[i].nowid=bcache[i].idseq;
+					else
+                        brdshm->bstatus[i].nowid=lastfh.id+1;
                     maxi = i;
                 }
             if (maxi != -1)
@@ -501,4 +505,11 @@ void board_update_toptitle(struct boardheader* bh,int increment)
     else
       bh->toptitle+=increment;
     bcache_unlock(fd);
+}
+
+void flush_bcache()
+{
+    int i;
+    for (i = 0; i < MAXBOARD; i++)
+	    bcache[i].idseq=brdshm->bstatus[i].nowid;
 }

@@ -231,6 +231,7 @@ void unlock_sem_check(int lockid);
 
 
 /* define in bcache.c */
+	void flush_bcache(); /* 同步bcache*/
     void board_setcurrentuser(int idx,int num); /*设置在线用户计数*/
     int getbnum(const char *bname);
     void resolve_boards(ARG_VOID);

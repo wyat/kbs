@@ -148,7 +148,7 @@ struct boardheader {            /* This structure is used to hold data in */
     char BM[BM_LEN];
     char title[STRLEN];
     unsigned level;
-    unsigned int unused;
+    unsigned int idseq;
     unsigned int clubnum; /*如果是俱乐部，这个是俱乐部序号*/
     unsigned int flag;
     union {

@@ -10,6 +10,7 @@
 void do_exit()
 {
     flush_ucache();
+	flush_bcache();
     bbslog("4miscdaemon", "flush passwd file");
 }
 
@@ -513,6 +514,7 @@ void flushd()
     while (1) {
         sleep(2 * 60 * 60);
         flush_ucache();
+		flush_bcache();
         bbslog("4miscdaemon", "flush passwd file");
     };
 }
