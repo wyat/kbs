@@ -64,4 +64,17 @@ void postreport(const char * posttitle, int post_num, char *board)
     return ;
 }
 
+int isowner(struct userec* user,struct fileheader* fileinfo)
+{
+    char buf[25];
+    time_t posttime;
+    if (strcmp(fileinfo->owner,user->userid))
+        return 0;
+    posttime = atoi(fileinfo->filename+2);
+    if (posttime<user->firstlogin)
+        return 0;
+    return 1;
+}
+
+
 
