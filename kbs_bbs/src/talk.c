@@ -278,7 +278,7 @@ int t_query(char* q_id)
 #endif                          /* 
                                  */
 #ifdef FB2000
-	prints("%s (\033[1;33m%s\033[m) 共上站 \033[1;32m%d\033[m 次，网龄[\033[1;32m%d\033[0;1m]天",
+	prints("%s (\033[1;33m%s\033[m) 共上站 \033[1;32m%d\033[m 次，网龄[\033[1;32m%d\033[m]天",
 		lookupuser->userid, lookupuser->username,  lookupuser->numlogins, (time(0)-lookupuser->firstlogin)/86400);
 #else
         prints("%s (%s) 共上站 %d 次，发表过 %d 篇文章", lookupuser->userid, lookupuser->username, lookupuser->numlogins, lookupuser->numposts);
