@@ -3795,6 +3795,9 @@ static PHP_FUNCTION(bbs_createnewid)
 	newuser.userlevel = PERM_AUTOSET;
 	newuser.userdefine = -1;
 	newuser.userdefine &= ~DEF_NOTMSGFRIEND;
+#ifdef HAVE_WFORUM
+	newuser.userdefine &= ~DEF_SHOWREALUSERDATA;
+#endif
 	newuser.notemode = -1;
 	newuser.exittime = time(NULL) - 100;
 	newuser.flags[0] = CURSOR_FLAG;
