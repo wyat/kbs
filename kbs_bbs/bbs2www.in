@@ -12,14 +12,16 @@ if test $CONFIG_HAVE_WWW -eq 0 ; then
 fi
 
 if test "$WWW_DIR" != "no"; then
-    if test -f /home0/www/bin/apachectl; then
-        WWW_DIR=/home0/www
-    else
-      if test -d /usr/local/apache; then
-          WWW_DIR=/usr/local/apache
+    if test "$WWW_DIR" = "yes"; then
+      if test -f /home0/www/bin/apachectl; then
+          WWW_DIR=/home0/www
       else
-        if test -d /var/www; then
-            WWW_DIR=/var/www
+        if test -d /usr/local/apache; then
+            WWW_DIR=/usr/local/apache
+        else
+          if test -d /var/www; then
+              WWW_DIR=/var/www
+          fi
         fi
       fi
     fi
@@ -45,19 +47,21 @@ AC_ARG_WITH(php,
                           select php source directory],
 PHP_DIR="$withval", PHP_DIR="yes")
 
-if test "$WWW_DIR" != "no"; then
+if test "$WWW_DIR" = "no"; then
     PHP_DIR="no"
 fi
 
 if test "$PHP_DIR" != "no"; then
-  if test -f /home/share/php/Zend/zend.h; then
-          PHP_DIR=/home/share/php
-  else
-    if test -f /usr/include/php/Zend/zend.h; then
-            PHP_DIR=/usr/include/php
+  if test "$PHP_DIR" = "yes"; then
+    if test -f /home/share/php/Zend/zend.h; then
+            PHP_DIR=/home/share/php
     else
-      if test -f /usr/local/include/php/Zend/zend.h; then
-              PHP_DIR=/usr/local/include/php
+      if test -f /usr/include/php/Zend/zend.h; then
+              PHP_DIR=/usr/include/php
+      else
+        if test -f /usr/local/include/php/Zend/zend.h; then
+                PHP_DIR=/usr/local/include/php
+        fi
       fi
     fi
   fi
@@ -72,7 +76,7 @@ if test "$PHP_DIR" != "no"; then
   AC_SUBST(HTMPATH)
   AC_SUBST(PHPBBSLIBPATH)
   AC_SUBST(BBSSITE)
-  
+
   HTML_FILES=`cd bbs2www; find html -path '*/CVS/*' -prune -o -type f -print | xargs`
   AC_SUBST(HTML_FILES)
 fi
