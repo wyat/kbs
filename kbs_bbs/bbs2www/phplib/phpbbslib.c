@@ -271,8 +271,8 @@ static void assign_user(zval * array, struct userec *user, int num)
     add_assoc_long(array, "noteline", user->noteline);
     add_assoc_long(array, "notemode", user->notemode);
 	#ifdef HAVE_USERMONEY
-	ass_assoc_long(array,"money", user->money);
-	ass_assoc_long(array,"score", user->score);
+	add_assoc_long(array,"money", user->money);
+	add_assoc_long(array,"score", user->score);
 	#endif
 }
 static int foundInArray(unsigned int content, unsigned int array[], unsigned int len){
@@ -797,6 +797,58 @@ static int buffered_output(char *buf, size_t buflen, void *arg)
 
 	return 0;
 }
+static char* output_buffer=NULL;
+static int output_buffer_len=0;
+static int output_buffer_size=0;
+
+static void output_printf(char* buf) {
+	int bufLen;
+	int n;
+	if (output_buffer==NULL) {
+		output_buffer=(char* )emalloc(10240); //first 10k
+		output_buffer_size=10240;
+	}
+	bufLen=strlen(buf);
+	n=output_buffer_len+bufLen-output_buffer_size;
+	if (n>=0) {
+		output_buffer_size+=((n/5120)+1)*5120; //n*5k every time
+		output_buffer=(char*)erealloc(output_buffer,output_buffer_size);
+	}
+	memcpy(output_buffer+output_buffer_len,buf,bufLen);
+	output_buffer_len+=bufLen;
+}
+
+static char* get_output_buffer(){
+	return output_buffer;
+}
+
+static int get_output_buffer_len(){
+	return output_buffer_len;
+}
+
+static int new_buffered_output(char *buf, size_t buflen, void *arg)
+{
+	buffered_output_t *output = (buffered_output_t *)arg;
+	if (output->buflen <= buflen)
+	{
+		output->flush(output);
+		output_printf(buf);
+		return 0;
+	}
+	if ((output->buflen - (output->outp - output->buf) - 1) <= buflen) 
+		output->flush(output);
+	strncpy(output->outp, buf, buflen); 
+	output->outp += buflen;
+
+	return 0;
+}
+
+static void new_flush_buffer(buffered_output_t *output)
+{
+	*(output->outp) = '\0'; 
+	output_printf(output->buf);
+	output->outp = output->buf;
+}
 
 static PHP_FUNCTION(bbs_printansifile)
 {
@@ -854,8 +906,12 @@ static PHP_FUNCTION(bbs_printansifile)
 		munmap(ptr, st.st_size);
         RETURN_LONG(2);
 	}
+/*
 	override_default_output(out, buffered_output);
 	override_default_flush(out, flush_buffer);
+*/
+	override_default_output(out, new_buffered_output);
+	override_default_flush(out, new_flush_buffer);
 
     if (!sigsetjmp(bus_jump, 1)) 
 	{
@@ -867,7 +923,7 @@ static PHP_FUNCTION(bbs_printansifile)
 	free_output(out);
     signal(SIGBUS, SIG_IGN);
     signal(SIGSEGV, SIG_IGN);
-    RETURN_LONG(0);
+	RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),0);
 }
 
 
