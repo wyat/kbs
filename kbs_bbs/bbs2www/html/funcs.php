@@ -63,7 +63,11 @@ if ($utmpkey!="") {
 
 function valid_filename($fn)
 {
-	if ((strstr($fn,"..")!=FALSE)||(strstr($fn,"/")))
+	if ((strstr($fn,"..")!=FALSE)||(strstr($fn,"/")!=FALSE))
+		return 0;
+	if ( (strstr($fn,"&")!=FALSE)||(strstr($fn,";")!=FALSE))
+	   ||(strstr($fn,"|")!=FALSE)||(strstr($fn,"*")!=FALSE))
+	   ||(strstr($fn,"<")!=FALSE)||(strstr($fn,">")!=FALSE))
 		return 0;
 	return 1;
 }
@@ -161,6 +165,28 @@ function html_error_quit($err_msg)
 </html>
 <?php
 	exit;
+}
+
+function sizestring($size)
+{
+	if ($size<1024)
+	  return "$size";
+	$fsize=((double)$size)/1024;
+	if ($fsize<1024) {
+	  return sprintf("%01.2fk","$fsize");
+	}
+	$fsize=((double)$fsize)/1024;
+	if ($fsize<1024) {
+	  return sprintf("%01.2fM","$fsize");
+	}
+	$fsize=((double)$fsize)/1024;
+	if ($fsize<1024) {
+	  return sprintf("%01.2fG","$fsize");
+	}
+	$fsize=((double)$fsize)/1024;
+	if ($fsize<1024) {
+	  return sprintf("%01.2fT","$fsize");
+	}
 }
 
 function get_bbsfile($relative_name)

@@ -5,19 +5,38 @@
 	 */
 	$filenames=array();
 	$filesizes=array();
+	global $errno;
+	@$act_attachname=$_GET["attachname"];
+	@$action=$_GET["act"];
 	require("funcs.php");
 	if ($loginok !=1 )
 		html_nologin();
 	else
 	{
 		html_init("gb2312","粘贴附件");
+		if (!valid_filename($act_attachname))
+		    html_error_quit("错误的文件名");
+		if ($action=="delete") {
+			unlink(ATTACHTMPPATH . "$act_attachname");
+		} else if ($action=="add") {
+			@$errno=$_FILES['attachfile']['error'];
+			if ($errno==UPLOAD_ERR_OK)
+			        if ($_FILES['userfile']['size']<=ATTACHMAXSIZE)) {
+					if (is_uploaded_file($_FILES['attachfile']['tmp_name'])) {
+			    			move_uploaded_file($_FILES['attachfile']['tmp_name'], 
+			        			ATTACHTMPPATH . "$act_attachname");
+					}
+				} else
+					$errno=UPLOAD_ERR_FORM_SIZE;
+			}
+		}
 		$filecount=0;
                 if ($handle = opendir(ATTACHTMPPATH . "/" . $utmpkey)) {
-                    /* This is the correct way to loop over the directory. */
                     while (false !== ($filenames = readdir($handle))) { 
                     	$filenames[] = $file;
                     	$filesizes[] = filesize($file);
                     	$filecount++;
+                    	$totalsize+=$filesizes[$filecount];
                     }
                     closedir($handle);
                 }
@@ -59,7 +78,7 @@ function addsubmit() {
         pos=e1.indexOf('&',0);
         if (pos!=-1)
             e3=e1.substring(0,pos)+e1.substring(pos+1,document.forms[0].elements["attachfile"].value.length);
-        e2="attach?func=attach&act=add&usr=kcn&attach=bbsfoot0.htm&attachname=bbsfoot0.htm&attachfile="+e3+"&sid=NWs2YzFuNDA5MDEwNTA0MDAw";
+        e2="bbsupload.php?act=add&attach=bbsfoot0.htm&attachname=bbsfoot0.htm&attachfile="+e3+"&sid=NWs2YzFuNDA5MDEwNTA0MDAw";
         document.forms[0].action=e2;  
         document.forms[0].submit();
   }
@@ -67,7 +86,7 @@ function addsubmit() {
 
 function deletesubmit() {
   var e2;
-  e2="attach?func=attach&act=delete&usr=kcn&attach=bbsfoot0.htm&attachname=bbsfoot0.htm&removefile="+document.forms[1].elements["removefile"].value+"&sid=NWs2YzFuNDA5MDEwNTA0MDAw";
+  e2="bbsupload.php?act=delete&attach=bbsfoot0.htm&attachname=bbsfoot0.htm&removefile="+document.forms[1].elements["removefile"].value+"&sid=NWs2YzFuNDA5MDEwNTA0MDAw";
   document.forms[1].action=e2;
   document.forms[1].submit();
 }
@@ -83,6 +102,28 @@ function clickclose() {
 		//-->
 </script>
 <body bgcolor="#FFFFFF"  background="/images/rback.gif">
+<?php
+                if ($action=="add") {
+                	switch ($errno) {
+                	case UPLOAD_ERR_OK:
+                		echo "文件上载成功！";
+                		break;
+                	case UPLOAD_ERR_INI_SIZE:
+                	case UPLOAD_ERR_FORM_SIZE:
+                		echo "文件超过预定的大小" . sizestr(ATTACHMAXSIZE) . "字节");
+                		break;
+                	case UPLOAD_ERR_PARTIAL:
+                		echo "文件传输出错！";
+                		break;
+                	case UPLOAD_ERR_NO_FILE:
+                		echo "没有文件上传！";
+                		break;
+                	default:
+                		echo "未知错误";
+                	}
+                	echo "<br />";
+                }
+?>
 <form name="addattach" method="post" ENCTYPE="multipart/form-data" align="left" action="">
   <table border="0" cellspacing="2" class="txt-b03">
     <tr> 
@@ -137,7 +178,8 @@ function clickclose() {
     <td width="423"><font color="#804040"> 
       <select name="removefile" cols="40" size="1" class="form02">
 <?php
-        <option value="bbsfoot0.htm">bbsfoot0.htm</option>
+      foreach ($file as $filenames)
+        printf("<option value=\"%s\">%s</option>",$file,$file);
 ?>
       </select>
       </font></td>
@@ -151,7 +193,7 @@ function clickclose() {
         <table border="0" width="500">
           <tr> 
             <td width="150" class="txt01" align="right">现在附件文件总量为：</td>
-            <td width="350" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;1.63k字节</b></font></td>
+            <td width="350" class="txt01"><font color="#FF0000"><b>&nbsp;&nbsp;<?php echo sizestring($totalsize); ?>字节</b></font></td>
   </tr></table></td></tr>
 </table>
 <table width="75%" border="0" align="center" cellpadding="0" cellspacing="0">
