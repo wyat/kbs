@@ -10,8 +10,6 @@ extern int	zapbuf_changed;
 extern int     brdnum;
 extern int yank_flag;
 extern char    *boardprefix;
-extern int     favbrd_list[FAVBOARDNUM+1];
-extern int     brc_list[ BRC_MAXNUM ], brc_num;
 
 void
 EGroup( cmd )
@@ -572,7 +570,7 @@ case 'n': case 'j': case KEY_DOWN:
             if(2 == yank_flag) {
                 char bname[STRLEN];
                 int i = 0;
-                if(*favbrd_list >= FAVBOARDNUM) {
+                if(getfavnum()>= FAVBOARDNUM) {
                     move(2, 0);
                     clrtoeol();
                     prints("个人热门版数已经达上限(%d)！", FAVBOARDNUM);
@@ -590,9 +588,7 @@ case 'n': case 'j': case KEY_DOWN:
                 CreateNameList() ;             /*  free list memory. */
                 if(*bname) i = getbnum(bname);
                 if( i > 0 && !IsFavBoard(i-1) ) {
-                    int llen;
-                    llen = ++(*favbrd_list);
-                    favbrd_list[llen] = i-1;
+		    addFavBoard(i-1);
                     save_favboard();
                     brdnum = -1;    /*  force refresh board list */
                 } else {
@@ -660,9 +656,10 @@ case 'n': case 'j': case KEY_DOWN:
                 /* if (-1 != load_boards())
                    qsort( nbrd, brdnum, sizeof( nbrd[0] ), cmpboard ); */
 
-                if( zapbuf[ ptr->pos ] > 0 && brc_num > 0 ) {
+		/* 他想把zap版面的时间定义为上次阅读的时间，但是没有使用
+                if( zapbuf[ ptr->pos ] > 0 ) 
                     zapbuf[ ptr->pos ] = brc_list[0];
-                }
+		    */
                 ptr->total = page = -1;
                 modify_user_mode( newflag ? READNEW : READBRD );
                 break;
@@ -720,7 +717,7 @@ void FavBoard()
     yanksav = yank_flag;
     yank_flag = 2;
     boardprefix = NULL;
-    if(!*favbrd_list) load_favboard(1);
+    if(!getfavnum()) load_favboard(1);
     choose_board(ifnew);
     yank_flag = yanksav;
 }
