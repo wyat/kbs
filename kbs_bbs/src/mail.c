@@ -1348,7 +1348,7 @@ int mail_del_range(struct _select_def* conf,struct fileheader *fileinfo,void* ex
     int ent=conf->pos;
     struct read_arg* arg=conf->arg;
 
-    ret = (del_range(conf, fileinfo, true));        /*Haohmaru.99.5.14.修改一个bug,
+    ret = (del_range(conf, fileinfo, NULL));        /*Haohmaru.99.5.14.修改一个bug,
                                                          * * 否则可能会因为删信件的.tmpfile而错删版面的.tmpfile */
     if (!strcmp(arg->direct, ".DELETED"))
         get_mailusedspace(currentuser, 1);
@@ -1478,7 +1478,7 @@ struct key_command mail_comms[] = {
 #ifdef PERSONAL_CORP
 	{'y', (READ_KEY_FUNC)read_importpc,NULL},
 #endif
-    {Ctrl('C'), (READ_KEY_FUNC)read_cross,NULL}, 
+    {Ctrl('C'), (READ_KEY_FUNC)do_cross,NULL}, 
     
     {'h', (READ_KEY_FUNC)mailreadhelp,NULL},
     {Ctrl('J'), (READ_KEY_FUNC)mailreadhelp,NULL},

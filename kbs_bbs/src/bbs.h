@@ -443,9 +443,10 @@ enum BBS_DIR_MODE
     DIR_MODE_ORIGIN  = 6, /** .ORIGIN */
     DIR_MODE_AUTHOR  = 7, /** .AUTHOR.userid */
     DIR_MODE_TITLE   = 8, /** .TITLE.userid */
-	DIR_MODE_ZHIDING = 9,  /** .DINGDIR */
-	DIR_MODE_WEB_THREAD = 10, /** .WEBTHREAD */
-	DIR_MODE_MAIL /* mail mode */
+    DIR_MODE_SUPERFITER = 9, /** .FILTER */
+    DIR_MODE_WEB_THREAD = 10, /** .WEBTHREAD */
+    DIR_MODE_ZHIDING = 11,  /** .DINGDIR */
+    DIR_MODE_MAIL ,/* mail mode */
 };
 
 enum BBSLOG_TYPE

@@ -21,8 +21,6 @@ char * libs, * libptr;
     if(!(o)) {ferr=p; return;}
 
 extern struct boardheader* currboard;
-extern char currdirect[255];
-extern int digestmode;
 
 int fget_var(char * name)
 {
@@ -357,17 +355,21 @@ void feval(struct fvar_struct * p, char * s, int l, int r)
     libptr+=r-l+2;
 }
 
-int super_filter(int ent, struct fileheader *fileinfo, char *direct)
+int super_filter(struct _select_def* conf,struct fileheader* fileinfo,void* extraarg)
 {
     struct fileheader *ptr1;
     struct flock ldata, ldata2;
     int fd, fd2, size = sizeof(fileheader), total, i, count = 0;
-    char olddirect[PATHLEN];
+    char direct[PATHLEN];
+    char newdirect[PATHLEN];
     char *ptr;
     struct stat buf;
-    int mode=8, load_content=0, found=0, load_stat=0;
+    int load_content=0, found=0, load_stat=0;
     int gid = fileinfo->groupid;
     extern int scr_cols;
+    struct read_arg* arg=(struct read_arg*)conf->arg;
+
+    //TODO: 这么大的index!
     static char index[1024]="";
 
     clear();
@@ -397,16 +399,12 @@ int super_filter(int ent, struct fileheader *fileinfo, char *direct)
         return FULLUPDATE;
     load_content = (strstr(index, "content")!=NULL||strstr(index, "文章内容")!=NULL);
     load_stat = (strstr(index, "asize")!=NULL||strstr(index, "总长度")!=NULL);
-    if (digestmode==7||digestmode==8 ) {
-        if (digestmode == 7 || digestmode == 8)
-            unlink(currdirect);
-        digestmode = 0;
-        setbdir(digestmode, currdirect, currboard->filename);
+    if (arg->mode==DIR_MODE_AUTHOR||arg->mode==DIR_MODE_TITLE) {
+        unlink(arg->direct);
     }
-    setbdir(digestmode, olddirect, currboard->filename);
-    digestmode = mode;
-    setbdir(digestmode, currdirect, currboard->filename);
-    if ((fd = open(currdirect, O_WRONLY | O_CREAT, 0664)) == -1) {
+    setbdir(DIR_MODE_NORMAL, direct, currboard->filename);
+    setbdir(DIR_MODE_SUPERFITER, newdirect, currboard->filename);
+    if ((fd = open(newdirect, O_WRONLY | O_CREAT, 0664)) == -1) {
         bbslog("user", "%s", "recopen err");
         return FULLUPDATE;      /* 创建文件发生错误*/
     }
@@ -420,7 +418,7 @@ int super_filter(int ent, struct fileheader *fileinfo, char *direct)
         return FULLUPDATE;      /* lock error*/
     }
 
-    if ((fd2 = open(olddirect, O_RDONLY, 0664)) == -1) {
+    if ((fd2 = open(direct, O_RDONLY, 0664)) == -1) {
         bbslog("user", "%s", "recopen err");
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
@@ -542,6 +540,7 @@ int super_filter(int ent, struct fileheader *fileinfo, char *direct)
         prints("表达式错误");
         refresh();
         sleep(1);
+        return FULLUPDATE;
     }
     else if(count==0) {
         move(3, 0);
@@ -549,6 +548,7 @@ int super_filter(int ent, struct fileheader *fileinfo, char *direct)
         prints("一个都没有找到....");
         refresh();
         sleep(1);
+        return FULLUPDATE;
     }
 /*    else if (chk_currBM(currBM, currentuser)) {
         char ans[4];
@@ -570,6 +570,8 @@ int super_filter(int ent, struct fileheader *fileinfo, char *direct)
                 change_post_flag(currBM, currentuser, digestmode, currboard, i+1, &f, currdirect, fflag, 0);
         }
     }*/
+    strcpy(arg->direct, newdirect);
+    arg->mode=DIR_MODE_SUPERFITER;
     return NEWDIRECT;
 }
 

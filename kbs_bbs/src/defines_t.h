@@ -92,19 +92,14 @@ int check_readonly(char *checked);      /* Leeward 98.03.28 */
 void record_exit_time();        /* 记录离线时间  Luzi 1998/10/23 */
 int shownotepad();
 int check_stuffmode();
-int do_reply(struct fileheader *fileinfo);
+int do_reply(struct _select_def* conf,struct fileheader *fileinfo);
 int do_select(int ent, struct fileheader *fileinfo, char *direct);      /* 输入讨论区名 选择讨论区 */
 int do_post();
 void make_blist();
 int digest_post(int ent, struct fileheader *fhdr, char *direct);
 int mark_post(int ent, struct fileheader *fhdr, char *direct);
-int post_article();             /*用户 POST 文章 */
+int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_file);             /*用户 POST 文章 */
 int do_send(char *userid, char *title,char* q_file);
-int digest_mode();
-int deleted_mode();
-int marked_mode();
-int change_mode();
-int junk_mode();
 int Goodbye();
 int post_reply(int ent, struct fileheader *fileinfo, char *direct);
 int sequential_read2(int ent);

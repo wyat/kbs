@@ -111,10 +111,11 @@ static int read_key(struct _select_def *conf, int command)
             break;
         case DIRCHANGED:
         case NEWDIRECT:
+        case CHANGEMODE:
+        case NEWSCREEN:
             ret=SHOW_DIRCHANGE;
             break;
         case DOQUIT:
-        case CHANGEMODE:
             ret=SHOW_QUIT;
             break;
         case READ_NEXT:
@@ -177,28 +178,50 @@ static int read_onselect(struct _select_def *conf)
 static int read_getdata(struct _select_def *conf, int pos, int len)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
-    int n;
     struct stat st;
-    int entry=0;
     int count;
 
     if (arg->data==NULL)
         arg->data=calloc(BBS_PAGESIZE,arg->ssize);
     
     if (fstat(arg->fd,&st)!=-1) {
+        int entry=0;
+        int dingcount=0;
+        int n;
         count=st.st_size/arg->ssize;
-        if (count!=conf->item_count) {
-            //need refresh
-            conf->item_count=count;
-            arg->filecount=count;//TODO,置顶的时候，filecount和item_count不一样，少个置顶
-            return SHOW_DIRCHANGE;
+        arg->filecount=count;
+        if ((arg->mode==DIR_MODE_NORMAL)||
+            ((arg->mode>=DIR_MODE_THREAD)&&(arg->mode<=DIR_MODE_WEB_THREAD)))
+        { //需要检查置顶
+            dingcount=currboard->toptitle;
         }
-        
+
         if (lseek(arg->fd, arg->ssize * (pos - 1), SEEK_SET) != -1) {
             if ((n = read(arg->fd, arg->data, arg->ssize * len)) != -1) {
                 entry=(n / arg->ssize);
             }
         }
+        
+        /* 获得置顶的数据*/
+        if (dingcount) {
+            if (entry!=len) { //需要读入.DING
+                int dingfd;
+                n=0;
+                if ((dingfd=open(arg->dingdirect,O_RDONLY,0))!=-1) {
+                    if ((n = read(dingfd, arg->data+arg->ssize*entry, arg->ssize * (len-entry))) != -1) {
+                        n/=arg->ssize;
+                    }
+                    close(dingfd);
+                }
+                if (n!=dingcount)&&(n!=(len-entry)))) {
+                    /*置顶数据肯定出问题*/
+                    dingcount=n;
+                }
+            }
+            /*加上置顶个数*/
+            count+=dingcount;
+        }
+        conf->item_count=count;
     } else
         return SHOW_QUIT;
     return SHOW_CONTINUE;
@@ -278,6 +301,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
 {
     struct _select_def read_conf;
     struct read_arg arg;
+    char ding_direct[PATHLEN];
     int i;
     const static struct key_translate ktab[]= {
             {'\n','r'},
@@ -299,7 +323,7 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
     if (cmdmode==DIR_MODE_MAIL)
         modify_user_mode(RMAIL);
     else //todo: other mode
-        modify_user_mode(READBRD);
+        modify_user_mode(READING);
 
     /* save argument */
     bzero(&arg,sizeof(struct read_arg));
@@ -312,6 +336,12 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
     arg.readmode=READ_NORMAL;
     arg.data=NULL;
     arg.readdata=NULL;
+    if ((arg->mode==DIR_MODE_NORMAL)||
+        ((arg->mode>=DIR_MODE_THREAD)&&(arg->mode<=DIR_MODE_WEB_THREAD))) {
+        //设置置顶的.DIR direct TODO:用tmpfs
+  	sprintf(ding_direct,"boards/%s/%s",currboard->filename,DING_DIR);
+        arg->dingdirect=ding_direct;
+    } else arg->dingdirect=NULL;
 
     clear();
 
@@ -765,12 +795,6 @@ int read_zsend(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     return zsend_post(conf->pos, fh, read_arg->direct);
 }
 
-int read_cross(struct _select_def* conf, struct fileheader* fh, void* extraarg)
-{
-    struct read_arg *read_arg = (struct read_arg *) conf->arg;
-    return do_cross(conf->pos, fh, read_arg->direct);
-}
-
 #ifdef PERSONAL_CORP
 int read_importpc(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 {
@@ -782,7 +806,7 @@ int read_importpc(struct _select_def* conf, struct fileheader* fh, void* extraar
 char* read_getcurrdirect(struct _select_def* conf)
 {
     struct read_arg *read_arg = (struct read_arg *) conf->arg;
-    if (conf->pos>read_arg->filecount) {
+    if ((conf->pos>read_arg->filecount)&&(read_arg->dingdirect!=NULL)) {
         return read_arg->dingdirect;
     }
     return read_arg->direct;

@@ -435,7 +435,7 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg, char
         if ((ans[0] == 'N' || ans[0] == 'n') && (!nomsg)) {
             ans[0]='N';
         } else if (((ans[0] == 'C' || ans[0] == 'c')) && (!nomsg))
-            return 1;
+            return 0;
         else {
             ans[0]='Y';
         }
@@ -513,7 +513,6 @@ int a_SeSave(char *path, char *key, struct fileheader *fileinfo, int nomsg, char
             a_prompt(-1, buf, ans);
         }
     }
-    change_post_flag(currBM, currentuser, digestmode, currboard->filename, ent, fileinfo, direct, FILE_IMPORT_FLAG, 0);
     return 1;
 }
 
@@ -536,7 +535,7 @@ int a_Save(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *
         if ((ans[0] == 'N' || ans[0] == 'n') && (!nomsg)) {
             ans[0]='N';
         } else if (((ans[0] == 'C' || ans[0] == 'c')) && (!nomsg))
-            return 1;
+            return 0;
         else {
             ans[0]='Y';
         }
