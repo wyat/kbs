@@ -24,6 +24,7 @@ static PHP_FUNCTION(bbs_setuserscore);
 static PHP_FUNCTION(bbs_adduserscore);
 #endif
 
+static PHP_FUNCTION(bbs_saveuserdata);
 static PHP_FUNCTION(bbs_checkuserpasswd);
 static PHP_FUNCTION(bbs_setuserpasswd);
 
@@ -86,7 +87,6 @@ static PHP_FUNCTION(bbs_update_uinfo);
 static PHP_FUNCTION(bbs_createnewid);
 static PHP_FUNCTION(bbs_fillidinfo);
 static PHP_FUNCTION(bbs_createregform);
-static PHP_FUNCTION(bbs_createregform_wbbs);
 static PHP_FUNCTION(bbs_findpwd_check);
 static PHP_FUNCTION(bbs_delfile);
 static PHP_FUNCTION(bbs_delmail);
@@ -128,6 +128,8 @@ static function_entry smth_bbs_functions[] = {
 		PHP_FE(bbs_setuserscore, NULL)
 		PHP_FE(bbs_adduserscore, NULL)
 #endif
+		PHP_FE(bbs_saveuserdata, NULL)
+
 		PHP_FE(bbs_checkuserpasswd, NULL)
 		PHP_FE(bbs_setuserpasswd, NULL)
 		PHP_FE(bbs_getuserlevel, NULL)
@@ -193,7 +195,6 @@ static function_entry smth_bbs_functions[] = {
         PHP_FE(bbs_update_uinfo, NULL)
         PHP_FE(bbs_createnewid,NULL)
 	PHP_FE(bbs_createregform,NULL)
-	PHP_FE(bbs_createregform_wbbs,NULL)
 	PHP_FE(bbs_findpwd_check,NULL)
         PHP_FE(bbs_fillidinfo,NULL)
         PHP_FE(bbs_delfile,NULL)
@@ -299,7 +300,7 @@ static void assign_user(zval * array, struct userec *user, int num)
     add_assoc_long(array,"mobilderegistered", ud.mobileregistered);
     add_assoc_string(array, "mobilenumber", ud.mobilenumber,1);
 
-#ifdef HAVE_WBBS
+#ifdef HAVE_WFORUM
     add_assoc_string(array,"OICQ",ud.OICQ,1);
     add_assoc_string(array,"ICQ",ud.ICQ,1);
     add_assoc_string(array,"MSN", ud.MSN,1);
@@ -3857,11 +3858,160 @@ static PHP_FUNCTION(bbs_fillidinfo)
     RETURN_LONG(0);
 }
 
+static PHP_FUNCTION(bbs_saveuserdata)
+{
+    char*   userid,
+	    *   realname,
+        *   photo_url,
+        *   address,
+		*	email,
+		*	phone,
+		*   mobile_phone,
+		* OICQ, 
+		* ICQ, 
+		* MSN, 
+		* homepage,
+		* userface_url,
+		* country,
+		* province,
+		* city,
+		* graduate_school;
+    int     userid_len,
+	        realname_len,
+	        photo_url_len,
+			address_len,
+			email_len,
+			phone_len,
+			mobile_phone_len,
+			OICQ_len,
+			ICQ_len,
+			MSN_len,
+			homepage_len,
+			userface_url_len,
+			country_len,
+			province_len,
+			city_len,
+			graduate_school_len,
+			gender,
+	        year,
+	        month,
+			day,
+			userface_img,
+			userface_width,
+			userface_height, 
+			group,
+			shengxiao,
+			bloodtype,
+			religion ,
+			profession, 
+			married, 
+			education,
+			character;
+    zend_bool   bAuto;
+	struct  userdata ud;
+	struct  userec* uc;
+	FILE*   fn;
+	char    genbuf[STRLEN+1];
+	char*   ptr;
+	int     usernum;
+	long    now;
 
+    int ac = ZEND_NUM_ARGS();
+
+
+	if (ac != 32 || zend_parse_parameters(32 TSRMLS_CC, "sssllllssssssslslllsssllllllslsb", &userid,&userid_len,&realname,&realname_len,
+	    &address,&address_len,&gender,&year,&month,&day,&email,&email_len,&phone,&phone_len,&mobile_phone,&mobile_phone_len,
+		&OICQ, &OICQ_len, &ICQ, &ICQ_len, &MSN, &MSN_len, &homepage, &homepage_len, &userface_img,
+		&userface_url, &userface_url_len, &userface_width, &userface_height, &group, &country, &country_len,
+		&province, &province_len, &city, &city_len, &shengxiao, &bloodtype, &religion, &profession,
+		&married, &education, &graduate_school, &graduate_school_len, &character, &photo_url, &photo_url_len,&bAuto) == FAILURE)
+    {
+		WRONG_PARAM_COUNT;
+	}
+
+	if(userid_len > IDLEN)RETURN_LONG(2);
+
+    usernum = getusernum(userid);
+	if(0 == usernum)RETURN_LONG(3);
+
+	if ( (userface_width<0) || (userface_width>120) ){
+		RETURN_LONG(-1);
+	}
+	if ( (userface_height<0) || (userface_height>120) ){
+		RETURN_LONG(-2);
+	}
+	if (userface_url_len!=0) {
+		userface_img=-1;
+	}
+
+	read_userdata(userid, &ud);
+    strncpy(ud.realname, realname, NAMELEN);
+    strncpy(ud.address, address, STRLEN);
+	strncpy(ud.reg_email,email,STRLEN);
+	strncpy(ud.OICQ,OICQ,STRLEN);
+	strncpy(ud.ICQ,ICQ,STRLEN);
+	strncpy(ud.MSN,MSN,STRLEN);
+	strncpy(ud.homepage,homepage,STRLEN);
+	strncpy(ud.userface_url,userface_url,STRLEN);
+	strncpy(ud.country,country,STRLEN);
+	strncpy(ud.province,province,STRLEN);
+	strncpy(ud.city,city,STRLEN);
+	strncpy(ud.graduateschool,graduate_school,STRLEN);
+	strncpy(ud.telephone,phone,STRLEN);
+	strncpy(ud.photo_url,photo_url,STRLEN);
+	ud.photo_url[STRLEN-1]=0;
+	ud.telephone[STRLEN-1]=0;
+	ud.OICQ[STRLEN-1]=0;
+	ud.ICQ[STRLEN-1]=0;
+	ud.MSN[STRLEN-1]=0;
+	ud.homepage[STRLEN-1]=0;
+	ud.userface_url[STRLEN-1]=0;
+	ud.country[STRLEN-1]=0;
+	ud.province[STRLEN-1]=0;
+	ud.city[STRLEN-1]=0;
+	ud.graduateschool[STRLEN-1]=0;
+    ud.realname[NAMELEN-1] = '\0';
+	ud.address[STRLEN-1] = '\0';
+	ud.reg_email[STRLEN-1] = '\0';
+
+    if(strcmp(mobile_phone,"")){
+	    ud.mobileregistered = true;
+		strncpy(ud.mobilenumber,mobile_phone,MOBILE_NUMBER_LEN);
+		ud.mobilenumber[MOBILE_NUMBER_LEN-1] = '\0';
+	}
+    else{
+    	ud.mobileregistered = false;
+    	}
+    
+#ifdef HAVE_BIRTHDAY
+    ud.birthyear=(year > 1900 && year < 2050)?(year-1900):0;
+	ud.birthmonth=(month >=1 && month <=12)?month:0;
+	ud.birthday=(day>=1 && day <=31)?day:0;
+	if(gender==1)ud.gender='M';
+	else
+	    ud.gender='F';
+#endif
+	ud.userface_img=userface_img;
+	ud.userface_width=userface_width;
+	ud.userface_height=userface_height;
+	ud.group=group;
+	ud.shengxiao=shengxiao;
+	ud.bloodtype=bloodtype;
+	ud.religion=religion;
+	ud.profession=profession;
+	ud.married=married;
+	ud.education=education;
+	ud.character=character;
+	write_userdata(userid, &ud);
+    RETURN_LONG(0);
+
+}
+
+#ifdef HAVE_WFORUM
 /**
  * Function: Create a registry form
  *  rototype:
- * int bbs_createregform_wbbs(string userid ,string realname,string dept,string address,int gender,int year,int month,int day,
+ * int bbs_createregform(string userid ,string realname,string dept,string address,int gender,int year,int month,int day,
     string email,string phone,string mobile_phone,string OICQ, string ICQ, string MSN, string homepage, int userface_img,
 	string userface_url,int userface_width, int userface_height, int group, string country ,string province, string city,
 	int shengxiao, int bloodtype, int religion , int profession, int married, int education, string graduate_school,
@@ -3877,7 +4027,7 @@ static PHP_FUNCTION(bbs_fillidinfo)
  *  	10 -- system error
  *  @author binxun 2003.5
  */
-static PHP_FUNCTION(bbs_createregform_wbbs)
+static PHP_FUNCTION(bbs_createregform)
 {
     char*   userid,
 	    *   realname,
@@ -4091,6 +4241,9 @@ static PHP_FUNCTION(bbs_createregform_wbbs)
 	else
         RETURN_LONG(10);
 }
+
+#else
+
 /**
  * Function: Create a registry form
  *  rototype:
@@ -4247,6 +4400,7 @@ static PHP_FUNCTION(bbs_createregform)
 	else
         RETURN_LONG(10);
 }
+#endif
 
 /**
  *  Function: 根据注册姓名和email生成新的密码.如果用户名为空,则生成一个密码.
