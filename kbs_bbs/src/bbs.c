@@ -2562,12 +2562,12 @@ int del_ding(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 
 int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
-    char usrid[STRLEN];
-    int owned, keep, olddigestmode = 0;
-    struct fileheader mkpost;
+    char usrid[STRLEN],direct[MAXPATH];
+    int owned;
     struct read_arg* arg=conf->arg;
     int ent;
     int flag=(int)extraarg;
+    struct write_dir_arg delarg;
 
     ent=conf->pos;
 	/* add by stiger */
@@ -2581,14 +2581,6 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 
     if (arg->mode== DIR_MODE_DELETED|| arg->mode== DIR_MODE_JUNK)
         return DONOTHING;
-    keep = sysconf_eval("KEEP_DELETED_HEADER", 0);      /*是否保持被删除的POST的 title */
-    if (fileinfo->owner[0] == '-' && keep > 0 && !(flag&&ARG_NOPROMPT_FLAG)) {
-        clear();
-        prints("本文章已删除.\n");
-        pressreturn();
-        clear();
-        return FULLUPDATE;
-    }
     owned = isowner(currentuser, fileinfo);
     /*
      * change by KCN  ! strcmp( fileinfo->owner, currentuser->userid ); 
@@ -2611,14 +2603,16 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         }
     }
 
-    if (arg->mode != DIR_MODE_NORMAL && arg->mode != DIR_MODE_DIGEST) {
-        //不是正常模式或者文摘模式,需要计算在原文的位置
-        char direct[PATHLEN];
-        setbdir(0, direct, currboard->filename);
-        ent = search_record(arg->direct, &mkpost, sizeof(struct fileheader), (RECORD_FUNC_ARG) cmpfileinfoname, fileinfo->filename);
+    malloc_write_dir_arg(&delarg);
+    if ((arg->mode!=DIR_MODE_NORMAL)&& arg->mode != DIR_MODE_DIGEST) {
+        setbdir(DIR_MODE_NORMAL, direct, currboard->filename);
+        delarg.filename=direct;
+    } else {
+        delarg.fd=arg->fd;
+        delarg.ent=conf->pos;
     }
-
-    if (do_del_post(currentuser, ent, fileinfo, arg->direct, currboard->filename, 0, flag&ARG_DELDECPOST_FLAG) != 0) {
+    if (do_del_post(currentuser, &delarg, fileinfo, currboard->filename, DIR_MODE_NORMAL, flag&ARG_DELDECPOST_FLAG) != 0) {
+        free_write_dir_arg(&delarg);
         if (!(flag&ARG_NOPROMPT_FLAG)) {
             move(2, 0);
             prints("删除失败\n");
@@ -2627,6 +2621,7 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             return FULLUPDATE;
         }
     }
+    free_write_dir_arg(&delarg);
     if (!(flag&ARG_BMFUNC_FLAG)&&arg->mode) {
         switch (arg->mode) {
         case DIR_MODE_THREAD:

@@ -774,7 +774,7 @@ int delete_range(char *filename,int id1,int id2,int del_mode,int curmode)
                 }
             }
 #ifdef BBSMAIN
-            else if (uinfo.mode != RMAIL) {
+            else if (curmode != DIR_MODE_MAIL) {
                 int j;
                 memcpy(&delfhdr[delcount], &savefhdr[i], sizeof(struct fileheader));
                 delcount++;

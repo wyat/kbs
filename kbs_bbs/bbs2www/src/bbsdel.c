@@ -17,6 +17,7 @@ int del_post(int ent, struct fileheader *fileinfo, char *direct, char *board)
     struct userec *user;
     char bm_str[BM_LEN - 1];
     struct boardheader *bp;
+    struct write_dir_arg delarg;
 
     user = getcurrusr();
     bp = getbcache(board);
@@ -36,8 +37,15 @@ int del_post(int ent, struct fileheader *fileinfo, char *direct, char *board)
         if (!chk_currBM(bm_str, currentuser)) {
             return DONOTHING;
         }
-    if (do_del_post(currentuser, ent, fileinfo, direct, board, 0, 1) != 0)
+
+    malloc_write_dir_arg(&delarg);
+    delarg.filename=direct;
+    delarg.ent=ent;
+    if (do_del_post(currentuser, &delarg, fileinfo, board, 0, 1) != 0) {
+        free_write_dir_arg(&delarg);
         return FULLUPDATE;
+    }
+    free_write_dir_arg(&delarg);
     return DIRCHANGED;
 
 }

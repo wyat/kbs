@@ -267,6 +267,17 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     int is_emailpost_board(char *board);
 
 /* define in article.c */
+    struct write_dir_arg {
+      char* filename; /*.dir的文件名*/
+      int fd;                 //文件句柄
+      struct fileheader* fileptr;   //文件mmap指针
+      int ent;               //当前位置
+      off_t size;           //文件大小
+      bool needclosefd; //释放结构的时候是否需要关闭文件，内部使用
+    };
+    void malloc_write_dir_arg(struct write_dir_arg*filearg);
+    int init_write_dir_arg(struct write_dir_arg*filearg);
+    void free_write_dir_arg(struct write_dir_arg*filearg);
 	/* Search_Bin 
 	 * 功能：依据key, 对ptr传入的.DIR索引进行二分查找
 	 */

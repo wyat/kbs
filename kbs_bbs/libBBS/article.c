@@ -70,44 +70,173 @@ char name[STRLEN];
     return 0;
 }
 
-int do_del_post(struct userec *user, int ent, struct fileheader *fileinfo, char *direct, char *board, int currmode, int decpost)
+/*
+  * 判断当前模式是否可以使用id二分
+  */
+bool is_sorted_mode(int mode)
 {
-    char buf[512];
+    switch (mode) {
+        case DIR_MODE_NORMAL:
+        case DIR_MODE_THREAD:
+        case DIR_MODE_MARK:
+        case DIR_MODE_ORIGIN:
+        case DIR_MODE_AUTHOR:
+        case DIR_MODE_TITLE:
+        case DIR_MODE_SUPERFITER:
+        case DIR_MODE_WEB_THREAD:
+            return true;
+    }
+    return false;
+}
+
+/** 初始化filearg结构
+  */
+void malloc_write_dir_arg(struct write_dir_arg*filearg)
+{
+    filearg->filename=NULL;
+    filearg->fileptr=MAP_FAILED;
+    filearg->ent=-1;
+    filearg->fd=-1;
+    filearg->size=-1;
+    filearg->needclosefd=false;
+}
+
+/** 初始化filearg结构,把各个东西mmap上
+  */
+int init_write_dir_arg(struct write_dir_arg*filearg)
+{
+    if (filearg->fileptr==MAP_FAILED) {
+        if (filearg->filename!=NULL) {
+            if (safe_mmapfile(filearg->filename, 
+                        O_RDWR, 
+                        PROT_READ | PROT_WRITE, 
+                        MAP_SHARED,
+                        (void **) &filearg->fileptr, &filearg->size, &filearg->fd) == 0)
+                return -1;
+            filearg->needclosefd=true;
+        } else { //用fd来打开
+            if (safe_mmapfile_handle(filearg->fd, 
+                        PROT_READ | PROT_WRITE, 
+                        MAP_SHARED,
+                        (void **) &filearg->fileptr, &filearg->size) == 0)
+                return -1;
+        }
+    }
+    return 0;
+}
+
+/*
+ *  释放filearg所分配的资源。
+ */
+void free_write_dir_arg(struct write_dir_arg*filearg)
+{
+    if (filearg->needclosefd&&(filearg->fd!=-1)) {
+        close(filearg->fd);
+    }
+    if (filearg->fileptr!=MAP_FAILED)
+        end_mmapfile((void *) filearg->fileptr, filearg->size, -1);
+}
+
+/*
+ * 写dir文件之前把文件定位到正确的位置，lock住，并返回相应的数据
+ * 这里边并不调用free_write_dir_arg来释放资源。需要上层自己来
+ * 调用此函数如果成功，记得及时flock(filearg->fd,LOCK_UN)
+ * @param filearg 传入的结构。如果filearg->filename不为空，说明需要打开文件
+ *                        否则使用filearg->fd作为文件句柄。
+ *                        filearg->ent为预计的位置，ent>=1
+ *                        filearg->fileptr如果不等于MAP_FAILED,那么这个函数会mmap文件并
+ *                        填写filearg->fileptr和filearg->size用于返回数据
+ * @param fileinfo 用于定位的东西，不为空的时候需要定位
+ * @param mode 当前模式，只有sorted的可以使用二分
+ * @return 0成功,此时mmap完毕。
+ */
+int prepare_write_dir(struct write_dir_arg * filearg,struct fileheader* fileinfo,int mode)
+{
+    int ret=0;
+    bool needrelocation=false;
+    BBS_TRY {
+        int count;
+        struct fileheader* nowFh;
+        if (init_write_dir_arg(filearg)!=0)
+            BBS_RETURN(-1);
+        count=filearg->size/sizeof(struct fileheader);
+        flock(filearg->fd,LOCK_EX);
+        if (fileinfo) { //定位一下
+            if ((filearg->ent>count)||(filearg->ent<=0))
+                needrelocation=true;
+            else {
+                nowFh=filearg->fileptr+(filearg->ent-1);
+                needrelocation=strcmp(fileinfo->filename,nowFh->filename);
+            }
+        }
+        if (needrelocation) { //重定位这个位置
+            int i;
+            if (is_sorted_mode(mode)) {
+                filearg->ent=Search_Bin(filearg->fileptr, fileinfo->id, 0, count-1);
+            } else {//匹配文件名
+                int oldent=filearg->ent;
+                nowFh=filearg->fileptr;
+                filearg->ent=-1;
+                /* 先从当前位置往前找，因为一般都是被删除导致向前了*/
+                nowFh=filearg->fileptr+(oldent-1);
+                for (i=oldent;i>=0;i--,nowFh--) {
+                    if (!strcmp(nowFh->filename)) {
+                        filearg->ent=i+1;
+                        break;
+                    }
+                }
+                /* 再从当前位置往后找*/
+                nowFh=filearg->fileptr+oldent;
+                for (i=oldent+1;i<count;i++,nowFh++) {
+                    if (!strcmp(nowFh->filename)) {
+                        filearg->ent=i+1;
+                        break;
+                    }
+                }
+            }
+            if (filearg->ent==-1)
+                ret=-1;
+        }
+    }
+    BBS_CATCH {
+        ret = -1;
+    }
+    BBS_END;
+    if (ret!=0)
+        flock(filearg->fd,LOCK_UN);
+    return ret;
+}
+
+int do_del_post(struct userec *user, struct write_dir_arg*dirarg,struct fileheader *fileinfo, char *board, int currmode, int decpost)
+{
     char *t;
     int owned, fail;
 
-    strcpy(buf, direct);
-    if ((t = strrchr(buf, '/')) != NULL)
-        *t = '\0';
-/*    if( keep <= 0 ) {*/
+    if (prepare_write_dir(dirarg)!=0)
+        return-1;
+    BBS_TRY {
+        memcpy(dirarg->fileptr + (dirarg->ent - 1), 
+            dirarg->fileptr + dirarg->ent, 
+            dirarg->size - sizeof(struct fileheader) * dirarg->ent);
+        dirarg->size-=sizeof(struct fileheader);
+        ftruncate(dirarg->fd, dirarg->size);
+    }
+    BBS_CATCH {
+    }
+    BBS_END;
+    flock(dirarg->fd,LOCK_UN); /*这个是需要赶紧做的*/
     if (fileinfo->id == fileinfo->groupid)
         setboardorigin(board, 1);
     setboardtitle(board, 1);
-    /*
-     * added by bad 2002.8.12
-     */
-    fail = delete_record(direct, sizeof(struct fileheader), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
-/*
-    } else {
-        fail = update_file(direct,sizeof(struct fileheader),ent,cmpfilename,
-                           cpyfilename);
-    }
-    */
+
+    
     owned = isowner(user, fileinfo);
     if (!fail) {
         cancelpost(board, user->userid, fileinfo, owned, 1);
         updatelastpost(board);
-/*
-        sprintf(buf,"%s/%s",buf,fileinfo->filename) ;
-        if(keep >0)  if ( (fn = fopen( buf, "w" )) != NULL ) {
-            fprintf( fn, "\n\n\t\t本文章已被 %s 删除.\n",
-                     currentuser->userid );
-            fclose( fn );
-        }
-*/
         if (fileinfo->accessed[0] & FILE_MARKED)
             setboardmark(board, 1);
-        if ((true != currmode)        /* 不可以用 “NA ==” 判断：digestmode 三值 */
+        if ((DIR_MODE_NORMAL == currmode)        /* 不可以用 “NA ==” 判断：digestmode 三值 */
             &&!((fileinfo->accessed[0] & FILE_MARKED)
                 && (fileinfo->accessed[1] & FILE_READ)
                 && (fileinfo->accessed[0] & FILE_FORWARDED))) { /* Leeward 98.06.17 在文摘区删文不减文章数目 */
@@ -124,7 +253,6 @@ int do_del_post(struct userec *user, int ent, struct fileheader *fileinfo, char 
                 }
             }
         }
-        utime(fileinfo->filename, 0);
         if (user != NULL)
             bmlog(user->userid, board, 8, 1);
         newbbslog(BBSLOG_USER, "Del '%s' on '%s'", fileinfo->title, board);     /* bbslog */
