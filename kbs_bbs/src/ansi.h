@@ -17,6 +17,12 @@ enum UBBTYPE {UBB_TYPE_IMG,
 	UBB_TYPE_FLY
 };
 
+enum ATTACHMENTTYPE {
+	ATTACH_IMG,
+	ATTATCH_SWF,
+	ATTATCH_OTHERS
+};
+
 #define STATE_SET(s, b) (s |= b)
 #define STATE_CLR(s, b) (s &= ~b)
 #define STATE_ISSET(s, b) (s & b)
