@@ -2761,107 +2761,18 @@ int into_announce(struct _select_def* conf,struct fileheader *fileinfo,void* ext
     return DONOTHING;
 }
 
-static int sequent_ent;
-
-int sequent_messages(struct fileheader *fptr, int idc, int *continue_flag)
+int sequential_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
-//new_i_read TODO!!!
-    if (readpost) {
-        if (idc < sequent_ent)
-            return 0;
-#ifdef HAVE_BRC_CONTROL
-        if (!brc_unread(fptr->id))
-            return 0;           /*已读 则 返回 */
-#endif
-        if (*continue_flag != 0) {
-            genbuf[0] = 'y';
-        } else {
-            prints("讨论区: '%s' 标题:\n\"%s\" posted by %s.\n", currboard->filename, fptr->title, fptr->owner);
-            getdata(3, 0, "读取 (Y/N/Quit) [Y]: ", genbuf, 5, DOECHO, NULL, true);
-        }
-        if (genbuf[0] != 'y' && genbuf[0] != 'Y' && genbuf[0] != '\0') {
-            if (genbuf[0] == 'q' || genbuf[0] == 'Q') {
-                clear();
-                return QUIT;
-            }
-            clear();
-            return 0;
-        }
-        strncpy(quote_user, fptr->owner, OWNER_LEN);
-        quote_user[OWNER_LEN - 1] = 0;
-        setbfile(genbuf, currboard->filename, fptr->filename);
-        register_attach_link(board_attach_link, fptr);
-        ansimore_withzmodem(genbuf, false, fptr->title);
-        register_attach_link(NULL,NULL);
-      redo:
-        move(t_lines - 1, 0);
-        clrtoeol();
-        prints("\033[1;44;31m[连续读信]  \033[33m回信 R │ 结束 Q,← │下一封 ' ',↓ │^R 回信给作者                \033[m");
-        *continue_flag = 0;
-        switch (igetkey()) {
-        case Ctrl('Y'):
-//new_i_read TODO!!!  zsend_post(0, fptr, arg->direct);
-            clear();
-            goto redo;
-        case Ctrl('Z'):
-            r_lastmsg();        /* Leeward 98.07.30 support msgX */
-            break;
-        case 'N':
-        case 'Q':
-        case 'n':
-        case 'q':
-        case KEY_LEFT:
-            break;
-        case KEY_REFRESH:
-            break;
-        case 'Y':
-        case 'R':
-        case 'y':
-        case 'r':
-//new_i_read TODO!!!  do_reply(conf,fptr);     /*回信 */
-        case ' ':
-        case '\n':
-        case KEY_DOWN:
-            *continue_flag = 1;
-            break;
-        case Ctrl('R'):
-            post_reply(0, fptr, (char *) NULL);
-            break;
-        default:
-            break;
-        }
-        clear();
+    struct read_arg* arg=conf->arg;
+    int findpos;
+    
+    findpos=find_nextnew(conf,0);
+    if (findpos) {
+        conf->new_pos=findpos;
+        arg->readmode=READ_NEW;
+        list_select_add_key(conf, 'r');
     }
-//new_i_raed     setbdir(digestmode, genbuf, currboard->filename);
-#ifdef HAVE_BRC_CONTROL
-    brc_add_read(fptr->id);
-#endif
-    /*
-     * return 0;  modified by dong , for clear_new_flag(), 1999.1.20
-     * if (strcmp(CurArticleFileName, fptr->filename) == 0)
-     * return QUIT;
-     * else 
-     */
-    return 0;
-
-}
-
-int sequential_read(int ent, struct fileheader *fileinfo, char *direct)
-{
-    readpost = 1;
-    clear();
-    return sequential_read2(ent);
-}
- /*ARGSUSED*/ int sequential_read2(int ent)
-{
-    char buf[STRLEN];
-    int continue_flag;
-
-    sequent_ent = ent;
-    continue_flag = 0;
-//new_i_raed     setbdir(digestmode, buf, currboard->filename);
-    apply_record(buf, (APPLY_FUNC_ARG) sequent_messages, sizeof(struct fileheader), &continue_flag, 1, false);
-    return FULLUPDATE;
+    return SHOW_SELCHANGE;
 }
 
 int clear_new_flag(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)

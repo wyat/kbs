@@ -8,6 +8,38 @@
 extern char MsgDesUid[14];
 static int read_search_articles(struct _select_def* conf, char *query, bool up, int aflag);
 
+/* 寻找下一个未读文章，找到返回位置，否则返回0*/
+int find_nextnew(struct _select_def* conf,int begin)
+{
+    struct read_arg* arg=conf->arg;
+    struct fileheader *pFh,*nowFh;
+    off_t size;
+    bool found;
+    int i;
+    if (i<=0)
+        return 0;
+    BBS_TRY {
+        if (safe_mmapfile_handle(read_arg->fd, PROT_READ|PROT_WRITE, MAP_SHARED, (void **) &pFh, &size) ) {
+            nowFh=pFh+begin-1;
+            found=false;
+            for (i=begin-1;i<size/sizeof(struct fileheader);i++,nowFh++) {
+                if (brc_unread(nowFh->id)) {
+                    found=true;
+                    break;
+                }
+            }
+        }
+    }
+    BBS_CATCH {
+    }
+    BBS_END;
+    if (pFh!=MAP_FAILED)
+        end_mmapfile((void *) pFh, size, -1);
+    if (found)
+        return i+1;
+    return 0;
+}
+
 /*用于apply_record的回调函数*/
 static int fileheader_thread_read(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
 {
@@ -130,7 +162,14 @@ static int read_key(struct _select_def *conf, int command)
         case READ_NEXT:
         case GOTO_NEXT:
             ret=SHOW_REFRESH;
-            if (arg->readmode==READ_NORMAL) {
+            if (arg->readmode==READ_NEW) { //find next new article;
+                int findpos=find_nextnew(conf,conf->pos);
+                if (findpos) {
+                    conf->new_pos=findpos;
+                    list_select_add_key(conf, 'r');
+                    ret=SHOW_SELCHANGE;
+                }
+            } else if (arg->readmode==READ_NORMAL) {
                 if (conf->pos<conf->item_count) {
                     conf->new_pos = conf->pos + 1;
                     if (mode==READ_NEXT)
@@ -162,6 +201,9 @@ static int read_key(struct _select_def *conf, int command)
             }
             break;
         case READ_PREV:
+            if (arg->readmode==READ_NEW) {
+                break;
+            }
             if (arg->readmode==READ_NORMAL) {
                 if (conf->pos>1) {
                     conf->new_pos = conf->pos - 1;
