@@ -40,9 +40,9 @@ int main()
     printf("<tr><td>\n");
     printf("作者: %s<br>\n", currentuser->userid);
     printf("使用标题: <input type=\"text\" name=\"title\" size=\"40\" maxlength=\"100\" value=\"%s\">\n", encode_html(buf, void1(title), sizeof(buf)));
-    if (attach)
-        printf("附件：<input type=\"text\" name=\"attachname\" size=\"50\" value=\"\" disabled > \n");
     printf("讨论区: [%s]<br>\n", board);
+    if (attach)
+        printf("<br />\n附件：<input type=\"text\" name=\"attachname\" size=\"50\" value=\"\" disabled > ");
     printf("使用签名档 <select name=\"signature\">\n");
     if (currentuser->signature == 0)
         printf("<option value=\"0\" selected>不使用签名档</option>\n");
@@ -99,8 +99,20 @@ int main()
     printf("<tr><td class=\"post\" align=\"center\">\n");
     printf("<input type=\"submit\" value=\"发表\"> \n");
     printf("<input type=\"reset\" value=\"清除\"></td></tr>\n");
-    if (attach)
+    if (attach) {
+        printf("<script language=\"JavaScript\">\n");
+        printf("<!--\n");
+        printf("   function GoAttachWindow(){     \n");
+        printf("    var hWnd = window.open(\"bbsupload.php\",\"_blank\",\"width=600,height=300,scrollbars=yes\");  \n");
+        printf("    if ((document.window != null) && (!hWnd.opener))  \n");
+        printf("    hWnd.opener = document.window;  \n");
+        printf("    hWnd.focus();  \n");
+        printf("    return false;  \n");
+        printf("  }  \n");
+        printf("-->\n");
+        printf("</script>\n");
         printf("<input type=\"button\" name=\"attach22\" onClick=\"window.open(bbsupload.php,\"_blank\",\"width=600,height=300,scrollbars=yes\"\">\n");
+    }
     printf("</table></form>\n");
     http_quit();
 }
