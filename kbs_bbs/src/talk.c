@@ -1850,6 +1850,7 @@ char *direct;
 
 void t_override()
 {
+    char genbuf[PATHLEN];
     sethomefile(genbuf, currentuser->userid, "friends");
     i_read(GMENU, genbuf, friend_title, (READ_FUNC) friend_doentry, friend_list, sizeof(struct friends));
     clear();

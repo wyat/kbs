@@ -15,6 +15,7 @@ struct favbrd_struct {
 };
 extern struct favbrd_struct favbrd_list[FAVBOARDNUM];
 extern int favbrd_list_t, favnow;
+extern int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 static int check_newpost(struct newpostdata *ptr);
 
 void EGroup(cmd)

@@ -1,4 +1,5 @@
 #include "bbs.h"
+#include "read.h"
 #include <math.h>
 
 #define MAX_FVAR 100
@@ -489,7 +490,7 @@ int super_filter(struct _select_def* conf,struct fileheader* fileinfo,void* extr
 #ifdef HAVE_BRC_CONTROL
         set_vard(fvars+fget_var("unread"), brc_unread(ptr1->id)); set_vard(fvars+fget_var("未读"), brc_unread(ptr1->id));
 #endif
-        setbfile(ffn, currboard, ptr1->filename);
+        setbfile(ffn, currboard->filename, ptr1->filename);
         set_vard(fvars+fget_var("ftime"), get_posttime(ptr1)); set_vard(fvars+fget_var("时间"), get_posttime(ptr1));
         set_vard(fvars+fget_var("effsize"), ptr1->eff_size); set_vard(fvars+fget_var("有效长度"), ptr1->eff_size);
         if(load_stat) {

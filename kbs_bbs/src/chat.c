@@ -1380,13 +1380,15 @@ void call_mail(chatcontext * pthis, const char *arg)
     FILE *fpin;
     char b2[STRLEN];
     char *t;
+	char direct[PATHLEN];
 
     if (chkmail() == 0) {       /* check mail */
         printchatline(pthis, "\033[32m*** 没有新的信件 ***\033[m");
         return;
     }
-    setmailfile(currdirect, currentuser->userid, DOT_DIR);
-    fpin = fopen(currdirect, "rb");
+
+    setmailfile(direct, currentuser->userid, DOT_DIR);
+    fpin = fopen(direct, "rb");
     if (fpin == NULL)
         return;
     printchatline(pthis, "\033[32m【当前新的信件如下】\033[m");

@@ -30,14 +30,14 @@ int cmpinames();                /* added by Leeward 98.04.10 */
 
 extern int numofsig;
 extern char quote_user[];
-char *sysconf_str();
-//char currmaildir[STRLEN];
 
 #define maxrecp 300
 
-static int mail_reply(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg);
+static int mail_reply(int ent,struct fileheader* fileinfo,char* direct);
 static int mail_del(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg);
 static int do_gsend(char *userid[], char *title, int num);
+static int do_mail_reply(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg);
+extern int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 
 int chkmail()
 {
@@ -103,14 +103,14 @@ int chkmail()
     return (ismail = 0);
 }
 
-int get_mailnum()
+int get_mailnum(char* direct)
 {
     struct fileheader fh;
     struct stat st;
     int fd;
     register int numfiles;
 
-    if ((fd = open(currdirect, O_RDONLY)) < 0)
+    if ((fd = open(direct, O_RDONLY)) < 0)
         return 0;
     fstat(fd, &st);
     numfiles = st.st_size;
@@ -754,23 +754,19 @@ int del_mail(int ent, struct fileheader *fh, char *direct)
 }
 
 int mrd;
-int delete_new_mail(struct fileheader *fptr, int idc, void *arg)
+int delete_new_mail(struct fileheader *fptr, int idc, void *direct)
 {
     if (fptr->accessed[1] & FILE_DEL) {
-        del_mail(idc, fptr, currdirect);
+        del_mail(idc, fptr, (char*)direct);
         return 1;
     }
     return 0;
 }
 
-int read_new_mail(struct fileheader *fptr, int idc, void *arg)
+int read_new_mail(struct fileheader *fptr, int idc, char *direct)
 {
     char done = false, delete_it;
     char fname[256];
-    struct _select_def conf;
-    struct read_arg readarg;
-
-    conf.arg=&readarg;
 
     if (fptr->accessed[0])
         return 0;
@@ -794,7 +790,7 @@ int read_new_mail(struct fileheader *fptr, int idc, void *arg)
         prints("(R)ªÿ–≈, (D)…æ≥˝, (G)ºÃ–¯ ? [G]: ");
         switch (igetkey()) {
         case Ctrl('Y'):
-            zsend_post(idc, fptr, currdirect);
+            zsend_post(idc, fptr, direct);
             break;
         case 'R':
         case 'r':
@@ -810,9 +806,7 @@ int read_new_mail(struct fileheader *fptr, int idc, void *arg)
                 break;
             }
 
-            conf.pos=idc;
-            readarg.direct=currdirect;
-            mail_reply(&conf, fptr,NULL);
+            mail_reply(idc, fptr,direct);
             /*
              * substitute_record(currmaildir, fptr, sizeof(*fptr), dc);
              */
@@ -834,7 +828,7 @@ int read_new_mail(struct fileheader *fptr, int idc, void *arg)
             fptr->accessed[1] |= FILE_DEL;
         }
     }
-    if (substitute_record(currdirect, fptr, sizeof(*fptr), idc))
+    if (substitute_record(direct, fptr, sizeof(*fptr), idc))
         return -1;
     clear();
     return 0;
@@ -842,18 +836,19 @@ int read_new_mail(struct fileheader *fptr, int idc, void *arg)
 
 int m_new()
 {
+    char direct[PATHLEN];
     clear();
     mrd = 0;
     modify_user_mode(RMAIL);
-    setmailfile(currdirect, currentuser->userid, ".DIR");
+    setmailfile(direct, currentuser->userid, ".DIR");
 	setmailcheck(currentuser->userid);
-    if (apply_record(currdirect, (APPLY_FUNC_ARG) read_new_mail, sizeof(struct fileheader), NULL, 1, false) == -1) {
+    if (apply_record(direct, (APPLY_FUNC_ARG) read_new_mail, sizeof(struct fileheader), direct, 1, false) == -1) {
         clear();
         move(0, 0);
         prints("No new messages\n\n\n");
         return -1;
     }
-    apply_record(currdirect, (APPLY_FUNC_ARG) delete_new_mail, sizeof(struct fileheader), NULL, 1, true);
+    apply_record(direct, (APPLY_FUNC_ARG) delete_new_mail, sizeof(struct fileheader), direct, 1, true);
 /*    	
     if (delcnt) {
         while (delcnt--)
@@ -876,6 +871,7 @@ void mailtitle(struct _select_def* conf)
      */
     int MailSpace, numlimit;
     int UsedSpace = get_mailusedspace(currentuser, 0) / 1024;
+    struct read_arg* arg=(struct read_arg*) conf->arg;
 
     get_mail_limit(currentuser, &MailSpace, &numlimit);
     showtitle("” º˛—°µ•    ", BBS_FULL_NAME);
@@ -885,11 +881,11 @@ void mailtitle(struct _select_def* conf)
     /*
      * prints("[44m±‡∫≈    %-20s %-49s[m\n","∑¢–≈’ﬂ","±Í  Ã‚") ; 
      */
-    if (0 != get_mailnum() && 0 == UsedSpace)
+    if (0 != get_mailnum(arg->direct) && 0 == UsedSpace)
         UsedSpace = 1;
     else if (UsedSpace < 0)
         UsedSpace = 0;
-    prints("[44m±‡∫≈    %-12s %6s  %-13sƒ˙µƒ–≈œ‰…œœﬁ»›¡ø%4dK£¨µ±«∞“—”√%4dK ", (strstr(currdirect, ".SENT")) ? " ’–≈’ﬂ" : "∑¢–≈’ﬂ", "»’  ∆⁄", "±Í  Ã‚", MailSpace, UsedSpace);    /* modified by dong , 1998.9.19 */
+    prints("[44m±‡∫≈    %-12s %6s  %-13sƒ˙µƒ–≈œ‰…œœﬁ»›¡ø%4dK£¨µ±«∞“—”√%4dK ", (strstr(arg->direct, ".SENT")) ? " ’–≈’ﬂ" : "∑¢–≈’ﬂ", "»’  ∆⁄", "±Í  Ã‚", MailSpace, UsedSpace);    /* modified by dong , 1998.9.19 */
     clrtoeol();
     prints("\n");
     resetcolor();
@@ -986,7 +982,7 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     clear();
     readnext = false;
     readprev = false;
-    setreadpost(fileinfo);
+    setreadpost(conf,fileinfo);
     strcpy(buf, arg->direct);
     if ((t = strrchr(buf, '/')) != NULL)
         *t = '\0';
@@ -1014,7 +1010,7 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
                 break;
             }
             replied = true;
-            mail_reply(conf, fileinfo,NULL);
+            do_mail_reply(conf, fileinfo,NULL);
             break;
         case ' ':
         case 'j':
@@ -1059,14 +1055,13 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     return FULLUPDATE;
 }
 
- /*ARGSUSED*/ static int mail_reply(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg)
+
+ /*ARGSUSED*/ static int mail_reply(int ent, struct fileheader *fileinfo,char* direct)
 {
     char uid[STRLEN];
     char title[STRLEN];
     char q_file[STRLEN];
     char *t;
-    int ent=conf->pos;
-    struct read_arg* arg=conf->arg;
 
     clear();
     modify_user_mode(SMAIL);
@@ -1106,10 +1101,17 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     default:
         prints("–≈º˛“—ºƒ≥ˆ\n");
         fileinfo->accessed[0] |= FILE_REPLIED;  /*added by alex, 96.9.7 */
-        substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
+        substitute_record(direct, fileinfo, sizeof(*fileinfo), ent);
     }
     pressreturn();
     return FULLUPDATE;
+}
+
+static int do_mail_reply(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg)
+{
+    int ent=conf->pos;
+    struct read_arg* arg=conf->arg;
+	mail_reply(ent,fileinfo,arg->direct);
 }
 
 static int mail_del(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg)
@@ -1443,7 +1445,7 @@ struct key_command mail_comms[] = {
     {'E', (READ_KEY_FUNC)mail_edit,NULL},
 	{'T', (READ_KEY_FUNC)mail_edit_title,NULL},
     {'r', (READ_KEY_FUNC)mail_read,NULL},
-    {'R', (READ_KEY_FUNC)mail_reply,NULL},
+    {'R', (READ_KEY_FUNC)do_mail_reply,NULL},
     {'m', (READ_KEY_FUNC)mail_mark,NULL},
     {'M', (READ_KEY_FUNC)mail_move,NULL},
     {'i', (READ_KEY_FUNC)mail_to_tmp,NULL},
@@ -1472,7 +1474,7 @@ struct key_command mail_comms[] = {
     {Ctrl('O'), (READ_KEY_FUNC)read_addauthorfriend,NULL},
 
     {Ctrl('Y'), (READ_KEY_FUNC)read_zsend,NULL},
-    {Ctrl('C'), (READ_KEY_FUNC)read_cross,NULL}, 
+    {Ctrl('C'), (READ_KEY_FUNC)do_cross,NULL}, 
 
 #ifdef PERSONAL_CORP
 	{'y', (READ_KEY_FUNC)read_importpc,NULL},
@@ -1491,7 +1493,7 @@ int m_read()
 
     setmailfile(curmaildir, currentuser->userid, DOT_DIR);
     in_mail = true;
-    new_i_read(DIR_MODE_MAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+    new_i_read(DIR_MODE_MAIL, curmaildir, mailtitle, (READ_ENT_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
     in_mail = false;
 	setmailcheck(currentuser->userid);
     return FULLUPDATE /* 0 */ ;
@@ -2220,12 +2222,12 @@ static int m_clean()
     setmailfile(buf, currentuser->userid, mail_sysbox[1]);
     num = get_num_records(buf, sizeof(struct fileheader));
     if (num && askyn("«Â≥˝∑¢º˛œ‰√¥?", 0))
-        delete_range(buf, 1, num, 1);
+        delete_range(buf, 1, num, 1, DIR_MODE_MAIL);
     move(0, 0);
     setmailfile(buf, currentuser->userid, mail_sysbox[2]);
     num = get_num_records(buf, sizeof(struct fileheader));
     if (num && askyn("«Â≥˝¿¨ª¯œ‰√¥?", 0))
-        delete_range(buf, 1, num, 1);
+        delete_range(buf, 1, num, 1, DIR_MODE_MAIL);
 	/*
     if (user_mail_list.mail_list_t) {
         int i;
@@ -2285,7 +2287,7 @@ struct mail_proc_arg {
     int cmdptr[sizeof(mail_cmds) / sizeof(struct command_def)];
 };
 
-static void maillist_refresh(struct _select_def *conf)
+static int maillist_refresh(struct _select_def *conf)
 {
     int i;
 
@@ -2309,6 +2311,7 @@ static void maillist_refresh(struct _select_def *conf)
         move(14, 46);
         prints("%s", "Œﬁ◊‘∂®“Â” œ‰");
     }
+    return SHOW_CONTINUE;
 }
 static int maillist_show(struct _select_def *conf, int pos)
 {
@@ -2369,7 +2372,7 @@ static int maillist_onselect(struct _select_def *conf)
         sel = conf->pos - arg->cmdnum - 1;
         setmailfile(curmaildir,currentuser->userid, mail_sysbox[sel]);
         in_mail = true;
-        new_i_read(DIR_MODE_MAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+        new_i_read(DIR_MODE_MAIL, curmaildir, mailtitle, (READ_ENT_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
         in_mail = false;
         /*
          * œµÕ≥” œ‰
@@ -2384,7 +2387,7 @@ static int maillist_onselect(struct _select_def *conf)
         sprintf(buf, ".%s", user_mail_list.mail_list[sel] + 30);
         setmailfile(curmaildir, currentuser->userid, buf);
         in_mail = true;
-        new_i_read(RMAIL, curmaildir, mailtitle, (READ_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
+        new_i_read(RMAIL, curmaildir, mailtitle, (READ_ENT_FUNC) maildoent, &mail_comms[0], sizeof(struct fileheader));
         in_mail = false;
     }
     modify_user_mode(MAIL);
@@ -2990,7 +2993,7 @@ int set_mailgroup(mailgroup_list_t * mgl, int entry, mailgroup_t * users)
         pts[i].x = 2;
         pts[i].y = i + 3;
     }
-    group_conf.key_table = &mail_key_table[0];
+    group_conf.key_table = (struct key_translate*)mail_key_table;
     group_conf.item_per_page = BBS_PAGESIZE;
     /*
      * º”…œ LF_VSCROLL ≤≈ƒ‹”√ LEFT º¸ÕÀ≥ˆ 
@@ -3268,7 +3271,7 @@ int set_mailgroup_list()
     /*
      * º”…œ LF_VSCROLL ≤≈ƒ‹”√ LEFT º¸ÕÀ≥ˆ 
      */
-    grouplist_conf.key_table=&mail_key_table[0];
+    grouplist_conf.key_table=(struct key_translate*)mail_key_table;
     grouplist_conf.flag = LF_NUMSEL | LF_VSCROLL | LF_BELL | LF_LOOP | LF_MULTIPAGE;
     grouplist_conf.prompt = "°Ù";
     grouplist_conf.item_pos = pts;

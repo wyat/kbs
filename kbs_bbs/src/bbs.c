@@ -23,6 +23,7 @@
 /* ËùÓÐ µÄ×¢ÊÍ ÓÉ Alex&Sissi Ìí¼Ó £¬ alex@mars.net.edu.cn */
 
 #include "bbs.h"
+#include "read.h"
 #include <time.h>
 #include <dlfcn.h>
 
@@ -69,6 +70,8 @@ extern int B_to_b;
 
 extern struct screenline *big_picture;
 extern struct userec *user_data;
+int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+
 
 int check_readonly(char *checked)
 {                               /* Leeward 98.03.28 */
@@ -117,7 +120,7 @@ int UndeleteArticle(struct _select_def* conf,struct fileheader *fileinfo,void* e
     int fd;
     struct read_arg* arg=(struct read_arg*)conf->arg;
 
-    if (arg->mode!= DIR_MODE_JUNK&& arg->mode != DIR_MODE_DELETED)
+    if ((arg->mode!= DIR_MODE_JUNK)&& (arg->mode != DIR_MODE_DELETED))
         return DONOTHING;
     if (!chk_currBM(currBM, currentuser))
         return DONOTHING;
@@ -407,7 +410,7 @@ int do_cross(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
                 for (i = conf->pos; i > 0; i--) {
                     if (0 == get_record_handle(fd, &xfh, sizeof(xfh), i)) {
                         if (0 == strcmp(xfh.filename, fileinfo->filename)) {
-                            ent = i;
+                            conf->pos= i;
                             break;
                         }
                     }
@@ -621,7 +624,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     if (uinfo.mode != RMAIL && arg->mode != DIR_MODE_DIGEST && arg->mode != DIR_MODE_DELETED && arg->mode != DIR_MODE_JUNK
         && strcmp(currboard->filename, "sysmail")) { /* ÐÂ·½·¨±È½Ï*/
             if ((ent->groupid != ent->id)&&(arg->mode==DIR_MODE_THREAD||!strncasecmp(TITLE,"Re:",3)||!strncmp(TITLE,"»Ø¸´:",5))) {      /*ReµÄÎÄÕÂ */
-                if (readfh->groupid == ent->groupid)     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
+                if ((readfh&&readfh->groupid == ent->groupid))     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
                     if (DEFINE(currentuser, DEF_HIGHCOLOR))
                         sprintf(buf, " [1;36m%4d[m %s%c%s %-12.12s %s[1;36m.%c%s[m ", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
                     else
@@ -629,7 +632,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
                 else
                     sprintf(buf, " %4d %s%c%s %-12.12s %s %c%s", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
             } else {
-                if (readfh->groupid == ent->groupid)     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
+                if (readfh&&(readfh->groupid == ent->groupid))     /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
                     if (DEFINE(currentuser, DEF_HIGHCOLOR))
                         sprintf(buf, " [1;33m%4d[m %s%c%s %-12.12s %s[1;33m.%c¡ñ %s[m ", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
                     else
@@ -640,7 +643,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 
     } else                     /* ÔÊÐí ÏàÍ¬Ö÷Ìâ±êÊ¶ */
         if (!strncmp("Re:", ent->title, 3)) {   /*ReµÄÎÄÕÂ */
-            if (isThreadTitle(readfh->title, ent->title)) /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
+            if (readfh&&isThreadTitle(readfh->title, ent->title)) /* µ±Ç°ÔÄ¶ÁÖ÷Ìâ ±êÊ¶ */
                 if (DEFINE(currentuser, DEF_HIGHCOLOR))
                     sprintf(buf, " [1;36m%4d[m %s%c%s %-12.12s %s[1;36m.%c%s[m ", num, typeprefix, type, typesufix, ent->owner, date, attachch, TITLE);
                 else
@@ -877,10 +880,10 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         post_reply(conf, fileinfo, extraarg);      /* »ØÎÄÕÂ */
         break;
     case 'g':
-        digest_post(ent, fileinfo, read_getcurrdirect(conf));     /* ÎÄÕªÄ£Ê½ */
+        set_article_flag(conf , fileinfo, (void*)FILE_DIGEST_FLAG);       /* Leeward 99.03.02 */
         break;
     case 'M':
-        mark_post(ent, fileinfo, read_getcurrdirect(conf));       /* Leeward 99.03.02 */
+        set_article_flag(conf , fileinfo, (void*)FILE_MARK_FLAG);       /* Leeward 99.03.02 */
         break;
     case Ctrl('U'):
         sread(0, 1, NULL /*ent */ , 1, fileinfo);       /* Leeward 98.10.03 */
@@ -903,28 +906,28 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         break;
     case Ctrl('Q'):            /*Haohmaru.98.12.05,ÏµÍ³¹ÜÀíÔ±Ö±½Ó²é×÷Õß×ÊÁÏ */
         clear();
-        show_authorinfo(0, fileinfo, '\0');
+        read_showauthorinfo(conf, fileinfo, NULL);
         return READ_NEXT;
         break;
     case Ctrl('W'):            /*cityhunter 00.10.18²ì¿´°æÖ÷ÐÅÏ¢ */
         clear();
-        show_authorBM(0, fileinfo, '\0');
+        read_showauthorBM(conf, fileinfo, NULL);
         return READ_NEXT;
         break;
     case Ctrl('O'):
         clear();
-        add_author_friend(0, fileinfo, '\0');
+        read_addauthorfriend(conf, fileinfo, NULL);
         return READ_NEXT;
     case 'Z':
     case 'z':
         if (!HAS_PERM(currentuser, PERM_PAGE))
             break;
-        sendmsgtoauthor(0, fileinfo, '\0');
+        read_sendmsgtoauthor(conf, fileinfo, NULL);
         return READ_NEXT;
         break;
     case Ctrl('A'):            /*Add by SmallPig */
         clear();
-        show_author(0, fileinfo, '\0');
+        read_showauthor(conf, fileinfo, NULL);
         return READ_NEXT;
         break;
     case 'L':
@@ -1183,7 +1186,7 @@ int marked_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     if (conf!=NULL)
         arg=(struct read_arg*)conf->arg;
     if (arg==NULL||arg->mode!= DIR_MODE_MARK) {
-        if (setboardmark(currboard, -1)) {
+        if (setboardmark(currboard->filename, -1)) {
             if (generate_mark(arg) == -1) {
                 return FULLUPDATE;
             }
@@ -1225,7 +1228,7 @@ int title_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         }
     }
     setbdir(arg->mode, arg->direct, currboard->filename);
-    if (!dashf(arg->)) {
+    if (!dashf(arg->direct)) {
         arg->mode=DIR_MODE_NORMAL;
         setbdir(DIR_MODE_NORMAL, arg->direct, currboard->filename);
         return FULLUPDATE;
@@ -1380,7 +1383,7 @@ int change_mode(struct _select_def* conf,struct fileheader *fileinfo,int newmode
             newmode=DIR_MODE_THREAD;
             break;
         case '3':
-            newmode=DIR_MODE_MARK
+            newmode=DIR_MODE_MARK;
             break;
         case '4':
             newmode=DIR_MODE_ORIGIN;
@@ -1446,11 +1449,11 @@ int change_mode(struct _select_def* conf,struct fileheader *fileinfo,int newmode
     case DIR_MODE_MARK:
         return marked_mode(conf,fileinfo,0);
     case DIR_MODE_ORIGIN:
-        return search_mode(6, buf);
+        return search_mode(conf,fileinfo,6, buf);
     case DIR_MODE_AUTHOR:
-        return search_mode(7, buf);
+        return search_mode(conf,fileinfo,7, buf);
     case DIR_MODE_TITLE:
-        return search_mode(8, buf);
+        return search_mode(conf,fileinfo, 8, buf);
     case DIR_MODE_SUPERFITER:
         return super_filter(conf,fileinfo,0);
     case DIR_MODE_DELETED:
@@ -1844,7 +1847,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 
     modify_user_mode(POSTING);
     setbdir(DIR_MODE_NORMAL, direct, currboard->filename);
-    if (!((arg->mode == DIR_MODE_MARK)&&( arg->mode == DIR_MODE_THREAD)&&( arg->mode == DIR_MODE_NORMAL)))
+    if (!((arg->mode == DIR_MODE_MARK)||( arg->mode == DIR_MODE_THREAD)||( arg->mode == DIR_MODE_NORMAL)))
     {
         move(3, 0);
         clrtobot();
@@ -1856,13 +1859,10 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     if (!haspostperm(currentuser, currboard->filename)) { /* POSTÈ¨ÏÞ¼ì²é */
         move(3, 0);
         clrtobot();
-        if (arg->mode == DIR_MODE_NORMAL) {
             prints("\n\n        ´ËÌÖÂÛÇøÊÇÎ¨¶ÁµÄ, »òÊÇÄúÉÐÎÞÈ¨ÏÞÔÚ´Ë·¢±íÎÄÕÂ.\n");
             prints("        Èç¹ûÄúÉÐÎ´×¢²á£¬ÇëÔÚ¸öÈË¹¤¾ßÏäÄÚÏêÏ¸×¢²áÉí·Ý\n");
             prints("        Î´Í¨¹ýÉí·Ý×¢²áÈÏÖ¤µÄÓÃ»§£¬Ã»ÓÐ·¢±íÎÄÕÂµÄÈ¨ÏÞ¡£\n");
             prints("        Ð»Ð»ºÏ×÷£¡ :-) \n");
-        }
-        pressreturn();
         clear();
         return FULLUPDATE;
     }
@@ -2352,7 +2352,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         /*
          * strcpy(fileinfo->title,buf);
          */
-        strcpy(tmp, direct);
+        strcpy(tmp, arg->direct);
         if ((t = strrchr(tmp, '/')) != NULL)
             *t = '\0';
         sprintf(genbuf, "%s/%s", tmp, fileinfo->filename);
@@ -2421,7 +2421,7 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
         ans[0] = ans[1];
         ans[1] = 0;
     }
-	if(ans[0]=='2') return zhiding_post(conf->pos,fileinfo,arg->direct);
+	if(ans[0]=='2') return zhiding_post(conf,fileinfo,extraarg);
 	else change_post_flag(currBM, currentuser, arg->mode, currboard->filename, conf->pos, fileinfo, arg->direct, FILE_NOREPLY_FLAG, 1);
 
 	return FULLUPDATE;
@@ -2447,7 +2447,7 @@ int del_range(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     if (!strcmp(currboard->filename, "syssecurity")
         || !strcmp(currboard->filename, "junk")
         || !strcmp(currboard->filename, "deleted")
-        || strstr(direct, ".THREAD") /*Haohmaru.98.10.16 */ )   /* Leeward : 98.01.22 */
+        || strstr(arg->direct, ".THREAD") /*Haohmaru.98.10.16 */ )   /* Leeward : 98.01.22 */
         return DONOTHING;
 
     if (uinfo.mode == READING && !HAS_PERM(currentuser, PERM_SYSOP))
@@ -2630,7 +2630,7 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         case DIR_MODE_ORIGIN:
         case DIR_MODE_AUTHOR:
         case DIR_MODE_TITLE:
-            search_mode(arg->mode, search_data);
+            search_mode(conf,fileinfo,arg->mode, search_data);
             break;
         }
     }
@@ -2645,7 +2645,7 @@ int Save_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     if (!HAS_PERM(currentuser, PERM_SYSOP))
         if (!chk_currBM(currBM, currentuser))
             return DONOTHING;
-    ret=a_Save(NULL, currboard->filename, fileinfo, false, direct, ent);
+    ret=a_Save(NULL, currboard->filename, fileinfo, false, arg->direct, conf->pos);
     if (ret)
         change_post_flag(currBM, currentuser, arg->mode, currboard->filename, conf->pos, fileinfo, arg->direct, FILE_IMPORT_FLAG, 0);
     return ret;
@@ -2661,7 +2661,7 @@ int Semi_save(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             return DONOTHING;
     if (conf->pos>arg->filecount) //TODO:Ö§³ÖÖÃ¶¥ÊÕÈë
         return DONOTHING;
-    ret=a_SeSave("0Announce", currboard->filename, fileinfo, false,,conf->pos,1);
+    ret=a_SeSave("0Announce", currboard->filename, fileinfo, false,arg->direct,conf->pos,1);
     if (ret)
         change_post_flag(currBM, currentuser, arg->mode, currboard->filename, conf->pos, fileinfo, arg->direct, FILE_IMPORT_FLAG, 0);
     return ret;
@@ -2703,7 +2703,7 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     /*
      * Leeward 98.04.15 
      */
-    if (a_Import(NULL, currboard->filename, fileinfo, false, arg->direct, conf->pos)==1) {
+    if (a_Import(NULL, currboard->filename, fileinfo, false, arg->direct, conf->pos)==0) {
         if (!(fileinfo->accessed[0] & FILE_IMPORTED))
             change_post_flag(currBM, currentuser, arg->mode, currboard->filename, conf->pos, 
                 fileinfo, arg->direct, FILE_IMPORT_FLAG, 0);
@@ -2761,6 +2761,7 @@ static int sequent_ent;
 
 int sequent_messages(struct fileheader *fptr, int idc, int *continue_flag)
 {
+//new_i_read TODO!!!
     if (readpost) {
         if (idc < sequent_ent)
             return 0;
@@ -2795,7 +2796,7 @@ int sequent_messages(struct fileheader *fptr, int idc, int *continue_flag)
         *continue_flag = 0;
         switch (igetkey()) {
         case Ctrl('Y'):
-            zsend_post(0, fptr, currdirect);
+//new_i_read TODO!!!  zsend_post(0, fptr, arg->direct);
             clear();
             goto redo;
         case Ctrl('Z'):
@@ -2813,7 +2814,7 @@ int sequent_messages(struct fileheader *fptr, int idc, int *continue_flag)
         case 'R':
         case 'y':
         case 'r':
-            do_reply(fptr);     /*»ØÐÅ */
+//new_i_read TODO!!!  do_reply(conf,fptr);     /*»ØÐÅ */
         case ' ':
         case '\n':
         case KEY_DOWN:
@@ -2932,7 +2933,7 @@ int range_flag(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     for(i=inum1;i<=inum2;i++) 
     if(i>=1&&i<=total) {
         f.filename[0]=0;
-        change_post_flag(currBM, currentuser, arg->mode, currboard, i, &f, arg->direct, fflag, 0);
+        change_post_flag(currBM, currentuser, arg->mode, currboard->filename, i, &f, arg->direct, fflag, 0);
     }
     prints("\nÍê³É±ê¼Ç\n");
     pressreturn();
@@ -4603,60 +4604,60 @@ int choose_tmpl(char *title, char *fname)
 }
 
 static struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
-    {'r', (READ_FUNC)read_post,NULL},
-    {'K', (READ_FUNC)skip_post,NULL},
+    {'r', (READ_KEY_FUNC)read_post,NULL},
+    {'K', (READ_KEY_FUNC)skip_post,NULL},
 
-    {'d', (READ_FUNC)del_post,NULL},
-    {'D', (READ_FUNC)del_range,NULL},
-    {Ctrl('C'), (READ_FUNC)do_cross,NULL},
-    {'Y', (READ_FUNC)UndeleteArticle,NULL},     /* Leeward 98.05.18 */
-    {Ctrl('P'), (READ_FUNC)do_post,NULL},
-    {'E', (READ_FUNC)edit_post,NULL},
-    {'T', (READ_FUNC)edit_title,NULL},
+    {'d', (READ_KEY_FUNC)del_post,NULL},
+    {'D', (READ_KEY_FUNC)del_range,NULL},
+    {Ctrl('C'), (READ_KEY_FUNC)do_cross,NULL},
+    {'Y', (READ_KEY_FUNC)UndeleteArticle,NULL},     /* Leeward 98.05.18 */
+    {Ctrl('P'), (READ_KEY_FUNC)do_post,NULL},
+    {'E', (READ_KEY_FUNC)edit_post,NULL},
+    {'T', (READ_KEY_FUNC)edit_title,NULL},
             
-    {'m', (READ_FUNC)set_article_flag,(void*)FILE_MARK_FLAG},
-    {';', (READ_FUNC)noreply_post,(void*)NULL},        /*Haohmaru.99.01.01,Éè¶¨²»¿ÉreÄ£Ê½ */
-    {'#', (READ_FUNC)set_article_flag,(void*)FILE_SIGN_FLAG},           /* Bigman: 2000.8.12  Éè¶¨ÎÄÕÂ±ê¼ÇÄ£Ê½ */
+    {'m', (READ_KEY_FUNC)set_article_flag,(void*)FILE_MARK_FLAG},
+    {';', (READ_KEY_FUNC)noreply_post,(void*)NULL},        /*Haohmaru.99.01.01,Éè¶¨²»¿ÉreÄ£Ê½ */
+    {'#', (READ_KEY_FUNC)set_article_flag,(void*)FILE_SIGN_FLAG},           /* Bigman: 2000.8.12  Éè¶¨ÎÄÕÂ±ê¼ÇÄ£Ê½ */
 #ifdef FILTER
-    {'@', (READ_FUNC)set_article_flag,(void*)FILE_CENSOR_FLAG},         /* czz: 2002.9.29 ÉóºË±»¹ýÂËÎÄÕÂ */
+    {'@', (READ_KEY_FUNC)set_article_flag,(void*)FILE_CENSOR_FLAG},         /* czz: 2002.9.29 ÉóºË±»¹ýÂËÎÄÕÂ */
 #endif
-    {'g', (READ_FUNC)set_article_flag,(void*)FILE_DIGEST_FLAG},
-    {'t', (READ_FUNC)set_article_flag,(void*)FILE_DELETE_FLAG},     /*KCN 2001 */
-    {'|', (READ_FUNC)set_article_flag,(void*)FILE_TITLE_FLAG},
+    {'g', (READ_KEY_FUNC)set_article_flag,(void*)FILE_DIGEST_FLAG},
+    {'t', (READ_KEY_FUNC)set_article_flag,(void*)FILE_DELETE_FLAG},     /*KCN 2001 */
+    {'|', (READ_KEY_FUNC)set_article_flag,(void*)FILE_TITLE_FLAG},
 
-    {'G', (READ_FUNC)range_flag,(void*)FILE_TITLE_FLAG},
+    {'G', (READ_KEY_FUNC)range_flag,(void*)FILE_TITLE_FLAG},
         
-    {'H', (READ_FUNC)read_hot_info,NULL},   /* flyriver: 2002.12.21 Ôö¼ÓÈÈÃÅÐÅÏ¢ÏÔÊ¾ */
+    {'H', (READ_KEY_FUNC)read_hot_info,NULL},   /* flyriver: 2002.12.21 Ôö¼ÓÈÈÃÅÐÅÏ¢ÏÔÊ¾ */
         
-    {Ctrl('G'), (READ_FUNC)change_mode,(void*)0},   /* bad : 2002.8.8 add marked mode */
-    {'`', (READ_FUNC)change_mode,(void*)DIR_MODE_DIGEST},
-    {'.', (READ_FUNC)change_mode,(void*)DIR_MODE_DELETED},
-    {'>', (READ_FUNC)change_mode,(void*)DIR_MODE_JUNK},
-    {Ctrl('T'), (READ_FUNC)change_mode,(void*)DIR_MODE_TITLE},
+    {Ctrl('G'), (READ_KEY_FUNC)change_mode,(void*)0},   /* bad : 2002.8.8 add marked mode */
+    {'`', (READ_KEY_FUNC)change_mode,(void*)DIR_MODE_DIGEST},
+    {'.', (READ_KEY_FUNC)change_mode,(void*)DIR_MODE_DELETED},
+    {'>', (READ_KEY_FUNC)change_mode,(void*)DIR_MODE_JUNK},
+    {Ctrl('T'), (READ_KEY_FUNC)change_mode,(void*)DIR_MODE_TITLE},
 
-    {'s', (READ_FUNC)do_select,NULL},
-    {'x', (READ_FUNC)into_announce,NULL},
-    {'v', (READ_FUNC)i_read_mail,NULL},         /* period 2000-11-12 read mail in article list */
+    {'s', (READ_KEY_FUNC)do_select,NULL},
+    {'x', (READ_KEY_FUNC)into_announce,NULL},
+    {'v', (READ_KEY_FUNC)i_read_mail,NULL},         /* period 2000-11-12 read mail in article list */
 
-    {'i', (READ_FUNC)Save_post,NULL},
-    {'J', (READ_FUNC)Semi_save,NULL},
-    {'I', (READ_FUNC)Import_post,NULL},
+    {'i', (READ_KEY_FUNC)Save_post,NULL},
+    {'J', (READ_KEY_FUNC)Semi_save,NULL},
+    {'I', (READ_KEY_FUNC)Import_post,NULL},
         /*----------------------------------*/
 
 
 #ifdef INTERNET_EMAIL
-    {'F', (READ_FUNC)mail_forward,NULL},
-    {'U', (READ_FUNC)mail_uforward,NULL},
-    {Ctrl('R'), (READ_FUNC)post_reply,NULL},
+    {'F', (READ_KEY_FUNC)mail_forward,NULL},
+    {'U', (READ_KEY_FUNC)mail_uforward,NULL},
+    {Ctrl('R'), (READ_KEY_FUNC)post_reply,NULL},
 #endif
 
 #ifdef NINE_BUILD
-    {'c', (READ_FUNC)show_t_friends,NULL},
-    {'C', (READ_FUNC)clear_new_flag,NULL},
+    {'c', (READ_KEY_FUNC)show_t_friends,NULL},
+    {'C', (READ_KEY_FUNC)clear_new_flag,NULL},
 #else
-    {'c', (READ_FUNC)clear_new_flag,NULL},
+    {'c', (READ_KEY_FUNC)clear_new_flag,NULL},
 #endif
-    {'f', (READ_FUNC)clear_all_new_flag,NULL},
+    {'f', (READ_KEY_FUNC)clear_all_new_flag,NULL},
     /*----------------------------------------*/
 /*
     {'S', sequential_read},
@@ -4680,7 +4681,7 @@ static struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {Ctrl('E'), clubmember},
     {Ctrl('A'), show_author},
     {Ctrl('O'), add_author_friend},
-    {Ctrl('Q'), show_authorinfo},      
+    {trl('Q'), show_authorinfo},      
     {Ctrl('W'), show_authorBM},
 #ifdef NINE_BUILD
     {'z', show_sec_b_note},    
@@ -4715,7 +4716,7 @@ int Read()
     time_t usetime;
     struct stat st;
     int bid;
-    int returnmode;
+    int returnmode=DIR_MODE_DIGEST;
 
     if (!selboard||!currboard) {
         move(2, 0);
@@ -4765,7 +4766,10 @@ int Read()
         }
     }
     usetime = time(0);
-    returnmode=new_i_read(DIR_MODE_NORMAL, buf, readtitle, (READ_FUNC) readdoent, &read_comms[0], sizeof(struct fileheader));  /*½øÈë±¾°æ */
+    while (returnmode!=DIR_MODE_NORMAL) {
+    returnmode=new_i_read(DIR_MODE_NORMAL, buf, readtitle, (READ_ENT_FUNC) readdoent, &read_comms[0], sizeof(struct fileheader));  /*½øÈë±¾°æ */
+    setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
+    }
     newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", currboard->filename, time(0) - usetime);
     bmlog(currentuser->userid, currboard->filename, 0, time(0) - usetime);
     bmlog(currentuser->userid, currboard->filename, 1, 1);

@@ -2,6 +2,7 @@
 #define __READ_H__
 
 typedef int (*READ_KEY_FUNC)(struct _select_def*,void*,void*);
+typedef char *(*READ_ENT_FUNC) (void *, int, void *,void*,struct _select_def*);
 
 struct key_command {                /* Used to pass commands to the readmenu */
     int key;
@@ -20,7 +21,7 @@ struct read_arg {
     char* direct;
     char* dingdirect; /*置顶的.DIR保存在这里*/
     void (*dotitle) ();
-    READ_FUNC doentry;
+    READ_ENT_FUNC doentry;
     struct key_command *rcmdlist;
     int ssize;
 
@@ -76,7 +77,6 @@ int apply_thread(struct _select_def* conf, struct fileheader* fh,APPLY_THREAD_FU
    @param readdata 上次阅读的数据,用于判断同主题之类
    @param conf _select_conf结构指针
 */
-typedef char *(*READ_ENT_FUNC) (void *, int, void *,void*,struct _select_def*);
 
 int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct _select_def*), READ_ENT_FUNC doentry, struct key_command *rcmdlist, int ssize);
 

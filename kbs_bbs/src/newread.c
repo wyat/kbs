@@ -110,7 +110,13 @@ static int read_key(struct _select_def *conf, int command)
             ret=SHOW_REFRESH;
             break;
         case DIRCHANGED:
-        case NEWDIRECT:
+        case NEWDIRECT: {
+			    int newfd;
+                if ((newfd = open(arg->direct, O_RDWR, 0)) != -1) {
+			        close(arg->fd);
+                    arg->fd=newfd;
+			    }
+			}
         case CHANGEMODE:
         case NEWSCREEN:
             ret=SHOW_DIRCHANGE;
@@ -213,7 +219,7 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
                     }
                     close(dingfd);
                 }
-                if (n!=dingcount)&&(n!=(len-entry)))) {
+                if ((n!=dingcount)&&(n!=(len-entry))) {
                     /*置顶数据肯定出问题*/
                     dingcount=n;
                 }
@@ -272,7 +278,7 @@ static int read_show(struct _select_def *conf, int pos)
 {
     struct read_arg *arg = (struct read_arg *) conf->arg;
     char foroutbuf[512];
-    prints("%s",(*arg->doentry) (foroutbuf, pos, arg->data+(pos-conf->page_pos) * arg->ssize),arg->readdata);
+    prints("%s",(*arg->doentry) (foroutbuf, pos, arg->data+(pos-conf->page_pos) * arg->ssize,arg->readdata,conf));
     clrtoeol();
     return SHOW_CONTINUE;
 }
@@ -289,19 +295,21 @@ static int read_onsize(struct _select_def* conf)
         conf->item_pos[i].x = 1;
         conf->item_pos[i].y = i + 3;
     };
+    if (conf->item_per_page!=BBS_PAGESIZE) {
     if (arg->data!=NULL) {
         free(arg->data);
         arg->data=NULL;
     }
     conf->item_per_page = BBS_PAGESIZE;
     return SHOW_DIRCHANGE;
+    }
+    return SHOW_CONTINUE;
 }
 
-int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct _select_def*), READ_FUNC doentry, struct key_command *rcmdlist, int ssize)
+int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct _select_def*), READ_ENT_FUNC doentry, struct key_command *rcmdlist, int ssize)
 {
     struct _select_def read_conf;
     struct read_arg arg;
-    char ding_direct[PATHLEN];
     int i;
     const static struct key_translate ktab[]= {
             {'\n','r'},
@@ -336,12 +344,14 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
     arg.readmode=READ_NORMAL;
     arg.data=NULL;
     arg.readdata=NULL;
-    if ((arg->mode==DIR_MODE_NORMAL)||
-        ((arg->mode>=DIR_MODE_THREAD)&&(arg->mode<=DIR_MODE_WEB_THREAD))) {
+    if ((arg.mode==DIR_MODE_NORMAL)||
+        ((arg.mode>=DIR_MODE_THREAD)&&(arg.mode<=DIR_MODE_WEB_THREAD))) {
+        char ding_direct[PATHLEN];
         //设置置顶的.DIR direct TODO:用tmpfs
-  	sprintf(ding_direct,"boards/%s/%s",currboard->filename,DING_DIR);
-        arg->dingdirect=ding_direct;
-    } else arg->dingdirect=NULL;
+        sprintf(ding_direct,"boards/%s/%s",currboard->filename,DING_DIR);
+        arg.dingdirect=malloc(strlen(ding_direct)+1);
+        strcpy(arg.dingdirect,ding_direct);
+    } else arg.dingdirect=NULL;
 
     clear();
 
@@ -365,25 +375,61 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (struct 
         read_conf.show_title = read_title;
         read_conf.show_endline= read_endline;
         read_conf.on_size= read_onsize;
-        read_conf.key_table = &ktab[0];
+        read_conf.key_table = (struct key_translate *)ktab;
 
         read_getdata(&read_conf,read_conf.pos,read_conf.item_per_page);
 
         list_select_loop(&read_conf);
-        if (arg.data!=NULL)
-            free(arg.data);    
-        if (arg.readdata!=NULL)
-            free(arg.readdata);
-        if (read_conf.item_pos!=NULL)
-            free(read_conf.item_pos);
         close(arg.fd);
     } else {
-            prints("没有任何信件...");
-            pressreturn();
-            clear();
+        prints("没有任何信件...");
+        pressreturn();
+        clear();
     }
+    if (arg.data!=NULL)
+        free(arg.data);    
+    if (arg.readdata!=NULL)
+        free(arg.readdata);
+    if (arg.dingdirect!=NULL)
+        free(arg.dingdirect);
+    if (read_conf.item_pos!=NULL)
+        free(read_conf.item_pos);
+    return arg.mode;
 }
 
+
+static int searchpattern(char *filename, char *query)
+{
+    FILE *fp;
+    char buf[256];
+
+    if ((fp = fopen(filename, "r")) == NULL)
+
+        return 0;
+    while (fgets(buf, 256, fp) != NULL) {
+        if (strstr(buf, query)) {
+            fclose(fp);
+            return true;
+        }
+    }
+    fclose(fp);
+    return false;
+}
+
+static void get_upper_str(char *ptr2, char *ptr1)
+{
+    int ln, i;
+
+    for (ln = 0; (ln < STRLEN) && (ptr1[ln] != 0); ln++);
+    for (i = 0; i < ln; i++) {
+        ptr2[i] = toupper(ptr1[i]);
+        /******** 下面为Luzi添加 ************/
+        if (ptr2[i] == '\0')
+            ptr2[i] = '\1';
+        /******** 以上为Luzi添加 ************/
+    }
+    ptr2[ln] = '\0';
+}
 
 /* COMMAN : use mmap to speed up searching */
 /* add by stiger
@@ -561,10 +607,10 @@ bool isThreadTitle(char* a,char* b)
 {
     if (!strncasecmp(a,"re: ",4)) a+=4;
     if (!strncasecmp(b,"re: ",4)) b+=4;
-    if (!strncmp(a, "├ ", 3) a+=3;
-    if (!strncmp(b, "├ ", 3) b+=3;
-    if (!strncmp(a, "└ ", 3) a+=3;
-    if (!strncmp(b, "└ ", 3) b+=3;
+    if (!strncmp(a, "├ ", 3)) a+=3;
+    if (!strncmp(b, "├ ", 3)) b+=3;
+    if (!strncmp(a, "└ ", 3)) a+=3;
+    if (!strncmp(b, "└ ", 3)) b+=3;
     return strcmp(a,b)?0:1;
 }
 

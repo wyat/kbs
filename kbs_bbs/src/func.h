@@ -393,7 +393,7 @@ void set_user_title(unsigned char titleidx,char* newtitle);
     long get_mailusedspace(struct userec *user, int force);     /*peregrine */
     int get_record_handle(int fd, void *rptr, int size, int id);
     int get_record(char *filename, void *rptr, int size, int id);
-    int delete_range(char *filename, int id1, int id2, int del_mode);
+    int delete_range(char *filename, int id1, int id2, int del_mode,int curmode);
     int get_records(char *filename, void *rptr, int size, int id, int number);
     int read_get_records(char *filename, char *filename1, void *rptr, int size, int id, int number);
     int search_record_back(int fd,      /* idx file handle */
@@ -403,7 +403,6 @@ void set_user_title(unsigned char titleidx,char* newtitle);
                            void *farg,  /* additional param to call fptr() / original record */
                            void *rptr,  /* record data buffer to be used for reading idx file */
                            int sorted); /* if records in file are sorted */
-    int del_range(struct _select_def* conf,struct fileheader *fileinfo, void* extraarg);
     void load_mail_list(struct userec *user, struct _mail_list *mail_list);
     void save_mail_list(struct _mail_list *mail_list);
 

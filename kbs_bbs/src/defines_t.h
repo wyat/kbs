@@ -93,7 +93,6 @@ void record_exit_time();        /* 记录离线时间  Luzi 1998/10/23 */
 int shownotepad();
 int check_stuffmode();
 int do_reply(struct _select_def* conf,struct fileheader *fileinfo);
-int do_select(int ent, struct fileheader *fileinfo, char *direct);      /* 输入讨论区名 选择讨论区 */
 int do_post();
 void make_blist();
 int digest_post(int ent, struct fileheader *fhdr, char *direct);
@@ -101,13 +100,11 @@ int mark_post(int ent, struct fileheader *fhdr, char *direct);
 int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_file);             /*用户 POST 文章 */
 int do_send(char *userid, char *title,char* q_file);
 int Goodbye();
-int post_reply(int ent, struct fileheader *fileinfo, char *direct);
 int sequential_read2(int ent);
 void do_quote(char *filepath, char quote_mode, char* q_file,char* q_user);
 void setqtitle(char *stitle);
 int noreply_post_noprompt(int ent, struct fileheader *fileinfo, char *direct);
 void RemoveAppendedSpace(char *ptr);
-int del_post(int ent, struct fileheader *fileinfo, char *direct);
 
 /*vote.c*/
 void makevdir(char *bname);
@@ -160,7 +157,7 @@ struct keeploc *getkeep(char *s, int def_topline, int def_cursline);
 int sread(int passonly, int readfirst, int auser, int pnum, struct fileheader *ptitle);
 void fixkeep(char *s, int first, int last);
 
-typedef char *(*READ_FUNC) (void *, int, void *,void*);
+typedef char *(*READ_FUNC) (void *, int, void *);
 int i_read(int cmdmode, char *direct, void (*dotitle) (), READ_FUNC doentry, struct one_key *rcmdlist, int ssize);
 void u_exit();
 
