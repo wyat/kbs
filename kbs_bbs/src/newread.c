@@ -4,20 +4,6 @@
   */
 #include "bbs.h"
 
-struct read_arg {
-  /* save argument */
-  enum BBS_DIR_MODE mode;
-  char* direct;
-  void (*dotitle) ();
-  READ_FUNC doentry;
-  struct one_key *rcmdlist;
-  int ssize;
-
-  void* data; //readed data
-  int fd; //filehandle,open always
-
-  bool reading; //ÓÃÓÚ±íÊ¾·µ»ØREAD_NEXT,READ_PREVµÄÊ±ºòÖ±½Ó¶ÁÐ´
-};
 
 static int read_key(struct _select_def *conf, int command)
 {
@@ -27,7 +13,7 @@ static int read_key(struct _select_def *conf, int command)
     
     for (i = 0; arg->rcmdlist[i].fptr != NULL; i++) {
         if (arg->rcmdlist[i].key == command) {
-            int mode = (*(arg->rcmdlist[i].fptr)) (conf->pos, arg->data+(conf->pos - conf->page_pos) * arg->ssize, arg->direct);
+            int mode = (*(arg->rcmdlist[i].fptr)) (conf, arg->data+(conf->pos - conf->page_pos) * arg->ssize, arg->rcmdlist[i].arg);
             switch (mode) {
                 case FULLUPDATE:
                 case PARTUPDATE:
@@ -85,6 +71,7 @@ static int read_getdata(struct _select_def *conf, int pos, int len)
         if (count!=conf->item_count) {
             //need refresh
             conf->item_count=count;
+            arg->filecount=count;//TODO,ÖÃ¶¥µÄÊ±ºò£¬filecountºÍitem_count²»Ò»Ñù£¬ÉÙ¸öÖÃ¶¥
             return SHOW_DIRCHANGE;
         }
         
@@ -231,4 +218,154 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle) (), READ
     }
 }
 
+
+/* COMMAN : use mmap to speed up searching */
+/* add by stiger
+ * return :   2 :  DIRCHANGED
+ *            1 :  FULLUPDATE
+ *            0 :  DONOTHING
+ */
+static int read_search_articles(struct _select_def* conf, char *query, int offset, int aflag)
+{
+    char ptr[STRLEN];
+    int now, match = 0;
+    int complete_search;
+    char upper_ptr[STRLEN], upper_query[STRLEN];
+    bool init;
+    size_t bm_search[256];
+
+/*	int mmap_offset,mmap_length; */
+    struct fileheader *pFh, *pFh1;
+    int size;
+    struct read_arg *arg = (struct read_arg *) conf->arg;
+
+    get_upper_str(upper_query, query);
+    if (aflag >= 2) {
+        complete_search = 1;
+        aflag -= 2;
+    } else {
+        complete_search = 0;
+    }
+    if (*query == '\0') {
+        return 0;
+    }
+
+    /*
+     * move(t_lines-1,0);
+     * clrtoeol();
+     * prints("[44m[33mËÑÑ°ÖÐ£¬ÇëÉÔºò....                                                             [m");
+     */
+    init=false;
+    now = conf->pos;
+
+/*    refresh();*/
+    match = 0;
+    BBS_TRY {
+        if (safe_mmapfile_handle(arg->fd, O_RDONLY, PROT_READ, MAP_SHARED, (void **) &pFh, &size, NULL) == 0)
+            BBS_RETURN(0);
+        if(now > arg->filecount){
+	/*ÔÚÖÃ¶¥ÎÄÕÂÇ°ËÑË÷*/
+            now = arg->filecount;
+        }
+        if (now <= arg->filecount) {
+            pFh1 = pFh + now - 1;
+            while (1) {
+                if (offset > 0) {
+                    if (++now > arg->filecount)
+                        break;
+                    pFh1++;
+                } else {
+                    if (--now < 1)
+                        break;
+                    pFh1--;
+                }
+                if (now == arg->filecount)
+                    break;
+                if (aflag == -1) { /*ÄÚÈÝ¼ìË÷*/
+                    char p_name[256];
+
+                    if (uinfo.mode != RMAIL)
+                        setbfile(p_name, currboard->filename, pFh1->filename);
+                    else
+                        setmailfile(p_name, currentuser->userid, pFh1->filename);
+                    if (searchpattern(p_name, query)) {
+                        match = 1;
+                        break;
+                    } else
+                        continue;
+                }
+                strncpy(ptr, aflag ? pFh1->owner : pFh1->title, STRLEN - 1);
+                ptr[STRLEN - 1] = 0;
+                if (complete_search == 1) {
+                    char *ptr2 = ptr;
+
+                    if ((*ptr == 'R' || *ptr == 'r')
+
+                        && (*(ptr + 1) == 'E' || *(ptr + 1) == 'e') && (*(ptr + 2) == ':')
+                        && (*(ptr + 3) == ' ')) {
+                        ptr2 = ptr + 4;
+                    }
+                    if (!strcmp(ptr2, query)) {
+                        match = 1;
+                        break;
+                    }
+                } else {
+                    /*
+                     * Í¬×÷Õß²éÑ¯¸Ä³ÉÍêÈ«Æ¥Åä by dong, 1998.9.12 
+                     */
+                    if (aflag == 1) {   /* ½øÐÐÍ¬×÷Õß²éÑ¯ */
+                        if (!strcasecmp(ptr, upper_query)) {
+                            match = 1;
+                            break;
+                        }
+                    }
+
+                    else if (bm_strcasestr_rp(ptr, upper_query,bm_search,&init) != NULL) {
+                        match = 1;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    BBS_CATCH {
+        match = 0;
+    }
+    BBS_END
+    end_mmapfile((void *) pFh, size, -1);
+    move(t_lines - 1, 0);
+    clrtoeol();
+    if(match) {
+        conf->pos=now;
+        return 1;
+    }
+    return 0;
+}
+
+
+int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    static char author[IDLEN + 1];
+    char ans[IDLEN + 1], pmt[STRLEN];
+    char currauth[STRLEN];
+    bool up=(bool)extraarg;
+    
+    strncpy(currauth, fh->owner, STRLEN);
+    snprintf(pmt, STRLEN, "%sµÄÎÄÕÂËÑÑ°×÷Õß [%s]: ", offset > 0 ? "ÍùºóÀ´" : "ÍùÏÈÇ°", currauth);
+    move(t_lines - 1, 0);
+    clrtoeol();
+    getdata(t_lines - 1, 0, pmt, ans, IDLEN + 1, DOECHO, NULL, true);   /*Haohmaru.98.09.29.ÐÞÕý×÷Õß²éÕÒÖ»ÄÜ11Î»IDµÄ´íÎó */
+    if (ans[0] != '\0')
+        strncpy(author, ans, IDLEN);
+
+    else
+        strcpy(author, currauth);
+    switch (read_search_articles(conf, author, up, 1)) {
+        case 1:
+            return PARTUPDATE;
+        default:
+            conf->show_endline();
+    }
+    return DONOTHING;
+}
 

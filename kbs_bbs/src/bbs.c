@@ -3057,6 +3057,7 @@ struct one_key read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {'f', clear_all_new_flag},  /* added by dong, 1999.1.25 */
     {'S', sequential_read},
 #ifdef INTERNET_EMAIL
+//TODO: change interface
     {'F', mail_forward},
     {'U', mail_uforward},
     {Ctrl('R'), post_reply},
