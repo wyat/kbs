@@ -316,8 +316,10 @@ int brc_initial(char *userid, char *boardname ) /* ¶ÁÈ¡ÓÃ»§.boardrcÎÄ¼ş£¬È¡³ö±£´
     int fd;
     struct boardheader const* bptr;
 
+#ifdef BBSMAIN
     strncpy( currboard, boardname , STRLEN-BM_LEN); /*ºÜÊÇft,¾ÓÈ»ÔÚÕâÀïÖÃcurrboard*/
     currboard[STRLEN-BM_LEN]=0;
+#endif
     for (i=0;i<BRC_CACHE_NUM;i++) 
     	if (brc_cache_entry[i].bid==bid) {
     		brc_currcache=i;
