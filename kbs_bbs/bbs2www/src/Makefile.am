@@ -7,4 +7,4 @@ bin_PROGRAMS = bbsall bbs0an \
 	  bbsccc bbsufind bbsclear bbsedit bbsman bbsparm \
 	  bbsdenyall bbsdenydel bbsdenyadd
 AM_CFLAGS = -I../include -DNJU_WWWBBS -DBBS2WWW -DINVISIBLE -D_DETAIL_UINFO_ -DSHOW_IDLE_TIME -I../../src 
-LDADD = -L../lib -lbbslib -L../../libBBS -lBBS -L../../libsystem -lsystem -L../lib -lbbslib
+LDADD = -L../lib -lbbslib -L../../libBBS -lBBS -L../../libsystem -lsystem
