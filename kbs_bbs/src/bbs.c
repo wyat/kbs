@@ -1739,9 +1739,9 @@ int search_mode(struct _select_def* conf,struct fileheader *fileinfo,int mode, c
         clear();
         move(t_lines-2,0);
         prints("没有满足条件的文章");
-	pressanykey();
-	unlink(arg->direct);
-	arg->newmode=DIR_MODE_NORMAL;
+        pressanykey();
+        unlink(arg->direct);
+        arg->newmode=DIR_MODE_NORMAL;
         setbdir(DIR_MODE_NORMAL, arg->direct, currboard->filename);
     }
     return NEWDIRECT;
@@ -1886,7 +1886,7 @@ int read_hot_info()
     char ans[4];
     move(t_lines - 1, 0);
     clrtoeol();
-    getdata(t_lines - 1, 0, "选择阅读: 1)本日十大新闻 2)祝福·校内 3)近期热点 4)系统热点 5)日历日记[1]: ", ans, 3, DOECHO, NULL, true);
+    getdata(t_lines - 1, 0, "选择阅读: 1)本日十大新闻 2)十大祝福 3)近期热点 4)系统热点 5)日历日记[1]: ", ans, 3, DOECHO, NULL, true);
     switch (ans[0])
 	{
     case '2':
@@ -3102,23 +3102,26 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             return FULLUPDATE;
         }
     }
+    ret=DIRCHANGED;
     if (!(flag&ARG_BMFUNC_FLAG)&&arg->mode) {
         switch (arg->mode) {
         case DIR_MODE_THREAD:
-            title_mode(conf,fileinfo,extraarg);
+            ret=title_mode(conf,fileinfo,extraarg);
             break;
         case DIR_MODE_MARK:
-            marked_mode(conf,fileinfo,extraarg);
+            ret=marked_mode(conf,fileinfo,extraarg);
             break;
         case DIR_MODE_ORIGIN:
         case DIR_MODE_AUTHOR:
         case DIR_MODE_TITLE:
-            search_mode(conf,fileinfo,arg->mode, search_data);
+            ret=search_mode(conf,fileinfo,arg->mode, search_data);
             break;
         default:
             break;
         }
     }
+    if (ret==NEWDIRECT)
+        return NEWDIRECT;
     return DIRCHANGED;
 }
 
@@ -3214,6 +3217,7 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
      */
     if (a_Import(NULL, currboard->filename, fileinfo, false, arg->direct, conf->pos)==0) {
         if (!(fileinfo->accessed[0] & FILE_IMPORTED)) {
+      ret=DIRCHANGED;
             ret=set_article_flag(conf, fileinfo, FILE_IMPORT_FLAG);
         }
     }
@@ -3231,6 +3235,8 @@ int show_b_note(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     return FULLUPDATE;
 }
 
+      if (ret==NEWDIRECT)
+              return NEWDIRECT;
 #ifdef NINE_BUILD
 int show_sec_board_notes(char bname[30])
 {                               /* 显示版主的话 */
