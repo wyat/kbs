@@ -2182,7 +2182,7 @@ int add_attach(char* file1, char* file2, char* filename)
     uint32_t size;
     char o[8]={0,0,0,0,0,0,0,0};
     char buf[1024*16];
-    int i,ret;
+    int i;
     if(stat(file2, &st)==-1)
         return 0;
     if(st.st_size>=2*1024*1024&&!HAS_PERM(currentuser, PERM_SYSOP)) {
@@ -2222,6 +2222,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     long eff_size;/*用于统计文章的有效字数*/
     char* upload = NULL;
     int mailback = 0;		/* stiger,回复到信箱 */
+	int ret;
 
     char direct[PATHLEN];
     int cmdmode;
