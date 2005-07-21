@@ -2182,7 +2182,7 @@ int add_attach(char* file1, char* file2, char* filename)
     uint32_t size;
     char o[8]={0,0,0,0,0,0,0,0};
     char buf[1024*16];
-    int i;
+    int i,ret;
     if(stat(file2, &st)==-1)
         return 0;
     if(st.st_size>=2*1024*1024&&!HAS_PERM(currentuser, PERM_SYSOP)) {
@@ -2611,12 +2611,14 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 #endif
     switch (cmdmode) {
     case 2:
-        title_mode(conf,NULL,NULL);
+        ret=title_mode(conf,NULL,NULL);
         break;
     case 3:
-        marked_mode(conf,NULL,NULL);
+        ret=marked_mode(conf,NULL,NULL);
         break;
     }
+	if (ret==NEWDIRECT)
+		return ret;
     return DIRCHANGED;
 }
 
