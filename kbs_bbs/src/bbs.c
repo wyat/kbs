@@ -3238,8 +3238,6 @@ int show_b_note(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     return FULLUPDATE;
 }
 
-      if (ret==NEWDIRECT)
-              return NEWDIRECT;
 #ifdef NINE_BUILD
 int show_sec_board_notes(char bname[30])
 {                               /* 显示版主的话 */
