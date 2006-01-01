@@ -122,7 +122,7 @@ div.stylesel img {
 		<div align="center">
 <?php
 	// 这里显示每个界面方案的缩略图
-	$stylecount=count($style_names);
+	$stylecount = count($style_names);
 	$ret = "";
 	for($i=0;$i<$stylecount;$i++)
 	{
