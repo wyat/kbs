@@ -82,7 +82,7 @@ function display_articles($brdarr,$articles,$start,$ftype,$managemode,$page,$tot
 		$mancode = $managemode?"1":"0";
 	}
 ?>
-<script>
+<script type="text/javascript"><!--
 var c = new docWriter('<?php echo addslashes($board); ?>',<?php echo $brdarr["BID"]; ?>,<?php echo $start;
 ?>,<?php echo $mancode; ?>,<?php echo $ftype; ?>,<?php echo $page; ?>,<?php echo $total;
 ?>,'<?php echo addslashes($ann_path); ?>',<?php echo $showHot?"1":"0"; ?>);
@@ -134,6 +134,7 @@ c.t();c.f('<?php echo addslashes(bbs_add_super_fav ($brdarr['DESC'], 'bbsdoc.php
 	}
 	if ($s) echo "0";
 ?>);
+//-->
 </script>
 <?php
 }

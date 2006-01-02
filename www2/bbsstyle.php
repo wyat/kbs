@@ -10,7 +10,7 @@
 		}
 	}
 ?>
-<script type="text/javascript">
+<script type="text/javascript"><!--
 	var settings = {"sizer": 3, "pager": 4, "hot": 5}; /* faint IE5 */
 	function setInd(n, v) {
 		var ff = getObj(n + 'F');
@@ -69,6 +69,7 @@
 			getObj("idpsave").style.visibility = "hidden";
 		}
 	});
+//-->
 </script>
 <style type="text/css">
 form.stylesel {

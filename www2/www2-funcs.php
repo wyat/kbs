@@ -380,9 +380,10 @@ function error_alert($msg)
 {
 	page_header("·¢Éú´íÎó");
 ?>
-<script type="text/javascript">
+<script type="text/javascript"><!--
 window.alert(<?php echo "\"$msg\""; ?>);
 history.go(-1);
+//-->
 </script>
 </body></html>
 <?php
