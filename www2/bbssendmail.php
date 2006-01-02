@@ -51,7 +51,7 @@ if ($ret < 0)  {
 			html_error_quit($incept." 拒收您的邮件");
 			break;
 		case -4:
-			html_error_quit($incept." 的信箱已满");
+			html_error_quit($incept." 的信箱已满或者不能收信");
 			break;
 		case -5:
 			html_error_quit("两次发文/信间隔过密,请休息几秒再试!");	
@@ -65,6 +65,9 @@ if ($ret < 0)  {
 		case -8:
 			html_error_quit("找不到所回复的原信。");
 			break;
+		case -9:
+			html_error_quit("您没有发信的权限。");
+			break;		
 		case -100:
 			html_error_quit("错误的收件人ID");
 			break;
