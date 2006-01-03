@@ -160,10 +160,10 @@ function dosubmit() {
 <?php
 	if(isset($file)){
 		if(isset($board)){
-			$filename = "boards/" . $board . "/" . $file;
+			$filename = bbs_get_board_filename($board, $file);
 			echo "\n【 在 " . $destuserid . " 的大作中提到: 】\n";
 		}else{
-			$filename = "mail/".strtoupper($currentuser["userid"]{0})."/".$currentuser["userid"]."/".$file;
+			$filename = bbs_setmailfile($currentuser["userid"], $file);
 			echo "\n【 在 " . $destuserid . " 的来信中提到: 】\n";
 		}
 		if(file_exists($filename))
@@ -197,8 +197,8 @@ function dosubmit() {
 						break;
 					}
 					/* */
-					if (stristr($buf, "</textarea>") == FALSE)  //filter </textarea> tag in the text
-						echo ": ". $buf;
+					//if (stristr($buf, "</textarea>") == FALSE)  //filter </textarea> tag in the text
+						echo ": ". htmlspecialchars($buf);
 				}
 				fclose($fp);
 			}
