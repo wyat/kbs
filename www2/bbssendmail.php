@@ -7,14 +7,15 @@ mailbox_header("发送信件");
 $mailfile = @$_POST["file"];
 $dirfile = @$_POST["dir"];
 if (strstr($dirfile,'..')) die;
-$maildir = "mail/".strtoupper($currentuser["userid"]{0})."/".$currentuser["userid"]."/".$dirfile;
+$maildir = bbs_setmailfile($currentuser["userid"], $dirfile);
 $num = @intval($_POST["num"]);
 
-if($mailfile == "")		// if to send a new mail
+if ( !bbs_can_send_mail($mailfile ? 1 : 0) )
+	html_error_quit("您不能发送信件");
+
+if($mailfile == "")		// if not reply
 {
-	if (! bbs_can_send_mail() )
-		html_error_quit("您不能发送信件");
-	$incept = trim(ltrim(@$_POST['userid']));
+	$incept = trim(@$_POST['userid']);
 	if (!$incept)
 		html_error_quit("请输入收件人ID");
 	$lookupuser = array();
@@ -30,7 +31,8 @@ $title = trim(@$_POST["title"]);
 if (!$title) $title = '无主题';
 
 $sig = intval(@$_POST['signature']); //签名档
-$backup = isset($_POST['backup'])?strlen($_POST['backup']):0; //备份
+$backup = 0;
+if (isset($_POST['backup'])) $backup = intval($_POST['backup']);
 
 if($mailfile == "")
 {

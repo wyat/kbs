@@ -151,11 +151,11 @@ function dosubmit() {
 		}
 ?>
 </select>
- [<a target="_balnk" href="bbssig.php">查看签名档</a>]
+ [<a target="_blank" href="bbssig.php">查看签名档</a>]
 <?php
 	$bBackup = (bbs_is_save2sent() != 0);
 ?>
-<input type="checkbox" name="backup"<?php if ($bBackup) echo " checked=\"checked\""; ?>>保存到发件箱<br />
+<input type="checkbox" name="backup" value="1"<?php if ($bBackup) echo " checked=\"checked\""; ?>>保存到发件箱<br />
 <textarea class="sb1" name="text" onkeydown='return textarea_okd(dosubmit, event);' rows="20" cols="80" wrap="physical">
 <?php
 	if(isset($file)){
