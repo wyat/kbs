@@ -6,7 +6,7 @@
 		exit;
 	}
 		html_init("gb2312","","",1);
-		if ( (!bbs_can_send_mail())&&(!isset($_GET["file"])) )
+		if ( !bbs_can_send_mail(isset($_GET["file"]) ? 1 : 0) )
 			html_error_quit("您不能发送信件");
 		if (isset($_GET["board"]))
 			$board = $_GET["board"];
