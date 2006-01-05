@@ -46,7 +46,7 @@
 				if (setImg) {
 					o = getObj("stylethumb" + i);
 					o.src = "images/" + i + "/thumb.jpg";
-					o.alt = "‘§¿¿Õº∆¨";
+					o.alt = o.title = "‘§¿¿Õº∆¨";
 				}
 			} else break;
 		}
