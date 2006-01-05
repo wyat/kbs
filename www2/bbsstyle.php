@@ -43,7 +43,11 @@
 			var o = getObj("stylediv" + i);
 			if (o) {
 				o.style.borderColor = (i!=cssID) ? 'white' : 'blue';
-				if (setImg) getObj("stylethumb" + i).src = "images/" + i + "/thumb.jpg";
+				if (setImg) {
+					o = getObj("stylethumb" + i);
+					o.src = "images/" + i + "/thumb.jpg";
+					o.alt = "预览图片";
+				}
 			} else break;
 		}
 	}
@@ -133,7 +137,7 @@ div.stylesel img {
 	for($i=0;$i<$stylecount;$i++)
 	{
 		$ret .= "<div id='stylediv{$i}' class='stylesel clickable' onClick='chkStyle($i);'>";
-		$ret .= "<img id='stylethumb{$i}' title='载入中...' src='' /><br/>{$style_names[$i]}</div>";
+		$ret .= "<img id='stylethumb{$i}' alt='载入中...' src='' /><br/>{$style_names[$i]}</div>";
 	}
 	print($ret);
 ?>
