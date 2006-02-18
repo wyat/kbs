@@ -155,7 +155,7 @@ var o = new conWriter(<?php echo $ftype; ?>, '<?php echo addslashes($brdarr["NAM
 echo $article["ID"];?>, <?php echo $article["GROUPID"];?>, <?php echo $article["REID"];?>, '<?php
 echo addslashes(bbs_get_super_fav($article['TITLE'], "bbscon.php?bid=" . $brdnum . "&id=" . $article["ID"]));?>', <?php echo $num; ?>);
 o.h(1);
-attachURL = new AttachURL(<?php echo $brdnum; ?>,<?php echo $id; ?>,<?php echo $ftype; ?>,<?php echo $num; ?>,<?php echo ($cacheable?"1":"0"); ?>);
+att = new attWriter(<?php echo $brdnum; ?>,<?php echo $id; ?>,<?php echo $ftype; ?>,<?php echo $num; ?>,<?php echo ($cacheable?"1":"0"); ?>);
 <?php $s = bbs2_readfile($filename); if (is_string($s)) echo $s; ?>
 o.h(0);o.t();
 //-->

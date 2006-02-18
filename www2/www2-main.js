@@ -29,8 +29,8 @@ function htmlize(s) {
 }
 
 
-var attachURL = null, strArticle = "", divArtCon = null, cacheable = true;
-function AttachURL(bid, id, ftype, num, cacheable) {
+var att = null, strArticle = "", divArtCon = null, cacheable = true;
+function attWriter(bid, id, ftype, num, cacheable) {
 	this.bid = bid;
 	this.id = id;
 	this.ftype = ftype;
@@ -45,25 +45,33 @@ function prints(s) {
 	if (divArtCon) strArticle += s;
 	else document.write(s);
 }
-function attach(name, len, pos) {
-	var bImg = false;
+function attachURL(name, len, pos) {
 	var ext = null, o = name.lastIndexOf(".");
-	var s = "", a = attachURL;
-	if (!a) return;
+	if (!att) return null;
 	if (o != -1) {
 		ext = name.substring(o + 1).toLowerCase();
+	}
+	var url = "att.php?";
+	if (!att.cacheable) url += "n";
+	else if (len > 51200) url += "p";
+	else url += "s";
+	url += "." + att.bid + "." + att.id;
+	if (att.ftype) url += "." + att.ftype + "." + att.num;
+	url += "." + pos;
+	if (ext) url += "." + htmlize(ext);
+	return (url);
+}
+function attach(name, len, pos) {
+	var bImg = false;
+	var s = "", url = attachURL(name, len, pos);
+	if (!url) return;
+	var o = name.lastIndexOf(".");
+	if (o != -1) {
+		var ext = name.substring(o + 1).toLowerCase();
 		bImg = (ext == "jpg" || ext == "jpeg" || ext == "gif"
 			 || ext == "ico" || ext == "png"  || ext == "pcx"
 			 || ext == "bmp");
 	}
-	var url = "att.php?";
-	if (!a.cacheable) url += "n";
-	else if (len > 51200) url += "p";
-	else url += "s";
-	url += "."+a.bid+"."+a.id;
-	if (a.ftype) url += "."+a.ftype+"."+a.num;
-	url += "."+pos;
-	if (ext) url += "." + htmlize(ext);
 	if (bImg) {
 		s += '<br /><img src="images/img.gif"/>此主题相关图片如下：'
 		  + name + '(' + len + ' 字节)<br /><a href="' + url + '" target="_blank">'
