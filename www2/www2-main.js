@@ -502,6 +502,16 @@ function hotTopic(board) { /* TODO: no table, use AJAX */
 }
 
 
+function getURLPath(url) {
+	var pos = url.indexOf("://");
+	if (pos != -1) {
+		var uri = url.substr(pos + 3);
+		if ((pos = uri.indexOf("/")) != -1) {
+			url = uri.substr(pos);
+		}
+	}
+	return(url);
+}
 
 function checkFrame() {
 	var msg = '<div id="fontSizer"';
@@ -514,11 +524,7 @@ function checkFrame() {
 	+ '<span class="clickable" onclick="sizer(0)" title="字体变变变...变回去">R</span></div>';
 	document.write(msg);
 	if (top == self) { /* TODO: use better way */
-		var url = document.location.toString();
-		var pos, uri = url.substr(7);
-		if ((pos = uri.indexOf("/")) != -1) {
-			url = uri.substr(pos);
-		}
+		var url = getURLPath(document.location.toString());
 		var ex = '(<a href="frames.html?mainurl=' + escape(url) + '">展开完整界面</a>)';
 		var o = getObj("idExp");
 		if (o) o.innerHTML = ex;
