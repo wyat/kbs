@@ -152,7 +152,7 @@
 <h1><?php echo $brdarr["NAME"]; ?> °æ <?php echo $dir_name[$ftype]; ?></h1>
 <script type="text/javascript"><!--
 var o = new conWriter(<?php echo $ftype; ?>, '<?php echo addslashes($brdarr["NAME"]); ?>', <?php echo $brdnum; ?>, <?php
-echo $article["ID"];?>, <?php echo $article["GROUPID"];?>, <?php echo $article["REID"];?>, '<?php echo $article["FILENAME"];?>', '<?php
+echo $article["ID"];?>, <?php echo $article["GROUPID"];?>, <?php echo $article["REID"];?>, '<?php
 echo addslashes(bbs_get_super_fav($article['TITLE'], "bbscon.php?bid=" . $brdnum . "&id=" . $article["ID"]));?>', <?php echo $num; ?>);
 o.h(1);
 attachURL = new AttachURL(<?php echo $brdnum; ?>,<?php echo $id; ?>,<?php echo $ftype; ?>,<?php echo $num; ?>,<?php echo ($cacheable?"1":"0"); ?>);

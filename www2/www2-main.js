@@ -914,14 +914,13 @@ function clearArticleDiv(id) {
 	}
 }
 
-function conWriter(ftype, board, bid, id, gid, reid, file, favtxt, num) {
+function conWriter(ftype, board, bid, id, gid, reid, favtxt, num) {
 	this.board = escape(board);
 	this.ftype = ftype;
 	this.bid = bid;
 	this.id = id;
 	this.gid = gid;
 	this.reid = reid;
-	this.file = file;
 	this.favtxt = favtxt;
 	this.num = num;
 	this.baseurl = "bbscon.php?bid=" + bid + "&id=" + id;
